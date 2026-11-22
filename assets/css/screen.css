@@ -1,0 +1,45 @@
+/* Màn chiếu 16:9 cho cả lớp và người dự giờ (khung 1600 × 900, tự co giãn). */
+html,body{height:100%;overflow:hidden;background:#1F1A17}
+.stage{position:absolute;left:50%;top:50%;width:1600px;height:900px;transform-origin:center center;background:var(--bg);display:grid;grid-template-rows:96px 52px 1fr;overflow:hidden;font-size:22px}
+.s-head{display:flex;align-items:center;gap:22px;padding:0 34px;background:var(--ink);color:#fff;border-bottom:3px solid var(--accent)}
+.s-head img{height:46px}
+.s-head .t{flex:1;min-width:0}
+.s-head .t small{display:block;font-size:15px;opacity:.75;letter-spacing:.03em}
+.s-head .t b{display:block;font-size:34px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cartouche{border:2px solid var(--accent);border-radius:40px;padding:6px 22px;text-align:center;line-height:1.1}
+.cartouche small{display:block;font-size:12px;opacity:.7;letter-spacing:.12em}
+.cartouche b{font-size:30px;letter-spacing:.12em}
+.s-prog{display:flex;align-items:center;padding:0 34px;gap:0;background:var(--paper-2);border-bottom:1px solid var(--line)}
+.s-prog .st{display:flex;align-items:center;flex:1;min-width:0}
+.s-prog .st:last-child{flex:0}
+.s-prog .nd{width:18px;height:18px;border-radius:50%;background:#E2D8C6;border:2px solid #E2D8C6;flex:0 0 18px}
+.s-prog .ln{height:3px;flex:1;background:#E2D8C6}
+.s-prog .done .nd,.s-prog .done .ln{background:var(--accent);border-color:var(--accent)}
+.s-prog .cur .nd{background:var(--ink);border-color:var(--accent);box-shadow:0 0 0 5px color-mix(in srgb,var(--accent) 30%,transparent)}
+.s-body{display:grid;grid-template-columns:1fr 300px;min-height:0}
+.s-main{padding:28px 36px;overflow:hidden;position:relative}
+.s-side{border-left:1px solid var(--line);background:var(--paper-2);padding:24px 22px;display:flex;flex-direction:column;gap:18px;align-items:center;text-align:center}
+.sun{width:200px;height:200px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,color-mix(in srgb,var(--accent) 22%,#fff) 0 58%,transparent 59%),conic-gradient(var(--accent) var(--p,0%),#E9E0CF 0);font-size:50px}
+.sun .timer{font-size:52px}
+.big-n{font-size:58px;font-weight:800;line-height:1}
+.s-side .lbl{font-size:15px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.scr-center{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.scr-q{font-size:40px;line-height:1.22;margin:14px 0 22px;font-weight:800}
+.scr-sub{font-size:24px;color:var(--ink-2)}
+.scr-opts{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.scr-opt{display:flex;align-items:center;gap:16px;background:#fff;border:2px solid var(--line-2);border-radius:18px;padding:16px 20px;font-size:26px;font-weight:650}
+.scr-opt .k{flex:0 0 46px;height:46px;border-radius:12px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:800}
+.scr-explain{margin-top:20px;background:#fff;border-left:6px solid var(--ok);border-radius:12px;padding:14px 20px;font-size:22px}
+.scr-feats{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px;margin:10px 0 18px}
+.scr-feat{margin:0;background:#fff;border-radius:16px;border:1px solid var(--line);padding:16px 20px;font-size:24px;font-style:italic;box-shadow:var(--shadow)}
+.scr-text{font-size:30px}
+.scr-text li{margin-bottom:10px}
+.s-main .bars{gap:16px}
+.s-main .bar-label{font-size:24px}
+.s-main .bar-track{height:24px}
+.lobby-qr svg{width:420px;height:420px;background:#fff;border-radius:18px;padding:10px}
+.board-row{display:grid;grid-template-columns:60px 1fr 140px;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:12px 18px;margin-bottom:10px;font-size:26px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px;text-align:center}
+.kpi b{display:block;font-size:56px;line-height:1.1}
+.kpi span{color:var(--muted);font-size:18px}
+.s-main .pill{font-size:16px;padding:5px 12px}

@@ -1,0 +1,103 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "l360": {
+      "admins": {
+        ".read": "auth != null",
+        "$uid": {
+          ".write": "auth != null && auth.provider === 'password' && ((!root.child('l360/admins').exists() && $uid === auth.uid) || root.child('l360/admins/' + auth.uid).val() === true)"
+        }
+      },
+      "secret": {
+        ".read": "auth != null && root.child('l360/admins/' + auth.uid).val() === true",
+        ".write": "auth != null && root.child('l360/admins/' + auth.uid).val() === true"
+      },
+      "teachers": {
+        ".read": "auth != null && root.child('l360/teachers/' + auth.uid).exists()",
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.provider === 'password' && (root.child('l360/admins/' + auth.uid).val() === true || ($uid === auth.uid && (data.exists() || (root.child('l360/secret/invite').exists() && newData.child('invite').val() === root.child('l360/secret/invite').val()))))"
+        }
+      },
+      "library": {
+        ".read": "auth != null && root.child('l360/teachers/' + auth.uid).exists()",
+        "$id": {
+          ".write": "auth != null && root.child('l360/teachers/' + auth.uid).exists() && (!data.exists() || data.child('owner').val() === auth.uid || root.child('l360/admins/' + auth.uid).val() === true)"
+        }
+      },
+      "sessions": {
+        ".read": "auth != null && root.child('l360/teachers/' + auth.uid).exists()",
+        "$sid": {
+          ".write": "auth != null && root.child('l360/teachers/' + auth.uid).exists() && (!data.exists() || data.child('teacherUid').val() === auth.uid) && (!newData.exists() || newData.child('teacherUid').val() === auth.uid)"
+        }
+      },
+      "priv": {
+        "$room": {
+          ".read": "auth != null && root.child('l360/rooms/' + $room + '/meta/teacherUid').val() === auth.uid",
+          ".write": "auth != null && root.child('l360/rooms/' + $room + '/meta/teacherUid').val() === auth.uid"
+        }
+      },
+      "rooms": {
+        "$room": {
+          ".read": "auth != null && root.child('l360/rooms/' + $room + '/meta/teacherUid').val() === auth.uid",
+          ".write": "auth != null && root.child('l360/rooms/' + $room + '/meta/teacherUid').val() === auth.uid && !newData.exists()",
+          "meta": {
+            ".read": "auth != null",
+            ".write": "auth != null && root.child('l360/teachers/' + auth.uid).exists() && (!data.exists() || data.child('teacherUid').val() === auth.uid) && (!newData.exists() || newData.child('teacherUid').val() === auth.uid)"
+          },
+          "pub": {
+            ".read": "auth != null",
+            ".write": "auth != null && root.child('l360/rooms/' + $room + '/meta/teacherUid').val() === auth.uid"
+          },
+          "state": {
+            ".read": "auth != null",
+            ".write": "auth != null && root.child('l360/rooms/' + $room + '/meta/teacherUid').val() === auth.uid"
+          },
+          "roster": {
+            ".read": "auth != null",
+            "$code": {
+              ".write": "auth != null && (root.child('l360/rooms/' + $room + '/meta/teacherUid').val() === auth.uid || ((!data.child('uid').exists() || data.child('uid').val() === auth.uid) && newData.child('uid').val() === auth.uid && root.child('l360/rooms/' + $room + '/meta/status').val() !== 'ended'))",
+              "name": { ".validate": "newData.isString() && newData.val().length <= 20" }
+            }
+          },
+          "uids": {
+            "$uid": {
+              ".read": "auth != null && auth.uid === $uid",
+              ".write": "auth != null && auth.uid === $uid && newData.isString() && root.child('l360/rooms/' + $room + '/roster/' + newData.val() + '/uid').val() === auth.uid"
+            }
+          },
+          "presence": {
+            "$code": {
+              ".write": "auth != null && (root.child('l360/rooms/' + $room + '/meta/teacherUid').val() === auth.uid || root.child('l360/rooms/' + $room + '/roster/' + $code + '/uid').val() === auth.uid)"
+            }
+          },
+          "subs": {
+            "$key": {
+              "$code": {
+                ".read": "auth != null && root.child('l360/rooms/' + $room + '/roster/' + $code + '/uid').val() === auth.uid",
+                ".write": "auth != null && (root.child('l360/rooms/' + $room + '/meta/teacherUid').val() === auth.uid || (root.child('l360/rooms/' + $room + '/roster/' + $code + '/uid').val() === auth.uid && root.child('l360/rooms/' + $room + '/state/phase').val() === 'open'))"
+              }
+            }
+          },
+          "gsubs": {
+            "$key": {
+              "$g": {
+                ".read": "auth != null && root.child('l360/rooms/' + $room + '/roster/' + root.child('l360/rooms/' + $room + '/uids/' + auth.uid).val() + '/group').val() === $g",
+                ".write": "auth != null && (root.child('l360/rooms/' + $room + '/meta/teacherUid').val() === auth.uid || (root.child('l360/rooms/' + $room + '/roster/' + root.child('l360/rooms/' + $room + '/uids/' + auth.uid).val() + '/group').val() === $g && root.child('l360/rooms/' + $room + '/state/phase').val() === 'open'))"
+              }
+            }
+          },
+          "gwork": {
+            "$step": {
+              "$g": {
+                ".read": "auth != null && root.child('l360/rooms/' + $room + '/roster/' + root.child('l360/rooms/' + $room + '/uids/' + auth.uid).val() + '/group').val() === $g",
+                ".write": "auth != null && (root.child('l360/rooms/' + $room + '/meta/teacherUid').val() === auth.uid || (root.child('l360/rooms/' + $room + '/roster/' + root.child('l360/rooms/' + $room + '/uids/' + auth.uid).val() + '/group').val() === $g && root.child('l360/rooms/' + $room + '/state/phase').val() === 'open'))"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

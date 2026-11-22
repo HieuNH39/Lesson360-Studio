@@ -1,0 +1,317 @@
+{
+  "schema": "l360-pack/1",
+  "id": "gddp-di-san-kinh-bac",
+  "title": "Di sản 360 – Hướng dẫn viên nhí xứ Kinh Bắc",
+  "subject": "Giáo dục địa phương",
+  "grade": "10",
+  "lessonRef": "Chủ đề di sản văn hoá địa phương tỉnh Bắc Ninh (kết hợp HĐTN – trải nghiệm di sản)",
+  "duration": 45,
+  "author": "Nguyễn Hữu Hiệu",
+  "objectives": [
+    "Nêu được nét chính về một số di tích, di sản tiêu biểu của xứ Kinh Bắc.",
+    "Khai thác được thông tin từ ứng dụng Heritage Lens – Kinh Bắc Ký Sự và tư liệu có nguồn.",
+    "Giới thiệu được một di tích như một hướng dẫn viên; đề xuất việc làm bảo tồn di sản."
+  ],
+  "theme": {
+    "accent": "#B3372B",
+    "accent2": "#8F2A20",
+    "bg": "#F7F2E7"
+  },
+  "groups": [
+    {
+      "name": "Phật Tích",
+      "color": "#3E7A3B"
+    },
+    {
+      "name": "Bút Tháp",
+      "color": "#C98A12"
+    },
+    {
+      "name": "Đông Hồ",
+      "color": "#B4552D"
+    },
+    {
+      "name": "Xương Giang",
+      "color": "#2A62B0"
+    }
+  ],
+  "meta": {
+    "madeWithAI": true,
+    "aiTool": "Claude",
+    "note": "Nội dung di tích, câu hỏi và ảnh lấy từ dữ liệu đã kiểm duyệt của Heritage Lens – Kinh Bắc Ký Sự (có nguồn)."
+  },
+  "steps": [
+    {
+      "id": "mo-dau",
+      "type": "slide",
+      "title": "Kinh Bắc – miền di sản",
+      "minutes": 2,
+      "script": "Giới thiệu: Heritage Lens có 31 di tích, 6 tuyến hành trình. Hôm nay mỗi nhóm trở thành hướng dẫn viên nhí của một di tích.",
+      "body": "- Xứ Kinh Bắc (Bắc Ninh, Bắc Giang xưa) là vùng đất **văn hiến** với nhiều di tích quốc gia đặc biệt.\n- **Dân ca Quan họ Bắc Ninh** được UNESCO ghi danh năm 2009; **nghề tranh Đông Hồ** được ghi danh cần bảo vệ khẩn cấp năm 2025.\n- Nhiệm vụ hôm nay: khám phá – kết nối – giới thiệu – bảo tồn.",
+      "media": {
+        "image": "assets/img/packs/kinh-bac/ld-quan-ho-co.webp",
+        "caption": "Hát quan họ cổ ở hội Lim",
+        "credit": "Nguyễn Đông Sơn, CC BY-SA 3.0"
+      }
+    },
+    {
+      "id": "phat-tich",
+      "type": "explore",
+      "title": "Khám phá: Chùa Phật Tích",
+      "minutes": 5,
+      "siteId": "phat-tich",
+      "script": "Học sinh mở trang Chùa Phật Tích trong Heritage Lens (quét QR trên màn chiếu), nghe thuyết minh 2–3 phút rồi trả lời.",
+      "instructions": "Mở Heritage Lens, tìm hiểu chùa Phật Tích và trả lời nhiệm vụ.",
+      "mission": "Vì sao nơi này được gọi là “Phật Tích”? Kể tên một Bảo vật quốc gia đang lưu giữ ở chùa.",
+      "answerType": "text",
+      "maxWords": 40,
+      "explain": "Phật Tích là “dấu tích của Phật”: tháp đổ mà pho tượng Phật bên trong vẫn còn nguyên. Hai Bảo vật quốc gia: tượng Phật A Di Đà bằng đá (công nhận 2012) và bộ mười tượng linh thú (2017).",
+      "timer": 300
+    },
+    {
+      "id": "dong-ho",
+      "type": "explore",
+      "title": "Khám phá: Làng tranh Đông Hồ",
+      "minutes": 4,
+      "siteId": "dong-ho",
+      "instructions": "Mở trang Làng tranh Đông Hồ và chọn đáp án đúng.",
+      "mission": "Lớp lấp lánh trên giấy điệp làm từ gì?",
+      "answerType": "choice",
+      "options": [
+        "Bột gạo",
+        "Bột kim loại",
+        "Bột vỏ sò điệp",
+        "Đường kính"
+      ],
+      "answer": 2,
+      "explain": "Vỏ điệp nung, nghiền mịn, trộn hồ rồi quét lên giấy dó.",
+      "timer": 180
+    },
+    {
+      "id": "dong-thoi-gian",
+      "type": "order",
+      "title": "Dòng thời gian di sản",
+      "minutes": 3,
+      "instructions": "Sắp xếp các mốc từ sớm nhất đến muộn nhất.",
+      "question": "Sắp xếp các mốc sau theo trình tự thời gian (sớm nhất ở trên cùng).",
+      "items": [
+        "Dựng Đền Đô thờ các vua Lý",
+        "Dựng tháp và tượng Phật ở chùa Phật Tích",
+        "Trận Chi Lăng – Xương Giang kết thúc khởi nghĩa Lam Sơn",
+        "Hoàn thành trùng tu lớn chùa Bút Tháp",
+        "Dựng đình Diềm",
+        "UNESCO ghi danh Dân ca Quan họ Bắc Ninh"
+      ],
+      "explain": "Đền Đô (1030) → tháp và tượng Phật Tích (1057) → Chi Lăng – Xương Giang (1427) → trùng tu Bút Tháp (1647) → đình Diềm (1692) → Quan họ được UNESCO ghi danh (2009). Các mốc trải dài gần 1.000 năm: di sản Kinh Bắc là “cuốn sử sống” của dân tộc.",
+      "timer": 120
+    },
+    {
+      "id": "ket-noi",
+      "type": "match",
+      "title": "Di tích nào – dấu ấn nào?",
+      "minutes": 4,
+      "question": "Ghép mỗi di tích với dấu ấn tiêu biểu của nó.",
+      "pairs": [
+        {
+          "left": "Đền Đô",
+          "right": "Thờ tám vị vua nhà Lý"
+        },
+        {
+          "left": "Chùa Bút Tháp",
+          "right": "Tượng Quan Âm nghìn mắt nghìn tay"
+        },
+        {
+          "left": "Làng Đông Hồ",
+          "right": "Tranh khắc gỗ in trên giấy điệp"
+        },
+        {
+          "left": "Làng Diềm",
+          "right": "Đền thờ Vua Bà – Thủy tổ Quan họ"
+        },
+        {
+          "left": "Xương Giang",
+          "right": "Trận quyết chiến năm 1427"
+        }
+      ],
+      "explain": "Mỗi di tích gắn với một giá trị riêng: lịch sử (Đền Đô, Xương Giang), nghệ thuật (Bút Tháp, Đông Hồ), văn hóa dân gian (Quan họ).",
+      "timer": 120
+    },
+    {
+      "id": "huong-dan-vien",
+      "type": "groupwork",
+      "title": "Hướng dẫn viên nhí",
+      "minutes": 12,
+      "script": "Mỗi nhóm nhận một di tích, dùng tư liệu trên máy và Heritage Lens để soạn bài giới thiệu cho du khách.",
+      "instructions": "Nhận vai, đọc tư liệu, Thư kí nộp hồ sơ A–E.",
+      "task": "Soạn bài giới thiệu di tích của nhóm cho du khách lần đầu đến Kinh Bắc. Thông tin phải đúng và có nguồn.",
+      "roles": [
+        "Thư kí",
+        "Trưởng nhóm",
+        "Người tra cứu Heritage Lens",
+        "Người kể chuyện",
+        "Người thuyết trình"
+      ],
+      "fields": [
+        {
+          "key": "A",
+          "label": "Giới thiệu ngắn (vị trí, niên đại)"
+        },
+        {
+          "key": "B",
+          "label": "Giá trị lịch sử – văn hoá"
+        },
+        {
+          "key": "C",
+          "label": "Chi tiết hấp dẫn nhất"
+        },
+        {
+          "key": "D",
+          "label": "Lời mời du khách (1–2 câu)"
+        },
+        {
+          "key": "E",
+          "label": "Học sinh có thể làm gì để bảo tồn?"
+        }
+      ],
+      "resources": [
+        {
+          "for": [
+            1
+          ],
+          "title": "Nhóm 1 – Chùa Phật Tích",
+          "image": "assets/img/packs/kinh-bac/pt-dai-tuong.webp",
+          "credit": "Bongbech, CC BY-SA 4.0, qua Heritage Lens – Kinh Bắc Ký Sự",
+          "body": "Ngôi chùa thời Lý trên sườn núi Phật Tích, giữ pho tượng A Di Đà bằng đá năm 1057 và hàng mười linh thú đá, hai Bảo vật quốc gia.\n- **Tên chữ:** Vạn Phúc tự\n- **Niên đại:** Tháp và tượng dựng năm 1057, đời Lý Thánh Tông\n- **Xếp hạng:** Di tích quốc gia (1962); Di tích quốc gia đặc biệt (2014)\n- **Bảo vật quốc gia:** Tượng Phật A Di Đà (2012); bộ mười tượng linh thú (2017)\n- **Lễ hội:** Hội Khán hoa mẫu đơn, mùng 3 đến mùng 5 tháng Giêng, chính hội mùng 4",
+          "link": "https://hieunh39.github.io/Kinh-Bac-ky-su/#/site/phat-tich",
+          "linkTitle": "Mở trang di tích trong Heritage Lens"
+        },
+        {
+          "for": [
+            2
+          ],
+          "title": "Nhóm 2 – Chùa Bút Tháp",
+          "image": "assets/img/packs/kinh-bac/bt-san-chua.webp",
+          "credit": "Benjamin Smith, CC BY-SA 4.0, qua Heritage Lens – Kinh Bắc Ký Sự",
+          "body": "Ngôi chùa bên đê sông Đuống giữ gần như trọn vẹn kiến trúc thế kỷ XVII, nơi có tượng Quan Âm nghìn mắt nghìn tay và bốn nhóm Bảo vật quốc gia.\n- **Tên chữ:** Ninh Phúc tự; còn gọi chùa Nhạn Tháp\n- **Niên đại:** Tương truyền có từ thời Trần; trùng tu lớn xong năm 1647; tu sửa đầu thế kỷ XVIII\n- **Bảo vật quốc gia:** Tượng Quan Âm nghìn mắt nghìn tay (2012); bộ tượng Tam Thế, tòa Cửu phẩm liên hoa, hương án (2020)\n- **Xếp hạng:** Di tích quốc gia (1962); Di tích quốc gia đặc biệt (2013)\n- **Lễ hội:** 23 – 24 tháng Ba âm lịch",
+          "link": "https://hieunh39.github.io/Kinh-Bac-ky-su/#/site/but-thap",
+          "linkTitle": "Mở trang di tích trong Heritage Lens"
+        },
+        {
+          "for": [
+            3
+          ],
+          "title": "Nhóm 3 – Làng tranh dân gian Đông Hồ",
+          "image": "assets/img/packs/kinh-bac/dh-in-tranh.webp",
+          "credit": "RG72, CC BY-SA 4.0, qua Heritage Lens – Kinh Bắc Ký Sự",
+          "body": "Làng nghề in tranh khắc gỗ trên giấy điệp với màu từ cây cỏ, đất đá; nghề tranh được UNESCO ghi danh cần bảo vệ khẩn cấp năm 2025.\n- **Danh hiệu:** Di sản phi vật thể quốc gia (2012); UNESCO – cần bảo vệ khẩn cấp (9/12/2025)\n- **Chất liệu:** Giấy dó quét hồ và bột vỏ điệp; màu tự nhiên; ván khắc gỗ\n- **Cách in:** Mỗi màu một ván, in lần lượt; bản nét đen in sau cùng\n- **Tranh tiêu biểu:** Đám cưới chuột, Đàn lợn, Gà đàn, Vinh hoa – Phú quý, Hứng dừa",
+          "link": "https://hieunh39.github.io/Kinh-Bac-ky-su/#/site/dong-ho",
+          "linkTitle": "Mở trang di tích trong Heritage Lens"
+        },
+        {
+          "for": [
+            4
+          ],
+          "title": "Nhóm 4 – Địa điểm chiến thắng Xương Giang",
+          "image": "assets/img/packs/kinh-bac/xg-le-hoi.webp",
+          "credit": "Usercoca98f1, CC BY-SA 4.0, qua Heritage Lens – Kinh Bắc Ký Sự",
+          "body": "Nơi diễn ra trận quyết chiến năm 1427 kết thúc thắng lợi khởi nghĩa Lam Sơn; năm 2027 tròn 600 năm chiến thắng.\n- **Niên đại:** Thành do quân Minh xây năm 1407; nghĩa quân hạ thành tháng 9/1427; trận Chi Lăng – Xương Giang tháng 10 – 11/1427\n- **Công trình hiện nay:** Đền Xương Giang dựng trên nền thành cổ, khởi công 2012, hoàn thành đầu năm 2017\n- **Xếp hạng:** Di tích quốc gia (2009); quốc gia đặc biệt (QĐ 1954/QĐ-TTg, 31/12/2019)\n- **Lễ hội:** Mồng 6 – 7 tháng Giêng; di sản phi vật thể quốc gia (2023)",
+          "link": "https://hieunh39.github.io/Kinh-Bac-ky-su/#/site/xuong-giang",
+          "linkTitle": "Mở trang di tích trong Heritage Lens"
+        }
+      ],
+      "timer": 720
+    },
+    {
+      "id": "trien-lam",
+      "type": "expo",
+      "title": "Tour giới thiệu di sản",
+      "minutes": 6,
+      "source": "huong-dan-vien",
+      "perGroupSec": 75,
+      "criteria": [
+        "Thông tin chính xác",
+        "Hấp dẫn như hướng dẫn viên",
+        "Đề xuất bảo tồn thiết thực"
+      ],
+      "askQuestion": true,
+      "instructions": "Nghe nhóm bạn giới thiệu, chấm 3 tiêu chí, đặt câu hỏi."
+    },
+    {
+      "id": "do-vui",
+      "type": "quiz",
+      "title": "Đố vui di sản",
+      "minutes": 5,
+      "timer": 20,
+      "instructions": "5 câu, mỗi câu 20 giây.",
+      "questions": [
+        {
+          "q": "Đền Đô thờ những ai?",
+          "options": [
+            "Tám vị vua nhà Lý",
+            "Các vua Hùng",
+            "Các vua nhà Trần",
+            "Các vị thần sông núi"
+          ],
+          "answer": 0,
+          "explain": "Đền Đô còn gọi là đền Lý Bát Đế, thờ tám vị vua nhà Lý."
+        },
+        {
+          "q": "Ngọn tháp và pho tượng Phật ở Phật Tích được dựng năm nào, dưới đời vua nào?",
+          "options": [
+            "Năm 1057, đời Lý Thánh Tông",
+            "Năm 1226, đời Trần Thái Tông",
+            "Năm 1010, đời Lý Thái Tổ",
+            "Năm 1428, đời Lê Thái Tổ"
+          ],
+          "answer": 0,
+          "explain": "Năm 1057, vua Lý Thánh Tông, vị vua thứ ba nhà Lý, cho dựng tháp và đặt tượng Phật bằng đá."
+        },
+        {
+          "q": "Vì sao chùa có tên là Bút Tháp?",
+          "options": [
+            "Vì vua ban một cây bút",
+            "Vì tháp Báo Nghiêm có dáng như cây bút lông",
+            "Vì chùa bán bút",
+            "Vì có nhiều học trò đến học"
+          ],
+          "answer": 1,
+          "explain": "Đỉnh tháp Báo Nghiêm thon như ngòi bút lông dựng ngược."
+        },
+        {
+          "q": "Trận tổng công kích ở Xương Giang diễn ra năm nào?",
+          "options": [
+            "1288",
+            "1789",
+            "1077",
+            "1427"
+          ],
+          "answer": 3,
+          "explain": "Ngày 3/11/1427."
+        },
+        {
+          "q": "UNESCO ghi danh dân ca Quan họ Bắc Ninh năm nào?",
+          "options": [
+            "2025",
+            "2016",
+            "2009",
+            "1999"
+          ],
+          "answer": 2,
+          "explain": "Năm 2009, Di sản văn hóa phi vật thể đại diện của nhân loại."
+        }
+      ]
+    },
+    {
+      "id": "thong-diep",
+      "type": "text",
+      "title": "Thông điệp gìn giữ di sản",
+      "minutes": 3,
+      "question": "Viết một thông điệp (≤ 40 từ) gửi bạn bè về việc gìn giữ di sản Kinh Bắc.",
+      "placeholder": "",
+      "maxWords": 40,
+      "selfAssess": true,
+      "askDoubt": false,
+      "timer": 120
+    }
+  ]
+}
