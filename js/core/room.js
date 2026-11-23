@@ -118,6 +118,8 @@
       const st = { step: i, phase: "observe", q: 0, round: 1, page: 0, screen: "content", openedAt: null, dur: 0, vcmd: null, stepAt: S().TS };
       if (i >= 0 && !this.state.startedAt) st.startedAt = S().TS;
       await this.patchState(st);
+      // Hết tiết: công bố nhiệm vụ về nhà – chuẩn bị bài sau cho màn chiếu và học sinh.
+      if (i >= n) await S().set(R(this.room, "pub/homework"), Pack.homework(this.pack));
       const step = this.pack.steps[i];
       if (step) {
         const t = L360.types[step.type] || {};

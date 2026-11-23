@@ -280,9 +280,9 @@ window.L360.packs.push({
         },
         {
           q: "Người Ai Cập cổ đại viết chữ chủ yếu trên",
-          options: ["thẻ tre", "giấy làm từ cây papyrus", "phiến đất sét", "lụa"],
+          options: ["thẻ tre ghép", "giấy pa-pi-rút", "phiến đất sét", "tấm lụa"],
           answer: 1,
-          explain: "Giấy papyrus làm từ thân cây cói mọc ven sông Nin."
+          explain: "Giấy pa-pi-rút (papyrus) làm từ thân cây cói mọc ven sông Nin."
         },
         {
           q: "Lịch của người Ai Cập cổ đại chia một năm thành",
@@ -298,7 +298,7 @@ window.L360.packs.push({
         },
         {
           q: "Nhu cầu nào thúc đẩy người Ai Cập giỏi hình học?",
-          options: ["Xây nhà ở", "Buôn bán đường biển", "Đo đạc lại ruộng đất sau mỗi mùa lũ", "Đúc tiền"],
+          options: ["Xây dựng nhà ở cho dân", "Buôn bán trên đường biển", "Đo đạc lại ruộng đất sau lũ", "Đúc tiền đồng để trao đổi"],
           answer: 2,
           explain: "Lũ sông Nin xoá ranh giới ruộng đất, nên phải đo đạc, tính diện tích lại sau mỗi mùa lũ."
         }

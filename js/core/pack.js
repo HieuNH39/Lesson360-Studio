@@ -99,6 +99,64 @@
       const bs = b.so ? (/^(CĐ|Chủ đề)/i.test(b.so) ? b.so : `Bài ${b.so}`) : "";
       return [bs, t.tong > 1 ? `Tiết ${t.so}/${t.tong}` : t.so ? `Tiết ${t.so}` : ""].filter(Boolean).join(" · ");
     },
+    // Nhiệm vụ về nhà và chuẩn bị bài sau. Ưu tiên nội dung giáo viên/AI soạn (p.homework);
+    // thiếu thì tự gợi ý từ hoạt động vận dụng và tiết kế tiếp trong Phụ lục 1.
+    homework(p) {
+      const h = p.homework && typeof p.homework === "object" ? p.homework : typeof p.homework === "string" ? { tasks: [p.homework] } : {};
+      const clip = (t, n) => {
+        t = String(t || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+        return t.length > n ? t.slice(0, n - 1).replace(/\s+\S*$/, "") + "…" : t;
+      };
+      const tasks = (Array.isArray(h.tasks) ? h.tasks : h.tasks ? [h.tasks] : []).map((x) => clip(x, 220)).filter(Boolean);
+      let prepare = clip(h.prepare, 240);
+      const auto = !tasks.length;
+      if (auto) {
+        tasks.push(p.steps.some((s) => s.ghiBai) ? "Học thuộc phần ghi vở; tự vẽ lại sơ đồ khái quát của tiết học bằng trí nhớ." : "Ôn lại các nội dung chính của tiết học.");
+        const vd = p.steps.find((s) => s.phase === "van-dung" && isActivity(s));
+        if (vd) {
+          const what = clip(vd.instructions || vd.question || vd.prompt || "", 150);
+          tasks.push(`Hoàn thành nhiệm vụ vận dụng “${clip(vd.title, 60)}”${what ? ": " + what : ""}.`.replace(/\.\.$/, "."));
+        }
+      }
+      if (!prepare) {
+        const sau = p.ppct && p.ppct.sau;
+        const t = p.tiet || {};
+        if (sau && sau.cungBai) prepare = `Đọc trước nội dung tiết sau của bài “${clip(sau.ten, 80)}”${sau.noiDung ? ": " + clip(sau.noiDung, 120) : ""}; ghi lại 1 câu hỏi em muốn hỏi.`;
+        else if (sau) prepare = `Đọc trước bài “${clip(sau.ten, 90)}” trong SGK; ghi lại 1–2 điều em muốn tìm hiểu.`;
+        else if (t.so < t.tong) prepare = `Đọc trước phần tiếp theo của bài “${clip((p.bai && p.bai.ten) || p.title, 90)}” (tiết ${t.so + 1}); ghi lại 1 câu hỏi em muốn hỏi.`;
+        else prepare = "Đọc trước bài học tiếp theo trong SGK; ghi lại 1–2 điều em muốn tìm hiểu.";
+      }
+      return { tasks, prepare, sheet: clip(h.sheet, 200), auto };
+    },
+    // Thêm trang đề mục: trang "tên mục" trước mỗi bước bài giảng của phần hình thành kiến thức;
+    // tiết 1 thêm trang "tên bài" (và trang "chủ đề" nếu là bài mở đầu chủ đề). Không thêm trùng.
+    addHeadings(p, o = {}) {
+      const has = (k) => p.steps.some((s) => (s.pages || []).some((pg) => (pg.blocks || []).some((b) => b.kind === k)));
+      const ht = p.steps.filter((s) => s.phase === "hinh-thanh" && s.type === "slide");
+      if (!ht.length) return 0;
+      let added = 0;
+      ht.forEach((s, i) => {
+        s.pages = Array.isArray(s.pages) ? s.pages : [];
+        if (s.pages.some((pg) => (pg.blocks || []).some((b) => b.kind === "muc"))) return;
+        s.pages.unshift({ title: "", blocks: [{ kind: "muc", so: String(i + 1), ten: String(s.title || "").replace(/^\s*\d+[.)]\s*/, "") }] });
+        added++;
+      });
+      const t = p.tiet || {};
+      if ((Number(t.so) || 1) === 1 && !has("tenbai")) {
+        const b = p.bai || {};
+        ht[0].pages.unshift({
+          title: "",
+          blocks: [{ kind: "tenbai", so: b.so ? (/^(CĐ|Chủ đề)/i.test(b.so) ? b.so : "Bài " + b.so) : "", ten: b.ten || p.title, chude: o.chude || "", muc: ht.map((s) => String(s.title || "").replace(/^\s*\d+[.)]\s*/, "")) }]
+        });
+        added++;
+        if (o.chude && !has("chude")) {
+          const m = String(o.chude).match(/^((?:Chủ đề|Chương|Phần)\s*[\dIVX]+)[.:\s–-]*(.*)$/i);
+          ht[0].pages.unshift({ title: "", blocks: [{ kind: "chude", so: m ? m[1] : "Chủ đề", ten: m ? m[2] || o.chude : o.chude }] });
+          added++;
+        }
+      }
+      return added;
+    },
     phaseCount(p) {
       const c = { "khoi-dong": 0, "hinh-thanh": 0, "luyen-tap": 0, "van-dung": 0 };
       p.steps.forEach((s) => isActivity(s) && (c[s.phase] = (c[s.phase] || 0) + 1));

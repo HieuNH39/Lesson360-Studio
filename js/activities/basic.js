@@ -116,7 +116,76 @@
   });
 
   /* ---------------- Trắc nghiệm: 4 lựa chọn · Đúng/Sai 4 ý · Trả lời ngắn ---------------- */
-  const KIND_LABEL = { mcq: "4 lựa chọn", tf: "Đúng/Sai", short: "Trả lời ngắn" };
+  const KIND_LABEL = { mcq: "4 lựa chọn", tf: "Đúng/Sai", short: "Trả lời ngắn", fill: "Điền khuyết", sort: "Kéo thả phân loại" };
+  /* --- Điền khuyết: đáp án đặt trong [[ ]] ngay trong đoạn văn; [[A|B]] = chấp nhận A hoặc B. --- */
+  const fillParse = (text) => {
+    const parts = [];
+    const blanks = [];
+    let last = 0;
+    String(text || "").replace(/\[\[([^\]]+?)\]\]/g, (m, a, at) => {
+      parts.push(String(text).slice(last, at));
+      const alts = a.split("|").map((x) => x.trim()).filter(Boolean);
+      blanks.push({ answer: alts[0] || "", accept: alts.slice(1) });
+      last = at + m.length;
+      return m;
+    });
+    parts.push(String(text || "").slice(last));
+    return { parts, blanks };
+  };
+  // Xáo trộn cố định theo hạt giống (mọi máy thấy cùng một thứ tự).
+  const shuf = (list, seed) => {
+    let h = 2166136261;
+    String(seed).split("").forEach((c) => (h = Math.imul(h ^ c.charCodeAt(0), 16777619)));
+    const a = list.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      h = Math.imul(h ^ (h >>> 13), 1274126177);
+      const j = Math.abs(h) % (i + 1);
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+  L360.fillParse = fillParse;
+  // Kéo – thả bằng ngón tay/chuột (chạy trên iPad, laptop): chạm chọn rồi chạm đích, hoặc kéo thẳng vào đích.
+  function dragChips(root, chipSel, dropSel, onDrop) {
+    u.$$(chipSel, root).forEach((chip) => {
+      chip.onpointerdown = (e) => {
+        if (e.button > 0) return;
+        const sx = e.clientX, sy = e.clientY;
+        let ghost = null;
+        const move = (ev) => {
+          if (!ghost && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 8) return;
+          if (!ghost) {
+            ghost = chip.cloneNode(true);
+            ghost.classList.add("dd-ghost");
+            document.body.appendChild(ghost);
+            chip.classList.add("dd-src");
+          }
+          ghost.style.left = ev.clientX + "px";
+          ghost.style.top = ev.clientY + "px";
+          u.$$(dropSel, root).forEach((d) => d.classList.remove("dd-over"));
+          const t = document.elementFromPoint(ev.clientX, ev.clientY);
+          const d = t && t.closest(dropSel);
+          if (d && root.contains(d)) d.classList.add("dd-over");
+        };
+        const up = (ev) => {
+          window.removeEventListener("pointermove", move);
+          window.removeEventListener("pointerup", up);
+          window.removeEventListener("pointercancel", up);
+          if (!ghost) return;
+          ghost.remove();
+          chip.classList.remove("dd-src");
+          const t = document.elementFromPoint(ev.clientX, ev.clientY);
+          const d = t && t.closest(dropSel);
+          chip.dataset.dragged = "1";
+          setTimeout(() => delete chip.dataset.dragged, 50);
+          if (d && root.contains(d)) onDrop(chip, d);
+        };
+        window.addEventListener("pointermove", move);
+        window.addEventListener("pointerup", up);
+        window.addEventListener("pointercancel", up);
+      };
+    });
+  }
   const TF_PTS = [0, 10, 25, 50, 100]; // thang điểm phần Đúng/Sai của đề thi tốt nghiệp THPT (×100)
   const normAns = (s) =>
     String(s == null ? "" : s)
@@ -146,9 +215,18 @@
       return TF_PTS[n] || 0;
     }
     if (k === "short") return shortOk(ans, v) ? 100 : 0;
+    if (k === "fill" || k === "sort") {
+      const n = (ans.answers || []).length;
+      if (!n || !Array.isArray(v)) return 0;
+      const ok = ans.answers.filter((a, i) => (k === "fill" ? shortOk({ answer: a, accept: (ans.accept || [])[i] || [] }, v[i] == null ? "" : v[i]) : v[i] === a)).length;
+      return Math.round((100 * ok) / n);
+    }
     return v === ans.answer ? 100 : 0;
   };
-  const qKind = (q) => (q.kind === "tf" || q.kind === "short" ? q.kind : "mcq");
+  // Số ô/mục đúng (dùng cho thống kê theo từng chỗ trống, từng mục phân loại).
+  const partOk = (ans, v, i) =>
+    Array.isArray(v) && (ans.kind === "fill" ? v[i] != null && shortOk({ answer: ans.answers[i], accept: (ans.accept || [])[i] || [] }, v[i]) : v[i] === ans.answers[i]);
+  const qKind = (q) => (["tf", "short", "fill", "sort"].includes(q.kind) ? q.kind : "mcq");
   L360.registerType({
     type: "quiz",
     label: "Trắc nghiệm",
@@ -168,7 +246,9 @@
       questions: [
         { kind: "mcq", q: "Câu hỏi?", options: ["Phương án A", "Phương án B", "Phương án C", "Phương án D"], answer: 0, explain: "Giải thích ngắn." },
         { kind: "tf", q: "Đọc tư liệu và cho biết mỗi nhận định đúng hay sai.", statements: [{ text: "a) ...", answer: true }, { text: "b) ...", answer: false }, { text: "c) ...", answer: true }, { text: "d) ...", answer: false }], explain: "" },
-        { kind: "short", q: "Câu hỏi trả lời ngắn?", answer: "đáp án", accept: [], explain: "" }
+        { kind: "short", q: "Câu hỏi trả lời ngắn?", answer: "đáp án", accept: [], explain: "" },
+        { kind: "fill", q: "Chọn từ thích hợp điền vào chỗ trống.", text: "Câu có [[đáp án 1]] và [[đáp án 2]].", bank: ["từ nhiễu"], explain: "" },
+        { kind: "sort", q: "Xếp các mục vào đúng nhóm.", groups: ["Nhóm A", "Nhóm B"], items: [{ text: "mục 1", group: 0 }, { text: "mục 2", group: 1 }, { text: "mục 3", group: 0 }], explain: "" }
       ]
     }),
     normalize(s) {
@@ -178,6 +258,14 @@
         if (q.kind === "mcq") q = Object.assign({ options: [], answer: 0 }, q);
         if (q.kind === "tf") q.statements = (q.statements || []).slice(0, 4).map((x) => (typeof x === "string" ? { text: x, answer: true } : { text: String(x.text || ""), answer: !!x.answer }));
         if (q.kind === "short") q.accept = Array.isArray(q.accept) ? q.accept : q.accept ? [q.accept] : [];
+        if (q.kind === "fill") {
+          q.text = String(q.text || "");
+          q.bank = (Array.isArray(q.bank) ? q.bank : q.bank ? String(q.bank).split(/[;,]/) : []).map((x) => String(x).trim()).filter(Boolean);
+        }
+        if (q.kind === "sort") {
+          q.groups = (q.groups || []).map((g) => String(g || "")).slice(0, 4);
+          q.items = (q.items || []).map((x) => (typeof x === "string" ? { text: x, group: 0 } : { text: String(x.text || ""), group: Math.max(0, Math.min(q.groups.length - 1, Number(x.group) || 0)) }));
+        }
         return q;
       });
       s.timer = Number(s.timer) || 20;
@@ -193,6 +281,22 @@
         }
         if (q.kind === "tf" && (q.statements || []).length !== 4) err(`${w} (Đúng/Sai) cần đúng 4 ý a, b, c, d.`);
         if (q.kind === "short" && (q.answer == null || q.answer === "")) err(`${w} (trả lời ngắn) chưa có đáp án.`);
+        if (q.kind === "fill") {
+          const n = fillParse(q.text).blanks.length;
+          if (!n) err(`${w} (điền khuyết): đặt đáp án trong dấu [[ ]] ngay trong đoạn văn "text".`);
+          else if (n > 8) warn(`${w} (điền khuyết) có ${n} chỗ trống – nên tối đa 6.`);
+        }
+        if (q.kind === "sort") {
+          if ((q.groups || []).filter(Boolean).length < 2) err(`${w} (phân loại) cần 2–4 nhóm ("groups").`);
+          if ((q.items || []).length < 3) err(`${w} (phân loại) cần ít nhất 3 mục ("items").`);
+          else if ((q.items || []).length > 10) warn(`${w} (phân loại) có hơn 10 mục – màn hình nhỏ sẽ chật.`);
+        }
+        if (q.kind === "mcq" && Array.isArray(q.options) && q.options.length === 4) {
+          const ls = q.options.map((o) => String(o || "").trim().length);
+          if (new Set(q.options.map((o) => String(o).trim().toLowerCase())).size < 4) err(`${w}: có hai phương án trùng nhau.`);
+          if (Math.max(...ls) > 2.2 * Math.max(8, Math.min(...ls))) warn(`${w}: độ dài 4 phương án chênh lệch nhiều – học sinh dễ đoán đáp án; nên viết các phương án dài tương đương.`);
+          if (q.options.some((o) => /tất cả (các )?(đáp án|phương án|ý) (trên )?(đều )?(đúng|sai)|cả [abcd], [abcd]/i.test(String(o)))) warn(`${w}: tránh phương án "Tất cả đều đúng/sai" – mỗi câu chỉ có MỘT đáp án đúng.`);
+        }
         if (!q.explain) warn(`${w} chưa có giải thích đáp án.`);
       });
       if ((s.questions || []).length > 12) warn("Nhiều hơn 12 câu – cân nhắc tách thành 2 hoạt động.");
@@ -204,7 +308,7 @@
       const q = (s.questions || [])[st.q || 0] || {};
       if (q.timer) return Number(q.timer);
       const base = Number(s.timer) || 20;
-      return q.kind === "tf" ? Math.max(base, 45) : q.kind === "short" ? Math.max(base, 30) : base;
+      return q.kind === "tf" ? Math.max(base, 45) : q.kind === "short" ? Math.max(base, 30) : q.kind === "fill" || q.kind === "sort" ? Math.max(base, 60) : base;
     },
     publicPayload(s, st) {
       const i = st.q || 0;
@@ -213,6 +317,15 @@
       if (q.kind === "mcq") o.options = q.options || [];
       if (q.kind === "tf") o.statements = (q.statements || []).map((x) => x.text);
       if (q.kind === "short") o.unit = q.unit || "";
+      if (q.kind === "fill") {
+        const f = fillParse(q.text);
+        o.parts = f.parts;
+        o.bank = shuf(f.blanks.map((b) => b.answer).concat(q.bank || []), s.id + i);
+      }
+      if (q.kind === "sort") {
+        o.groups = q.groups || [];
+        o.items = shuf((q.items || []).map((x, j) => ({ i: j, text: x.text })), s.id + i);
+      }
       return o;
     },
     answerPayload(s, st) {
@@ -220,6 +333,11 @@
       const base = { kind: q.kind, explain: q.explain || "", ghiBai: q.ghiBai || "" };
       if (q.kind === "tf") return Object.assign(base, { answers: (q.statements || []).map((x) => !!x.answer) });
       if (q.kind === "short") return Object.assign(base, { answer: q.answer, accept: q.accept || [], tol: q.tol || 0 });
+      if (q.kind === "fill") {
+        const f = fillParse(q.text);
+        return Object.assign(base, { answers: f.blanks.map((b) => b.answer), accept: f.blanks.map((b) => b.accept) });
+      }
+      if (q.kind === "sort") return Object.assign(base, { answers: (q.items || []).map((x) => x.group) });
       return Object.assign(base, { answer: q.answer });
     },
     isCorrect(s, key, v) {
@@ -234,6 +352,9 @@
       return L360.quizPoints(this.answerPayload(s, { q: i }), v);
     },
     describe(s, key, v) {
+      const q = s.questions[Number(String(key).split("__q")[1])] || {};
+      if (q.kind === "fill" && Array.isArray(v)) return v.map((x, i) => `(${i + 1}) ${x == null ? "–" : x}`).join("; ");
+      if (q.kind === "sort" && Array.isArray(v)) return (q.items || []).map((x, i) => `${x.text} → ${v[i] == null ? "–" : (q.groups || [])[v[i]] || ""}`).join("; ");
       if (Array.isArray(v)) return v.map((x, i) => `${"abcd"[i]}:${x === true ? "Đ" : x === false ? "S" : "-"}`).join(" ");
       return typeof v === "number" ? u.letter(v) : v == null ? "" : String(v);
     },
@@ -241,7 +362,9 @@
       input(el, ctx) {
         const it = ctx.item || {};
         const kind = it.kind || "mcq";
-        let sel = kind === "tf" ? [null, null, null, null] : null;
+        let sel = kind === "tf" ? [null, null, null, null] : kind === "fill" ? (it.parts || []).slice(1).map(() => null) : kind === "sort" ? Array((it.items || []).length).fill(null) : null;
+        let act = 0; // ô trống / mục đang chọn
+        if (kind === "sort") act = null;
         const head = `<div class="row"><span class="pill accent">Câu ${it.q + 1}/${it.total}</span>${kind !== "mcq" ? `<span class="pill">${KIND_LABEL[kind]}</span>` : ""}<span class="spacer"></span>${ui.timer()}</div>
           <h2 style="margin-top:12px">${u.rich(it.text)}</h2>${it.source ? B.one({ kind: "quote", text: it.source }) : ""}${it.image ? ui.media({ image: it.image }) : ""}`;
         const draw = () => {
@@ -255,6 +378,27 @@
               .map((t, i) => `<div class="tf-row"><span class="k">${"abcd"[i]}</span><span>${u.rich(t)}</span><span class="tf-btns"><button class="t ${sel[i] === true ? "on" : ""}" data-tf="${i}:1">Đúng</button><button class="f ${sel[i] === false ? "on" : ""}" data-tf="${i}:0">Sai</button></span></div>`)
               .join("")}</div>`;
             ready = sel.every((x) => x != null);
+          } else if (kind === "fill") {
+            const used = sel.filter((x) => x != null);
+            const left = (it.bank || []).slice();
+            used.forEach((w) => {
+              const j = left.indexOf(w);
+              if (j >= 0) left.splice(j, 1);
+            });
+            body = `<div class="fl-text">${(it.parts || [])
+              .map((t, i) => u.esc(t) + (i < sel.length ? `<button class="fl-b ${sel[i] != null ? "full" : ""} ${act === i ? "act" : ""}" data-fb="${i}"><i>${i + 1}</i>${sel[i] != null ? u.esc(sel[i]) : "……"}</button>` : ""))
+              .join("")}</div><p class="small muted" style="margin:10px 0 6px">Chạm một chỗ trống rồi chạm từ cần điền (hoặc kéo thả từ vào chỗ trống). Chạm lại chỗ đã điền để bỏ.</p><div class="fl-bank">${left
+              .map((w) => `<button class="dd-chip" data-fw="${u.esc(w)}">${u.esc(w)}</button>`)
+              .join("") || `<span class="small muted">Đã dùng hết từ.</span>`}</div>`;
+            ready = sel.every((x) => x != null);
+          } else if (kind === "sort") {
+            const chip = (x) => `<button class="dd-chip ${act === x.i ? "act" : ""}" data-si-it="${x.i}">${u.esc(x.text)}</button>`;
+            const pool = (it.items || []).filter((x) => sel[x.i] == null);
+            body = `<div class="so-pool">${pool.map(chip).join("") || `<span class="small muted">Đã xếp hết – kiểm tra lại rồi gửi.</span>`}</div>
+              <div class="so-groups" style="--n:${(it.groups || []).length}">${(it.groups || [])
+                .map((g, gi) => `<div class="so-g" data-sg="${gi}"><div class="so-gh">${u.esc(g)}</div><div class="so-gb">${(it.items || []).filter((x) => sel[x.i] === gi).map(chip).join("")}</div></div>`)
+                .join("")}</div><p class="small muted" style="margin-top:8px">Kéo từng mục vào đúng nhóm (hoặc chạm mục rồi chạm nhóm). Chạm mục đã xếp để đưa về.</p>`;
+            ready = sel.every((x) => x != null);
           } else {
             body = `<label class="field">Câu trả lời${it.unit ? ` (${u.esc(it.unit)})` : ""}<input id="sa" type="text" autocomplete="off" value="${u.esc(sel || "")}" style="font-size:1.2rem;font-weight:700"></label>`;
             ready = !!(sel && String(sel).trim());
@@ -262,6 +406,53 @@
           el.innerHTML = `<div class="card">${head}${body}<button class="btn primary lg block" style="margin-top:16px" data-send ${ready ? "" : "disabled"}>Gửi đáp án</button>
             <p class="small muted center" style="margin-top:8px">Đây là cơ hội kiểm tra điều mình hiểu, không phải chạy đua tốc độ.</p></div>`;
           u.$$("[data-opt]", el).forEach((b) => (b.onclick = () => ((sel = Number(b.dataset.opt)), draw())));
+          if (kind === "fill") {
+            const put = (w, i) => {
+              if (i == null || i < 0) i = sel.findIndex((x) => x == null);
+              if (i < 0) return;
+              sel[i] = w;
+              const nx = sel.findIndex((x) => x == null);
+              act = nx < 0 ? -1 : nx;
+              draw();
+            };
+            u.$$("[data-fb]", el).forEach(
+              (b) =>
+                (b.onclick = () => {
+                  const i = Number(b.dataset.fb);
+                  if (sel[i] != null) sel[i] = null;
+                  act = i;
+                  draw();
+                })
+            );
+            u.$$("[data-fw]", el).forEach((b) => (b.onclick = () => !b.dataset.dragged && put(b.dataset.fw, act)));
+            dragChips(el, "[data-fw]", "[data-fb]", (c, d) => put(c.dataset.fw, Number(d.dataset.fb)));
+          }
+          if (kind === "sort") {
+            u.$$("[data-si-it]", el).forEach(
+              (b) =>
+                (b.onclick = () => {
+                  if (b.dataset.dragged) return;
+                  const i = Number(b.dataset.siIt);
+                  if (sel[i] != null) (sel[i] = null), (act = null);
+                  else act = act === i ? null : i;
+                  draw();
+                })
+            );
+            u.$$("[data-sg]", el).forEach(
+              (g) =>
+                (g.onclick = (e) => {
+                  if (act == null || e.target.closest("[data-si-it]")) return;
+                  sel[act] = Number(g.dataset.sg);
+                  act = null;
+                  draw();
+                })
+            );
+            dragChips(el, "[data-si-it]", "[data-sg]", (c, d) => {
+              sel[Number(c.dataset.siIt)] = Number(d.dataset.sg);
+              act = null;
+              draw();
+            });
+          }
           u.$$("[data-tf]", el).forEach(
             (b) =>
               (b.onclick = () => {
@@ -282,7 +473,7 @@
           }
           u.$("[data-send]", el).onclick = () => {
             if (kind === "short") return sel && sel.trim() && ctx.submit(sel.trim());
-            if (kind === "tf") return sel.every((x) => x != null) && ctx.submit(sel.slice());
+            if (kind === "tf" || kind === "fill" || kind === "sort") return sel.every((x) => x != null) && ctx.submit(sel.slice());
             return sel != null && ctx.submit(sel);
           };
         };
@@ -303,6 +494,25 @@
               const a = ans && ans.answers ? ans.answers[i] : null;
               return `<div class="tf-row ${a == null ? "" : m === a ? "right" : "wrong"}"><span class="k">${"abcd"[i]}</span><span>${u.rich(t)}</span><span class="small"><b>${m == null ? "–" : m ? "Đúng" : "Sai"}</b>${a == null ? "" : ` · đáp án: <b>${a ? "Đúng" : "Sai"}</b>`}</span></div>`;
             })
+            .join("")}</div>`;
+        else if (kind === "fill")
+          body = `<div class="fl-text">${(it.parts || [])
+            .map((t, i) => {
+              if (i >= (it.parts || []).length - 1) return u.esc(t);
+              const m = Array.isArray(mine) ? mine[i] : null;
+              const ok = ans && partOk(ans, mine, i);
+              return u.esc(t) + `<span class="fl-b full ${ans ? (ok ? "right" : "wrong") : ""}"><i>${i + 1}</i>${u.esc(m == null ? "……" : m)}${ans && !ok ? ` <small>→ ${u.esc(ans.answers[i])}</small>` : ""}</span>`;
+            })
+            .join("")}</div>`;
+        else if (kind === "sort")
+          body = `<div class="so-groups" style="--n:${(it.groups || []).length}">${(it.groups || [])
+            .map(
+              (g, gi) =>
+                `<div class="so-g"><div class="so-gh">${u.esc(g)}</div><div class="so-gb">${(it.items || [])
+                  .filter((x) => (Array.isArray(mine) ? mine[x.i] : null) === gi)
+                  .map((x) => `<span class="dd-chip ${ans ? (partOk(ans, mine, x.i) ? "right" : "wrong") : ""}">${u.esc(x.text)}${ans && !partOk(ans, mine, x.i) ? ` <small>→ ${u.esc(it.groups[ans.answers[x.i]] || "")}</small>` : ""}</span>`)
+                  .join("")}</div></div>`
+            )
             .join("")}</div>`;
         else body = `<div class="card flat"><div class="small muted">Em trả lời</div><b style="font-size:1.2rem">${u.esc(mine == null ? "–" : mine)}</b>${ans ? `<div class="small muted" style="margin-top:6px">Đáp án: <b>${u.esc(ans.answer)}</b></div>` : ""}</div>`;
         el.innerHTML = `<div class="card"><div class="row"><span class="pill accent">Câu ${it.q + 1}/${it.total}</span><span class="spacer"></span>
@@ -344,6 +554,31 @@
             }${a == null ? "" : ` · <b style="color:var(--ok)">${a ? "ĐÚNG" : "SAI"}</b>`}</span></div>`;
           })
           .join("")}</div>`;
+      } else if (kind === "fill") {
+        const subs = u.vals(ctx.subs).map((x) => x.v);
+        const np = (it.parts || []).length;
+        body = `<div class="fl-text scr">${(it.parts || [])
+          .map((t, i) => {
+            if (i >= np - 1) return u.esc(t);
+            const ok = ans ? subs.filter((v) => partOk(ans, v, i)).length : 0;
+            return u.esc(t) + `<span class="fl-b ${ans ? "full right" : ""}"><i>${i + 1}</i>${ans ? u.esc(ans.answers[i]) + `<small> ${u.pct(ok, n || 1)}%</small>` : "……"}</span>`;
+          })
+          .join("")}</div>${ans ? "" : `<div class="fl-bank scr">${(it.bank || []).map((w) => `<span class="dd-chip">${u.esc(w)}</span>`).join("")}</div>`}`;
+      } else if (kind === "sort") {
+        const subs = u.vals(ctx.subs).map((x) => x.v);
+        body = ans
+          ? `<div class="so-groups scr" style="--n:${(it.groups || []).length}">${(it.groups || [])
+              .map(
+                (g, gi) =>
+                  `<div class="so-g"><div class="so-gh">${u.esc(g)}</div><div class="so-gb">${(it.items || [])
+                    .filter((x) => ans.answers[x.i] === gi)
+                    .map((x) => `<span class="dd-chip right">${u.esc(x.text)} <small>${u.pct(subs.filter((v) => partOk(ans, v, x.i)).length, n || 1)}%</small></span>`)
+                    .join("")}</div></div>`
+              )
+              .join("")}</div>`
+          : `<div class="so-pool scr">${(it.items || []).map((x) => `<span class="dd-chip">${u.esc(x.text)}</span>`).join("")}</div><div class="so-groups scr" style="--n:${(it.groups || []).length}">${(it.groups || [])
+              .map((g) => `<div class="so-g"><div class="so-gh">${u.esc(g)}</div><div class="so-gb"></div></div>`)
+              .join("")}</div>`;
       } else {
         const freq = {};
         u.vals(ctx.subs).forEach((x) => {
@@ -376,6 +611,11 @@
         body = `<table class="t">${(q.statements || [])
           .map((x, i) => `<tr><td><b>${"abcd"[i]}</b> ${u.esc(x.text)}</td><td class="num">${x.answer ? "Đ" : "S"}</td><td class="num">${u.pct(subs.filter((v) => Array.isArray(v) && v[i] === x.answer).length, n || 1)}% đúng</td></tr>`)
           .join("")}</table>`;
+      } else if (q.kind === "fill" || q.kind === "sort") {
+        const ans = L360.types.quiz.answerPayload(s, { q: qi });
+        const subs = u.vals(ctx.subs).map((x) => x.v);
+        const rows = q.kind === "fill" ? ans.answers.map((a, j) => [`(${j + 1})`, a]) : (q.items || []).map((x) => [x.text, (q.groups || [])[x.group] || ""]);
+        body = `<table class="t">${rows.map((r, j) => `<tr><td>${u.esc(r[0])}</td><td><b>${u.esc(r[1])}</b></td><td class="num">${u.pct(subs.filter((v) => partOk(ans, v, j)).length, n || 1)}% đúng</td></tr>`).join("")}</table>`;
       } else {
         const ans = { answer: q.answer, accept: q.accept, tol: q.tol };
         const ok = u.vals(ctx.subs).filter((x) => shortOk(ans, x.v)).length;

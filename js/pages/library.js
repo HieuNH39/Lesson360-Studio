@@ -113,7 +113,7 @@
         ch = l.chuong;
         const n = cnt[l.key] || 0;
         const ev = C.eduVideos(l).length;
-        return `${hd}<button class="lib-row ${l.key === st.bai ? "on" : ""}" data-bai="${u.esc(l.key)}"><span class="grow" style="min-width:0"><b class="clamp2">${u.esc(l.label)}</b><span class="small muted">${l.trang ? `${cur && cur.book.local ? "Trang" : "SGK trang"} ${l.trang}` : ""}${ppOf(l.key) ? ` · ${ppOf(l.key).tiet.length} tiết (PPCT)` : ""}${ev ? ` · ${ev} video EduHistory` : ""}</span></span>
+        return `${hd}<button class="lib-row ${l.key === st.bai ? "on" : ""}" data-bai="${u.esc(l.key)}"><span class="grow" style="min-width:0"><b class="clamp2">${u.esc(l.label)}</b><span class="small muted">${l.trang ? `${cur && cur.book.local ? "Trang" : "SGK trang"} ${l.trang}` : ""}${ppOf(l.key) ? ` · ${ppOf(l.key).tiet.length} tiết (Phụ lục 1)` : ""}${ev ? ` · ${ev} video EduHistory` : ""}</span></span>
           <span class="pill ${n ? "brand" : ""}">${n ? n + " tiết" : "Chưa có"}</span></button>`;
       })
       .join("");
@@ -156,11 +156,13 @@
     const items = metas.filter((m) => m.k === l.key).sort((a, b) => a.ti - b.ti || (b.up || 0) - (a.up || 0));
     const pb = ppState.doc ? ppState.doc.bai.find((b) => b.key === l.key) : null;
     el.innerHTML = `<div class="card"><div class="small muted">${u.esc(l.chuong || "")}</div><h2 style="margin:4px 0 10px">${u.esc(l.label)}</h2>
-      <div class="row">${url ? `<a class="btn sm" href="${u.esc(url)}" target="_blank" rel="noopener">${L360.icon("sgk")} SGK${l.trang ? " trang " + l.trang : ""}</a>` : `<span class="pill">${L360.icon("sgk")} Tài liệu${l.trang ? " trang " + l.trang : ""}</span>`}<a class="btn sm primary" href="studio.html?bai=${encodeURIComponent(l.key)}${dt}">${L360.icon("plus")} Soạn tiết mới</a></div>
+      <div class="row">${url ? `<a class="btn sm" href="${u.esc(url)}" target="_blank" rel="noopener">${L360.icon("sgk")} SGK${l.trang ? " trang " + l.trang : ""}</a>${
+        url && l.trang && teacher && (teacher.isAdmin || teacher.isLeader) ? `<button class="btn sm ghost" id="fixPg" title="Link mở sai trang? Chỉnh độ lệch trang cho cả sách">Sai trang?</button>` : ""
+      }` : `<span class="pill">${L360.icon("sgk")} Tài liệu${l.trang ? " trang " + l.trang : ""}</span>`}<a class="btn sm primary" href="studio.html?bai=${encodeURIComponent(l.key)}${dt}">${L360.icon("plus")} Soạn tiết mới</a></div>
       ${
         pb
-          ? `<div class="note small" style="margin-top:12px"><b>Theo PPCT ${u.esc(L360.Ppct.yearLabel(ppState.doc.nam))}:</b> ${L360.Ppct.tietText(pb)}<div class="row" style="gap:6px;margin-top:6px">${pb.tiet
-              .map((t, i) => `<a class="chip" href="studio.html?bai=${encodeURIComponent(l.key)}&tiet=${i + 1}${dt}" title="${u.esc(t.noiDung || "")}">Tiết ${i + 1} · PPCT ${t.so}${t.tuan ? ` · tuần ${t.tuan}` : ""}</a>`)
+          ? `<div class="note small" style="margin-top:12px"><b>Theo Phụ lục 1 (${u.esc(L360.Ppct.yearLabel(ppState.doc.nam))}):</b> ${L360.Ppct.tietText(pb)}<div class="row" style="gap:6px;margin-top:6px">${pb.tiet
+              .map((t, i) => `<a class="chip" href="studio.html?bai=${encodeURIComponent(l.key)}&tiet=${i + 1}${dt}" title="${u.esc(t.noiDung || "")}">Tiết ${i + 1} · tiết ${t.so} PPCT${t.tuan ? ` · tuần ${t.tuan}` : ""}</a>`)
               .join("")}</div></div>`
           : ""
       }
@@ -186,6 +188,15 @@
           : `<div class="empty">Chưa có tiết nào cho bài này.<br>Thầy cô là người đầu tiên soạn?</div>`
       }</div>`;
     u.$$("[data-pv]", el).forEach((b) => (b.onclick = () => preview(b.dataset.pv)));
+    const fx = u.$("#fixPg", el);
+    if (fx)
+      fx.onclick = async () => {
+        if (await C.fixPage(l)) {
+          u.toast("Đã chỉnh độ lệch trang cho cả cuốn sách. Mở lại link SGK để kiểm tra.", "ok", 4000);
+          const a = el.querySelector('a[href*="#page="]');
+          if (a) a.href = C.lessonUrl(l);
+        }
+      };
     u.$$("[data-dup]", el).forEach(
       (b) =>
         (b.onclick = async () => {

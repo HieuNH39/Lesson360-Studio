@@ -48,7 +48,9 @@
   const QKINDS = [
     ["mcq", "4 lựa chọn"],
     ["tf", "Đúng/Sai 4 ý"],
-    ["short", "Trả lời ngắn"]
+    ["short", "Trả lời ngắn"],
+    ["fill", "Điền khuyết"],
+    ["sort", "Kéo thả phân loại"]
   ];
 
   function catalog(only) {
@@ -71,7 +73,7 @@
 - {"kind":"image","src":"https://upload.wikimedia.org/…(đường dẫn TRỰC TIẾP tới tệp ảnh thật)","commons":"File:Tên_tệp_chính_xác.jpg","alt":"mô tả chính xác ảnh phải thể hiện gì","query":"từ khoá tiếng Anh dự phòng","caption":"chú thích tiếng Việt","credit":"tác giả, giấy phép"}  ← xem mục ẢNH
 - {"kind":"gallery","images":[khối image…]} (2–4 ảnh)
 - {"kind":"timeline","items":[{"time":"mốc","label":"sự kiện","desc":"ngắn"}]} (3–7 mốc, đúng SGK)
-- {"kind":"mindmap","center":"chủ đề","branches":[{"label":"nhánh","items":["ý","ý"]}]} (3–6 nhánh)
+- {"kind":"mindmap","center":"tên bài/mục","icon":"🏛","branches":[{"label":"nhánh","icon":"📜","items":["ý","ý"]}]}  ← theo QUY ƯỚC SƠ ĐỒ TƯ DUY bên dưới
 - {"kind":"compare","columns":["Tiêu chí","A","B"],"rows":[["…","…","…"]]}
 - {"kind":"flow","steps":[{"label":"bước","desc":"ngắn"}]} (quy trình, diễn biến, nguyên nhân – kết quả)
 - {"kind":"cycle","center":"…","items":["…","…"]} (vòng tuần hoàn)
@@ -84,10 +86,19 @@
 - {"kind":"question","text":"câu hỏi gợi mở cho cả lớp"}
 - {"kind":"conclusion","text":"- kết luận ngắn gọn"}
 - {"kind":"note","text":"- nội dung học sinh GHI VÀO VỞ (ngắn, cô đọng)"}
+- {"kind":"chude","so":"Chủ đề 2","ten":"TÊN CHỦ ĐỀ","mota":"1 câu dẫn","bai":["Bài 4. …","Bài 5. …"]} (trang mở đầu chủ đề – đứng MỘT MÌNH trên trang)
+- {"kind":"tenbai","chude":"Chủ đề 2. …","so":"Bài 4","ten":"Tên bài đúng SGK","muc":["tên mục 1","tên mục 2"]} (trang tên bài – đứng một mình)
+- {"kind":"muc","so":"1","ten":"Tên mục đúng SGK","y":["a) ý nhỏ","b) ý nhỏ"]} (trang tên mục – đứng một mình, đặt TRƯỚC nội dung mỗi mục mới)
 - {"kind":"video","edu":"mã video EduHistory"} hoặc {"kind":"video","url":"https://www.youtube.com/watch?v=…","start":giây bắt đầu,"end":giây kết thúc,"caption":"tên video – kênh"}  ← xem mục VIDEO`;
+  const MAPRULES = `QUY ƯỚC SƠ ĐỒ TƯ DUY (thống nhất mọi bài để học sinh dễ vẽ lại vào vở):
+- Trung tâm: tên bài hoặc tên mục, tối đa 6 chữ; có thể thêm 1 biểu tượng "icon" (emoji) hợp nội dung.
+- 3–6 nhánh cấp 1; tên nhánh là danh từ/cụm danh từ ≤ 5 chữ (ví dụ "Điều kiện tự nhiên", "Thành tựu"); thứ tự nhánh theo logic nội dung (nguyên nhân → diễn biến → kết quả → ý nghĩa…). Màn chiếu tự tô mỗi nhánh một màu, đánh số 1, 2, 3… theo chiều kim đồng hồ từ góc trên bên phải.
+- Mỗi nhánh 1–3 ý con, mỗi ý là TỪ KHOÁ ≤ 8 chữ, không viết câu dài, không lặp lại tên nhánh; có thể thêm "icon" cho nhánh.
+- Không dùng sơ đồ tư duy cho nội dung chỉ có 1–2 ý; khi đó dùng flow/compare/keyterms.`;
   const MEDIA = `ẢNH (quan trọng nhất là ĐÚNG NỘI DUNG):
 - Tìm ảnh THẬT trên Wikimedia Commons (ưu tiên), Wikipedia, website bảo tàng/cơ quan nhà nước có giấy phép mở. Mở trang ảnh để kiểm tra đúng hiện vật, địa danh, nhân vật, sự kiện, thời kì của bài; không dùng ảnh minh hoạ chung chung.
-- Ảnh chụp/tư liệu gốc rõ nét, cạnh ngang từ 1200 px, không logo, không chữ chèn, không watermark, không ảnh do AI tạo; bản đồ ghi rõ là bản đồ.
+- Ảnh chụp/tư liệu gốc rõ nét, cạnh ngang từ 1200 px, không logo, không chữ chèn, không watermark; bản đồ ghi rõ là bản đồ. Khi không có ảnh chụp phù hợp (khái niệm, quá trình, công trình đã mất…), dùng TRANH VẼ, SƠ ĐỒ, ẢNH MÔ PHỎNG/PHỤC DỰNG có giấy phép mở (Wikimedia Commons) – sắc nét, đúng nội dung.
+- "caption" CHỈ LÀ TÊN ẢNH, ngắn gọn ≤ 8 chữ (ví dụ "Kim tự tháp Kê-ốp", "Lược đồ Ai Cập cổ đại"); không viết câu giải thích trong caption, nguồn ghi riêng ở "credit".
 - Ghi "commons" = tên tệp chính xác (File:…), "src" = đường dẫn trực tiếp tệp ảnh (https://upload.wikimedia.org/…), "alt" = ảnh phải thể hiện gì, "credit" = tác giả, giấy phép.
 - Không chắc ảnh có thật → để "src" rỗng nhưng vẫn ghi "alt" và "query" (tiếng Anh, tên riêng + loại ảnh, ví dụ "Great Pyramid of Giza aerial photo"). Studio kiểm tra từng ảnh: ảnh không tồn tại, mờ hoặc sai sẽ bị thay.
 VIDEO:
@@ -101,6 +112,9 @@ TRÒ CHƠI WEB (type "web"):
 - 4 lựa chọn: {"kind":"mcq","q":"…","options":["A","B","C","D"],"answer":0-3,"explain":"…"}
 - Đúng/Sai 4 ý (như đề thi tốt nghiệp THPT): {"kind":"tf","q":"đoạn tư liệu/dẫn","statements":[{"text":"a) …","answer":true},{"text":"b) …","answer":false},{"text":"c) …","answer":true},{"text":"d) …","answer":false}],"explain":"…"}
 - Trả lời ngắn: {"kind":"short","q":"…","answer":"đáp án","accept":["cách viết khác"],"explain":"…"} (đáp án ngắn: số, năm, tên riêng, 1–4 từ)
+- Điền khuyết: {"kind":"fill","q":"Chọn từ/cụm từ thích hợp điền vào chỗ trống.","text":"Đoạn văn bám SGK, mỗi chỗ trống ghi đáp án trong [[ ]], ví dụ: Năm [[938]], [[Ngô Quyền]] đánh tan quân Nam Hán trên sông [[Bạch Đằng]].","bank":["2–3 từ nhiễu cùng loại"],"explain":"…"} (2–6 chỗ trống; [[A|B]] nếu chấp nhận nhiều cách viết)
+- Kéo thả phân loại: {"kind":"sort","q":"Kéo mỗi ý vào đúng nhóm.","groups":["Nhóm 1","Nhóm 2"],"items":[{"text":"ý ngắn ≤ 10 chữ","group":0},{"text":"…","group":1}],"explain":"…"} (2–4 nhóm, 4–8 mục, mỗi nhóm ≥ 1 mục)
+YÊU CẦU CHẤT LƯỢNG CÂU 4 LỰA CHỌN: đúng nội dung SGK; câu dẫn rõ, trọn nghĩa; CHỈ MỘT phương án đúng; 3 phương án nhiễu hợp lí, cùng loại, cùng cấu trúc ngữ pháp với đáp án; 4 phương án DÀI TƯƠNG ĐƯƠNG (chênh lệch không quá vài chữ); không dùng "Tất cả đều đúng/sai", "Cả A và B"; không lặp từ khoá của câu dẫn trong riêng đáp án đúng.
 - Với type "video" thêm "t": số giây video dừng để hỏi.`;
   const SITES = () => (window.L360_HERITAGE || []).map((s) => `${s.id} (${s.name})`).join("; ");
 
@@ -147,11 +161,9 @@ THÔNG TIN TIẾT HỌC
 - Đây là TIẾT ${tiet.so}/${tiet.tong} của bài; thời lượng ${o.duration || 45} phút; ${o.groups || 4} nhóm; sĩ số khoảng ${o.size || 30}.
 ${o.content ? `- Nội dung tiết này: ${o.content}\n` : ""}${
         o.ppct
-          ? `- Theo phân phối chương trình (Phụ lục I) năm học ${String(o.ppct.nam).replace("-", "–")} của tổ: bài này dạy ${o.ppct.tong} tiết (tiết PPCT ${o.ppct.cacTiet.join(", ")}); tiết đang soạn là tiết PPCT ${o.ppct.so}${o.ppct.tuan ? `, tuần ${o.ppct.tuan}` : ""}. CHỈ soạn đúng nội dung của tiết này.\n${
+          ? `- Theo Phụ lục 1 (Kế hoạch dạy học môn) năm học ${String(o.ppct.nam).replace("-", "–")} của tổ: bài này dạy ${o.ppct.tong} tiết (tiết PPCT ${o.ppct.cacTiet.join(", ")}); tiết đang soạn là tiết PPCT ${o.ppct.so}${o.ppct.tuan ? `, tuần ${o.ppct.tuan}` : ""}. CHỈ soạn đúng nội dung của tiết này.\n${
               (o.ppct.khac || []).length ? `- Nội dung các tiết khác của bài (KHÔNG đưa vào tiết này): ${o.ppct.khac.map((x) => `tiết ${x.thu}: ${x.noiDung || "…"}`).join("; ")}.\n` : ""
-            }${o.ppct.thietBi ? `- Thiết bị, học liệu theo kế hoạch: ${o.ppct.thietBi}\n` : ""}${
-              o.ppct.nls && o.ppct.nls.length ? `- Năng lực số cần tích hợp trong tiết (mã theo Thông tư 02/2025/TT-BGDĐT): ${o.ppct.nls.join(", ")} – thiết kế ít nhất 1 nhiệm vụ cho học sinh rèn đúng các năng lực này.\n` : ""
-            }${o.ppct.ai && o.ppct.ai.length ? `- Năng lực AI cần tích hợp: ${o.ppct.ai.join(", ")}.\n` : ""}`
+            }`
           : ""
       }
 TIẾN TRÌNH YÊU CẦU (theo các hoạt động giáo viên đã chọn)
@@ -167,17 +179,24 @@ QUY TẮC NỘI DUNG
 4. PHẦN HÌNH THÀNH KIẾN THỨC PHẢI TRỰC QUAN: mỗi nội dung là một bước "slide" 2–4 trang; mỗi trang ghép 2–4 khối, có ít nhất 1 khối hình ảnh hoặc sơ đồ (image/gallery/map/timeline/mindmap/compare/flow/cycle/venn/pyramid/stats); trang cuối của mỗi nội dung có khối "conclusion" và khối "note" (ghi vào vở). Tránh khối chữ dài: tối đa 60 chữ mỗi khối text.
 5. GHI VỞ: khối "note" (hoặc trường "ghiBai") NGẮN, CÔ ĐỌNG: tối đa 4 ý, mỗi ý ≤ 25 chữ, để chữ trên màn chiếu đủ lớn; nhiều hơn thì tách sang trang sau. Màn chiếu hiện biểu tượng ghi vở và tự đưa vào Vở ghi của học sinh.
 6. KHÁI QUÁT KIẾN THỨC đa dạng, sáng tạo, không lặp một kiểu: dùng xen kẽ sơ đồ tư duy (mindmap), sơ đồ nhân quả/diễn biến (flow), trục thời gian (timeline), bảng so sánh (compare), giống – khác (venn), tháp phân tầng (pyramid), vòng tuần hoàn (cycle), thẻ thuật ngữ (keyterms), số liệu nổi bật (stats) – chọn dạng hợp bản chất nội dung; mỗi tiết ít nhất 2 dạng khác nhau. Ảnh, video, trò chơi web: theo các mục ẢNH, VIDEO, TRÒ CHƠI WEB bên dưới.
-7. Trắc nghiệm: phương án nhiễu hợp lí; đáp án đúng rải đều A/B/C/D; mọi câu có "explain" ngắn. Đúng/Sai có đúng 4 ý a–d, xen kẽ đúng – sai.
+7. Trắc nghiệm: theo YÊU CẦU CHẤT LƯỢNG CÂU 4 LỰA CHỌN ở mục DẠNG CÂU HỎI; đáp án đúng rải đều A/B/C/D; mọi câu có "explain" ngắn. Đúng/Sai có đúng 4 ý a–d, xen kẽ đúng – sai. Mỗi hoạt động luyện tập nên phối hợp ít nhất 2 dạng câu (4 lựa chọn, Đúng/Sai, trả lời ngắn, điền khuyết, kéo thả phân loại).
 8. Ô chữ: số hàng = số chữ của từ khoá; hàng thứ i chứa chữ thứ i của từ khoá; đáp án viết hoa không dấu, không khoảng trắng, tối đa 12 chữ cái; gợi ý ghi rõ số chữ cái.
 9. Không để lộ đáp án trong câu chữ: mục cần sắp xếp (order) không ghi năm hay số thứ tự; vế ghép (match) không lặp từ khoá của vế kia.
 10. "script" = lời dẫn ngắn cho giáo viên (1–3 câu); "instructions" = nhiệm vụ cho học sinh (1 câu).
 11. Tiếng Việt chuẩn, câu ngắn, hợp lứa tuổi; tên riêng nước ngoài phiên âm theo SGK.
 12. Nội dung chính xác, khách quan, phù hợp chủ trương của Đảng, pháp luật Nhà nước Việt Nam và Chương trình GDPT 2018.
+13. CẤU TRÚC TRANG ĐỀ MỤC (để học sinh ghi vở đúng đề mục): ${
+        tiet.so === 1 ? `tiết này là TIẾT ĐẦU của bài – bước "slide" đầu tiên của phần hình thành kiến thức (hoặc ngay sau khởi động) có trang "tenbai"${o.firstOfTopic ? ` và TRƯỚC ĐÓ một trang "chude" (đây là bài đầu tiên của chủ đề "${o.firstOfTopic}")` : ""}; ` : ""
+      }trước nội dung của MỖI MỤC MỚI (1, 2, 3… theo SGK) đặt một trang "muc" riêng. Các trang đề mục đứng một mình, không ghép khối khác.
+14. BIỂU TƯỢNG: khối mindmap, keyterms, stats có thể thêm "icon" (1 emoji đơn giản, đúng nghĩa) cho trực quan; không lạm dụng.
+15. NHIỆM VỤ VỀ NHÀ: thêm trường gốc "homework": {"tasks":["1–3 nhiệm vụ cụ thể, đo được (học thuộc gì, làm bài tập gì, hoàn thành phiếu nào)"],"prepare":"chuẩn bị cho tiết sau: đọc trước mục … SGK trang …, câu hỏi định hướng, sản phẩm cần mang"}.
 ${vids ? `\nVIDEO EDUHISTORY STUDIO CÓ SẴN CHO BÀI NÀY (dùng "edu":"mã"):\n  ${vids}\n` : ""}${types.includes("explore") ? `\nMã di tích Heritage Lens (type "explore"): ${SITES()}\n` : ""}
 THƯ VIỆN MẪU HOẠT ĐỘNG (chỉ dùng các "type" dưới đây; mỗi bước luôn có: id, type, phase, title, minutes, instructions, script)
 ${catalog(types.concat(["slide"]).filter((v, i, a) => a.indexOf(v) === i))}
 
 ${BLOCKS}
+
+${MAPRULES}
 
 ${MEDIA}
 
@@ -185,7 +204,7 @@ ${QUESTIONS}
 
 ĐỊNH DẠNG TRẢ LỜI
 - Trả về DUY NHẤT một khối \`\`\`json … \`\`\` hợp lệ: không chú thích, không dấu phẩy thừa, dùng dấu nháy kép.
-- Cấu trúc gốc: {"schema":"l360-pack/2","title","subjectId":"${o.subjectId || ""}","subject":"${o.subject || ""}","grade":"${o.grade || ""}","bai":{"key":"${b.key || ""}","so":"${b.so || ""}","ten":"${(b.ten || "").replace(/"/g, "'")}"},"tiet":{"so":${tiet.so},"tong":${tiet.tong}},"duration":${o.duration || 45},"objectives":[…],"design":{"style":"${design.style || ""}","palette":"${design.palette || ""}"},"steps":[…]}
+- Cấu trúc gốc: {"schema":"l360-pack/2","title","subjectId":"${o.subjectId || ""}","subject":"${o.subject || ""}","grade":"${o.grade || ""}","bai":{"key":"${b.key || ""}","so":"${b.so || ""}","ten":"${(b.ten || "").replace(/"/g, "'")}"},"tiet":{"so":${tiet.so},"tong":${tiet.tong}},"duration":${o.duration || 45},"objectives":[…],"design":{"style":"${design.style || ""}","palette":"${design.palette || ""}"},"homework":{"tasks":[…],"prepare":"…"},"steps":[…]}
 - Sau khối JSON, viết mục "Ghi chú cho giáo viên" (3–5 gạch đầu dòng): chỗ cần kiểm tra lại, gợi ý tư liệu nên bổ sung.
 
 GIÁO ÁN: (tôi đính kèm tệp KHBD hoặc dán nội dung ngay bên dưới)
@@ -197,6 +216,7 @@ ${errors.map((e) => "- LỖI: " + e).join("\n")}${warnings && warnings.length ? 
     },
     catalog,
     BLOCKS,
+    MAPRULES,
     MEDIA,
     QUESTIONS
   };

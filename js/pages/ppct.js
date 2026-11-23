@@ -35,7 +35,7 @@
 
   function shell(inner) {
     app.innerHTML =
-      L360.shell.topbar(`${L360.shell.modeBadge()}${L360.shell.userMenu(teacher)}`, { sub: "Phân phối chương trình theo năm học", nav: "ppct" }) +
+      L360.shell.topbar(`${L360.shell.modeBadge()}${L360.shell.userMenu(teacher)}`, { sub: "Phụ lục 1 – Kế hoạch dạy học môn", nav: "ppct" }) +
       `<main class="wrap" style="max-width:1360px">${inner}</main>` +
       L360.shell.footer();
     L360.shell.bindUserMenu(teacher);
@@ -56,13 +56,13 @@
       .forEach((x) => (groups[x.lop] = groups[x.lop] || []).push(x));
     const yearOpts = [...new Set([...st.years, st.nam])].sort().reverse();
     shell(`<div class="row" style="align-items:flex-end;margin-bottom:14px;gap:12px">
-        <div class="grow"><h1 style="margin:0">Phân phối chương trình</h1>
-        <p class="muted" style="margin:4px 0 0">Kế hoạch dạy học (Phụ lục I) của tổ: mỗi bài dạy mấy tiết, tiết thứ mấy, tuần nào, nội dung từng tiết. Studio, giáo án và màn mở tiết đều bám theo bảng này.</p></div>
+        <div class="grow"><h1 style="margin:0">Phụ lục 1 – Kế hoạch dạy học môn</h1>
+        <p class="muted" style="margin:4px 0 0">Kế hoạch dạy học môn của tổ: bài nào, dạy mấy tiết, thứ tự các tiết. Studio, giáo án (Phụ lục 4) và màn mở tiết bám theo bảng này; năng lực số, năng lực AI và thiết bị dạy học được xây dựng lại theo từng giáo án mới soạn.</p></div>
         <label class="field" style="min-width:170px;margin:0">Năm học<select id="nam">${yearOpts.map((y) => `<option value="${y}" ${y === st.nam ? "selected" : ""}>${P.yearLabel(y)}${y === P.yearNow() ? " (hiện hành)" : ""}</option>`).join("")}</select></label>
         ${
           canEdit()
-            ? `<button class="btn primary" id="nap">${L360.icon("upload")} Nạp Phụ lục I</button><button class="btn" id="namMoi">${L360.icon("plus")} Năm học mới</button>`
-            : `<span class="pill" title="Chỉ tổ trưởng và quản trị được nạp hoặc sửa PPCT">${L360.icon("info")} Chỉ xem</span>`
+            ? `<button class="btn primary" id="nap">${L360.icon("upload")} Nạp Phụ lục 1</button><button class="btn" id="namMoi">${L360.icon("plus")} Năm học mới</button>`
+            : `<span class="pill" title="Chỉ tổ trưởng và quản trị được nạp hoặc sửa Phụ lục 1">${L360.icon("info")} Chỉ xem</span>`
         }</div>
       ${
         st.list.length
@@ -76,9 +76,9 @@
                   .join("")}`
               )
               .join("")}</aside><section id="docv">${st.doc ? docView(st.doc) : ""}</section></div>`
-          : `<div class="card center" style="padding:42px"><h2>Năm học ${P.yearLabel(st.nam)} chưa có PPCT</h2><p class="muted">${
-              canEdit() ? "Nạp các tệp Phụ lục I của tổ (Word hoặc Excel), hoặc chép bộ PPCT của năm trước rồi sửa những chỗ thay đổi." : "Tổ trưởng chuyên môn sẽ nạp PPCT của năm học này."
-            }</p>${canEdit() ? `<div class="row" style="justify-content:center"><button class="btn primary" id="nap2">${L360.icon("upload")} Nạp Phụ lục I</button><button class="btn" id="namMoi2">${L360.icon("copy")} Chép từ năm trước</button></div>` : ""}</div>`
+          : `<div class="card center" style="padding:42px"><h2>Năm học ${P.yearLabel(st.nam)} chưa có Phụ lục 1</h2><p class="muted">${
+              canEdit() ? "Nạp các tệp Phụ lục 1 của tổ (Word hoặc Excel), hoặc chép Phụ lục 1 của năm trước rồi sửa những chỗ thay đổi." : "Tổ trưởng chuyên môn sẽ nạp Phụ lục 1 của năm học này."
+            }</p>${canEdit() ? `<div class="row" style="justify-content:center"><button class="btn primary" id="nap2">${L360.icon("upload")} Nạp Phụ lục 1</button><button class="btn" id="namMoi2">${L360.icon("copy")} Chép từ năm trước</button></div>` : ""}</div>`
       }`);
     u.$("#nam").onchange = (e) => {
       st.nam = e.target.value;
@@ -164,7 +164,7 @@
         .join("")}</tbody></table></div></div>`;
   }
   function bindDoc(doc) {
-    u.$("#taiJson").onclick = () => u.download(`PPCT ${docName(doc)} ${doc.nam}.json`, JSON.stringify(doc, null, 1), "application/json");
+    u.$("#taiJson").onclick = () => u.download(`Phu luc 1 ${docName(doc)} ${doc.nam}.json`, JSON.stringify(doc, null, 1), "application/json");
     if (!canEdit()) return;
     u.$("#napLai").onclick = () => importer({ replace: doc });
     u.$("#xoa").onclick = async () => {
@@ -191,15 +191,15 @@
     );
   }
 
-  /* ---------- Nạp Phụ lục I ---------- */
+  /* ---------- Nạp Phụ lục 1 ---------- */
   function importer(opt) {
     opt = opt || {};
     const found = [];
     const m = u.modal(
-      `<div class="row"><h2 class="grow" style="margin:0">${L360.icon("upload")} Nạp Phụ lục I${opt.replace ? ` – thay ${u.esc(docName(opt.replace))}` : ""}</h2><button class="btn sm ghost" data-close>Đóng</button></div>
-      <p class="small muted">Chọn một hoặc nhiều tệp kế hoạch dạy học (Word .docx hoặc Excel .xlsx/.xls). Hệ thống đọc bảng “Bài học/chủ đề – Tiết dạy theo PPCT”, khớp với SGK, rồi cho thầy cô duyệt trước khi áp dụng.</p>
+      `<div class="row"><h2 class="grow" style="margin:0">${L360.icon("upload")} Nạp Phụ lục 1${opt.replace ? ` – thay ${u.esc(docName(opt.replace))}` : ""}</h2><button class="btn sm ghost" data-close>Đóng</button></div>
+      <p class="small muted">Chọn một hoặc nhiều tệp kế hoạch dạy học (Word .docx hoặc Excel .xlsx/.xls). Hệ thống lấy tên bài, số tiết của bài và thứ tự các tiết (cột “Bài học/chủ đề – Tiết dạy theo PPCT”), khớp với SGK, rồi cho thầy cô duyệt trước khi áp dụng.</p>
       <label class="drop" id="drop"><input type="file" id="f" multiple accept=".docx,.xlsx,.xls,.xlsm,.pdf,.doc" hidden>${L360.icon("upload")} <b>Kéo thả tệp vào đây</b> hoặc bấm để chọn tệp</label>
-      <details style="margin-top:8px"><summary class="small">Hoặc dán bảng copy từ Word/Excel</summary><div id="paste" class="paste" contenteditable="true" data-ph="Bấm vào đây rồi dán (Ctrl+V / ⌘V) bảng PPCT…"></div></details>
+      <details style="margin-top:8px"><summary class="small">Hoặc dán bảng copy từ Word/Excel</summary><div id="paste" class="paste" contenteditable="true" data-ph="Bấm vào đây rồi dán (Ctrl+V / ⌘V) bảng kế hoạch dạy học…"></div></details>
       <div id="res" style="margin-top:12px"></div>
       <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" data-close>Huỷ</button><button class="btn primary" id="ap" disabled>Áp dụng</button></div>`,
       { wide: true }
@@ -221,7 +221,7 @@
         d.canhBaoNap = r.warn.filter((w) => /trùng|đánh số/.test(w));
         found.push({ file: src.file, doc: d, warn: r.warn, on: true });
       });
-      if (!r.docs.some((d) => d.bai.length)) found.push({ file: src.file, err: r.warn.join(" ") || "Không đọc được bảng PPCT." });
+      if (!r.docs.some((d) => d.bai.length)) found.push({ file: src.file, err: r.warn.join(" ") || "Không đọc được bảng kế hoạch dạy học." });
       show();
     };
     async function files(list) {
@@ -312,7 +312,7 @@
         }
       }
       if (ok) {
-        u.toast(`Đã áp dụng ${ok} bảng PPCT.`, "ok");
+        u.toast(`Đã áp dụng ${ok} bảng Phụ lục 1.`, "ok");
         m.close();
         st.nam = go[0].doc.nam;
         st.id = go[0].doc.id;
@@ -328,7 +328,7 @@
     const [a] = cur.split("-").map(Number);
     const next = `${a + 1}-${a + 2}`;
     const m = u.modal(`<h2>${L360.icon("plus")} Tạo năm học mới</h2>
-      <p class="muted small">Chép toàn bộ PPCT của năm học đang xem sang năm học mới. Sau đó nạp tệp Phụ lục I mới cho môn nào thay đổi, hoặc sửa liên kết từng bài. PPCT năm cũ vẫn được giữ để tra cứu giáo án cũ.</p>
+      <p class="muted small">Chép toàn bộ Phụ lục 1 của năm học đang xem sang năm học mới. Sau đó nạp tệp Phụ lục 1 mới cho môn nào thay đổi, hoặc sửa liên kết từng bài. Phụ lục 1 năm cũ vẫn được giữ để tra cứu giáo án cũ.</p>
       <div class="grid g2"><label class="field">Chép từ năm học<select id="tu">${st.years.map((y) => `<option ${y === cur ? "selected" : ""}>${y}</option>`).join("")}</select></label>
       <label class="field">Sang năm học<input id="den" value="${next}"></label></div>
       <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" data-close>Huỷ</button><button class="btn primary" id="go">Tạo năm học</button></div>`);

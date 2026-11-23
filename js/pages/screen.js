@@ -106,11 +106,19 @@
     const f = u.vals(data.pub && data.pub.featured && data.pub.featured[key]).filter((x) => typeof x === "string");
     el.innerHTML = f.length ? `<h2 style="font-size:34px">Bài nổi bật</h2><div class="scr-feats">${f.map((t) => `<blockquote class="scr-feat">“${u.esc(t)}”</blockquote>`).join("")}</div>` : `<div class="scr-center"><h2>Chưa có bài được gắn ★</h2></div>`;
   }
+  // Thẻ "Nhiệm vụ về nhà – chuẩn bị tiết sau" (màn chiếu và học sinh dùng chung giao diện).
+  function hwCard(hw) {
+    if (!hw || !(hw.tasks || []).length) return "";
+    return `<div class="hw-card"><div class="hw-h">${L360.icon("ghiBai")} Nhiệm vụ về nhà</div><ol>${hw.tasks.map((t) => `<li>${u.esc(t)}</li>`).join("")}</ol>${
+      hw.prepare ? `<div class="hw-p"><b>Chuẩn bị cho tiết sau:</b> ${u.esc(hw.prepare)}</div>` : ""
+    }</div>`;
+  }
   function summary(el) {
     const sid = data.meta && data.meta.sid;
+    const hw = data.pub && data.pub.homework;
     const show = (s) => {
       if (!s) {
-        el.innerHTML = `<div class="scr-center"><h1 style="font-size:60px">Cảm ơn các em!</h1><p class="scr-sub">${u.esc(data.meta.title || "")}</p></div>`;
+        el.innerHTML = `<div class="scr-end"><div><h1 style="font-size:60px;margin:0">Cảm ơn các em!</h1><p class="scr-sub">${u.esc(data.meta.title || "")}</p><img class="scr-end-logo" src="assets/img/logo-l360-ngang-trong.png" alt="Lesson 360° Studio"></div>${hwCard(hw)}</div>`;
         return;
       }
       el.innerHTML = `<h1 style="font-size:42px">Tổng kết tiết học</h1><div class="grid g4" style="margin:18px 0">
@@ -119,7 +127,8 @@
         <div class="kpi"><b>${s.correctRate == null ? "–" : s.correctRate + "%"}</b><span>trả lời đúng (câu có đáp án)</span></div>
         <div class="kpi"><b>${s.interactive}</b><span>lượt hoạt động tương tác</span></div></div>
         ${s.peer && s.peer.length ? `<h2>Học từ bạn: vòng 1 → vòng 2</h2>${s.peer.map((p) => `<p style="font-size:26px">${u.esc(p.title)}: <b>${p.r1}%</b> → <b style="color:var(--ok)">${p.r2}%</b> trả lời đúng</p>`).join("")}` : ""}
-        ${s.hard && s.hard.length ? `<h2 style="margin-top:14px">Cần củng cố</h2>${s.hard.map((h) => `<p style="font-size:22px">${u.esc(h.label)} – ${h.correct}% đúng</p>`).join("")}` : ""}`;
+        ${s.hard && s.hard.length ? `<h2 style="margin-top:14px">Cần củng cố</h2>${s.hard.map((h) => `<p style="font-size:22px">${u.esc(h.label)} – ${h.correct}% đúng</p>`).join("")}` : ""}
+        ${hwCard(hw)}`;
     };
     if (sid) S.get(`sessions/${sid}`).then((x) => (show(x), fitMain(u.$("#sm"), el))).catch(() => show(null));
     else show(null);
@@ -209,7 +218,8 @@
     const b = document.createElement("button");
     b.id = "unl";
     b.className = "unlock";
-    b.innerHTML = `${L360.icon("soundOn")} Bấm để bật âm thanh`;
+    b.innerHTML = `${L360.icon("soundOn")} Bật âm thanh`;
+    b.title = "Bấm để bật âm thanh đồng hồ và hiệu ứng";
     b.onclick = () => {
       snd.unlock();
       snd.join();
@@ -270,7 +280,7 @@
       ${step && !step.noSubmit ? `<div><div class="lbl">${step.groupMode ? "Nhóm đã nộp" : "Đã nộp"}</div><div class="big-n">${n}/${denom}</div></div>` : `<div><div class="lbl">Sĩ số</div><div class="big-n">${joined.length}</div></div>`}
       ${step ? `<div><div class="lbl">Trạng thái</div><div style="font-size:22px;font-weight:700">${ui.phaseLabel(st, step)}${step.type === "slide" && step.pages > 1 ? ` · trang ${(st.page || 0) + 1}/${step.pages}` : ""}</div></div>` : ""}
       ${note ? `<span class="ghi-badge">${L360.icon("ghiBai")} Ghi vào vở</span>` : step && step.ghiBai ? `<span class="ghi-badge" style="opacity:.6">${L360.icon("ghiBai")} Có nội dung ghi vở</span>` : ""}
-      <div style="margin-top:auto"><div class="lbl">Tiết học</div><div style="font-size:30px;font-weight:800"><span data-clock>0:00</span><span class="muted" style="font-size:18px;font-weight:600"> / ${pm ? pm.steps.reduce((a, x) => a + (Number(x.minutes) || 0), 0) || 45 : 45} phút</span></div></div>
+      <div class="side-clock"><div class="lbl">Còn lại của tiết</div><div class="big" data-left>${pm ? pm.steps.reduce((a, x) => a + (Number(x.minutes) || 0), 0) || 45 : 45}:00</div><div class="sub">Đã học <span data-clock>0:00</span> / ${pm ? pm.steps.reduce((a, x) => a + (Number(x.minutes) || 0), 0) || 45 : 45} phút</div></div>
       <button class="snd-btn" id="sndb" title="Âm thanh">${L360.icon(st.sound === false || !snd.enabled ? "soundOff" : "soundOn")}</button>`;
     u.$("#sndb", side).onclick = () => {
       snd.unlock();

@@ -4,7 +4,7 @@ import os, glob
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CORE = ["js/config.js", "js/vendor/qrcode.js", "js/vendor/firebase/firebase-app-compat.js", "js/vendor/firebase/firebase-auth-compat.js", "js/vendor/firebase/firebase-database-compat.js",
         "js/core/util.js", "js/core/store.js", "js/core/design.js", "js/core/sound.js", "js/core/ui.js", "js/core/blocks.js",
-        "js/data/sgk.js", "js/data/eduhistory.js", "js/core/curriculum.js", "js/core/pack.js", "js/core/room.js", "js/core/shell.js", "js/core/auth.js", "js/core/library.js", "js/core/ppct.js",
+        "js/data/sgk.js", "js/data/eduhistory.js", "js/core/curriculum.js", "js/core/pack.js", "js/core/room.js", "js/core/shell.js", "js/core/help.js", "js/core/auth.js", "js/core/library.js", "js/core/ppct.js",
         "js/data/heritage-sites.js", "js/activities/basic.js", "js/activities/game.js", "js/activities/interactive.js", "js/activities/group.js", "js/activities/explore.js", "js/activities/web.js"]
 PACKS = sorted(os.path.relpath(p, root) for p in glob.glob(os.path.join(root, "packs/*.js")))
 STUDIO = ["js/core/architect.js", "js/core/images.js", "js/core/khbd.js", "js/core/pptx.js"]
@@ -12,12 +12,14 @@ PAGES = {
     "index.html": ("Lesson 360° Studio – Xưởng AI kiến tạo bài học số từ giáo án", [], True, "js/pages/portal.js", ""),
     "thuvien.html": ("Thư viện bài học – Lesson 360°", [], True, "js/pages/library.js", ""),
     "studio.html": ("Soạn bài – Lesson 360° Studio", STUDIO, True, "js/pages/studio.js", ""),
-    "giaovien.html": ("Dạy học – Lesson 360°", [], True, "js/pages/host.js", ""),
+    "giaovien.html": ("Dạy học – Lesson 360°", ["js/core/nhanxet.js"], True, "js/pages/host.js", ""),
     "manchieu.html": ("Màn chiếu – Lesson 360°", [], True, "js/pages/screen.js", "screen"),
     "hocsinh.html": ("Vào lớp – Lesson 360°", ["js/core/lock.js"], True, "js/pages/student.js", ""),
     "insight.html": ("Dữ liệu 360 – Lesson 360°", ["js/core/architect.js"], True, "js/pages/insight.js", ""),
-    "ppct.html": ("Phân phối chương trình – Lesson 360°", [], False, "js/pages/ppct.js", ""),
+    "ppct.html": ("Phụ lục 1 – Kế hoạch dạy học môn – Lesson 360°", [], False, "js/pages/ppct.js", ""),
     "taikhoan.html": ("Tài khoản & quản trị – Lesson 360°", [], False, "js/pages/account.js", ""),
+    "baogiang.html": ("Báo giảng CSDL – Lesson 360°", ["js/core/baogiang.js"], False, "js/pages/baogiang.js", ""),
+    "tiendo.html": ("Tiến độ của tổ – Lesson 360°", [], False, "js/pages/tiendo.js", ""),
 }
 for name, (title, extra, packs, page, kind) in PAGES.items():
     scripts = CORE + (PACKS if packs else []) + extra + [page]

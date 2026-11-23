@@ -207,13 +207,40 @@
       const l = list.find((x) => x.key === key);
       return l ? Object.assign({ subject: subj, grade: base.grade, bookTitle: base.title }, l) : null;
     },
+    // Độ lệch trang do tổ chuyên môn chỉnh lại (lưu trên máy chủ, ưu tiên hơn số đo sẵn).
+    OFF: {},
+    async loadOffsets() {
+      try {
+        const S = L360.store;
+        if (!S) return;
+        await S.ready;
+        const v = await S.get("sgkOff");
+        if (v && typeof v === "object") Object.assign(Curr.OFF, v);
+      } catch (e) {}
+    },
+    async setOffset(bookId, off) {
+      Curr.OFF[bookId] = off;
+      await L360.store.set(`sgkOff/${bookId}`, off);
+    },
+    offOf(bookId, part) {
+      const k = bookId + (part ? "-" + part : "");
+      if (Curr.OFF[k] != null) return Curr.OFF[k];
+      const b = books[bookId];
+      if (!b) return null;
+      if (part) {
+        const pb = booksFor(b.subject === "lsdl" ? (part === "dl" ? "dia-li" : "lich-su") : b.subject, b.grade).find((x) => x.id === bookId && (x.part || "") === part);
+        if (pb && pb.off != null) return pb.off;
+      }
+      return b.off;
+    },
     // Đường dẫn mở đúng trang SGK (nếu đã đo độ lệch trang của sách).
     sgkUrl(bookId, trang) {
       const b = books[bookId];
       if (!b) return "";
       const part = typeof trang === "object" ? trang : null;
       const p = part ? part.trang : trang;
-      const off = part && part.off != null ? part.off : b.off;
+      const ov = Curr.OFF[bookId + (part && part.part ? "-" + part.part : "")];
+      const off = ov != null ? ov : part && part.off != null ? part.off : b.off;
       if (p != null && off != null) return `${b.reader}#page=${Math.max(0, p + off)}`;
       return b.reader;
     },
@@ -221,11 +248,23 @@
       if (!l) return "";
       const b = booksFor(l.subject || (books[l.bookId] || {}).subject, (books[l.bookId] || {}).grade).find((x) => x.id === l.bookId && (x.part || "") === (l.part || ""));
       const off = b ? b.off : (books[l.bookId] || {}).off;
-      return Curr.sgkUrl(l.bookId, { trang: l.trang, off });
+      return Curr.sgkUrl(l.bookId, { trang: l.trang, off, part: l.part || "" });
+    },
+    // Tổ trưởng/quản trị chỉnh độ lệch khi link mở sai trang: nhập số trang in đang hiện.
+    async fixPage(l) {
+      const cur = Curr.offOf(l.bookId, l.part);
+      const shown = prompt(`Link đang mở SGK "${(books[l.bookId] || {}).title || ""}". Trang SGK cần mở là trang ${l.trang}.\nTrên trang đọc sách, số trang in (ở chân trang) đang hiện là bao nhiêu?`, String(l.trang));
+      if (shown == null || !/^\d+$/.test(shown.trim())) return false;
+      const d = Number(l.trang) - Number(shown.trim());
+      if (!d) return false;
+      const k = l.bookId + (l.part ? "-" + l.part : "");
+      await Curr.setOffset(k, (cur || 0) + d);
+      return true;
     },
     eduVideos: (l) => (l && l.edu ? Edu.forBai(l.edu) : [])
   };
   L360.Curr = Curr;
+  Curr.loadOffsets();
 
   /* ---------- Nguồn video (EduHistory, YouTube, tệp mp4) ---------- */
   L360.videoSource = (b) => {

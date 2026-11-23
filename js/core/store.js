@@ -276,6 +276,16 @@
           await auth.signInWithPopup(pv);
           return api.auth.user;
         },
+        // Liên kết tài khoản Google vào tài khoản email đang dùng (lần sau đăng nhập bằng Google).
+        async linkGoogle() {
+          const pv = new firebase.auth.GoogleAuthProvider();
+          pv.setCustomParameters({ prompt: "select_account" });
+          await auth.currentUser.linkWithPopup(pv);
+          return api.auth.user;
+        },
+        providers() {
+          return ((auth.currentUser && auth.currentUser.providerData) || []).map((p) => p.providerId);
+        },
         async resetPassword(email) {
           await auth.sendPasswordResetEmail(email);
         },
@@ -294,7 +304,19 @@
     return api;
   }
 
-  const forcedRehearsal = /(?:^|[?&])(che-do|mode)=(dien-tap|rehearsal)/.test(location.search);
+  // Bản chính thức luôn chạy trực tuyến. Chế độ diễn tập (1 máy) chỉ dành cho kiểm thử nội bộ: cần thêm dev=1.
+  const qsDev = /[?&]dev=1(&|$)/.test(location.search);
+  let devOk = qsDev;
+  try {
+    if (qsDev) localStorage.setItem("l360:dev", "1");
+    devOk = devOk || localStorage.getItem("l360:dev") === "1";
+  } catch (e) {}
+  const askRehearsal = /(?:^|[?&])(che-do|mode)=(dien-tap|rehearsal)/.test(location.search);
+  if (askRehearsal && !devOk) {
+    const q = location.search.replace(/([?&])(che-do|mode)=(dien-tap|rehearsal)(&|$)/, (m, a, b, c, d) => (d ? a : "")).replace(/^&/, "?");
+    history.replaceState(history.state, "", location.pathname + (q === "?" ? "" : q) + location.hash);
+  }
+  const forcedRehearsal = askRehearsal && devOk;
   const hasFirebase =
     cfg.firebase && cfg.firebase.apiKey && cfg.firebase.databaseURL && typeof window.firebase !== "undefined";
   L360.store = !forcedRehearsal && hasFirebase ? FirebaseStore() : LocalStore();

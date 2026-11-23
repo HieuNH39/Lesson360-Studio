@@ -1,370 +1,370 @@
 {
-  "schema": "l360-pack/1",
-  "id": "ls10-b4-van-minh-ai-cap",
-  "title": "EGYPT 360° – Hành trình giải mã văn minh sông Nin",
-  "subject": "Lịch sử",
-  "grade": "10",
-  "book": "Kết nối tri thức với cuộc sống",
-  "lessonRef": "Bài 4. Khái niệm văn minh. Một số nền văn minh phương Đông thời kì cổ – trung đại (mục 1 và 2a)",
-  "duration": 45,
-  "author": "Nguyễn Hữu Hiệu",
-  "objectives": [
-    "Phân biệt được khái niệm văn hóa và văn minh.",
-    "Giải thích được vai trò của điều kiện tự nhiên (sông Nin) đối với sự hình thành văn minh Ai Cập.",
-    "Nêu và đánh giá được một số thành tựu tiêu biểu của văn minh Ai Cập cổ đại: chữ viết, toán học, lịch, kiến trúc, tôn giáo – y học.",
-    "Rút ra mối liên hệ: điều kiện → nhu cầu → thành tựu; trân trọng di sản văn minh nhân loại."
-  ],
-  "theme": {
-    "accent": "#9A6B12",
-    "accent2": "#7A5410",
-    "bg": "#FAF5EA"
+ "schema": "l360-pack/1",
+ "id": "ls10-b4-van-minh-ai-cap",
+ "title": "EGYPT 360° – Hành trình giải mã văn minh sông Nin",
+ "subject": "Lịch sử",
+ "grade": "10",
+ "book": "Kết nối tri thức với cuộc sống",
+ "lessonRef": "Bài 4. Khái niệm văn minh. Một số nền văn minh phương Đông thời kì cổ – trung đại (mục 1 và 2a)",
+ "duration": 45,
+ "author": "Nguyễn Hữu Hiệu",
+ "objectives": [
+  "Phân biệt được khái niệm văn hóa và văn minh.",
+  "Giải thích được vai trò của điều kiện tự nhiên (sông Nin) đối với sự hình thành văn minh Ai Cập.",
+  "Nêu và đánh giá được một số thành tựu tiêu biểu của văn minh Ai Cập cổ đại: chữ viết, toán học, lịch, kiến trúc, tôn giáo – y học.",
+  "Rút ra mối liên hệ: điều kiện → nhu cầu → thành tựu; trân trọng di sản văn minh nhân loại."
+ ],
+ "theme": {
+  "accent": "#9A6B12",
+  "accent2": "#7A5410",
+  "bg": "#FAF5EA"
+ },
+ "groups": [
+  {
+   "name": "PAPYRUS",
+   "color": "#4E7A35"
   },
-  "groups": [
-    {
-      "name": "PAPYRUS",
-      "color": "#4E7A35"
-    },
-    {
-      "name": "RA",
-      "color": "#C98A12"
-    },
-    {
-      "name": "PYRAMID",
-      "color": "#B4552D"
-    },
-    {
-      "name": "SPHINX",
-      "color": "#2A62B0"
-    }
-  ],
-  "meta": {
-    "madeWithAI": true,
-    "aiTool": "Claude",
-    "note": "Chuyển từ EGYPT 360° (bản dạy thật 17/11/2026) sang định dạng gói bài học."
+  {
+   "name": "RA",
+   "color": "#C98A12"
   },
-  "steps": [
+  {
+   "name": "PYRAMID",
+   "color": "#B4552D"
+  },
+  {
+   "name": "SPHINX",
+   "color": "#2A62B0"
+  }
+ ],
+ "meta": {
+  "madeWithAI": true,
+  "aiTool": "Claude",
+  "note": "Chuyển từ EGYPT 360° (bản dạy thật 17/11/2026) sang định dạng gói bài học."
+ },
+ "steps": [
+  {
+   "id": "dau-gia",
+   "type": "auction",
+   "title": "Phiên đấu giá di sản",
+   "minutes": 6,
+   "script": "Chào mừng các nhà sưu tầm! Mỗi nhóm có 100 đồng vàng. Hãy chọn MỘT di sản Ai Cập mà nhóm muốn sở hữu, đặt giá và nêu lí do thuyết phục. Nhóm thắng sẽ có quyền giới thiệu di sản đó ở cuối hoạt động nghiên cứu.",
+   "instructions": "Đại diện nhóm chọn 1 di sản, đặt giá (10–100, bội số của 5) và ghi lí do.",
+   "question": "Nhóm em muốn sở hữu di sản nào của Ai Cập cổ đại? Đặt giá và nêu lí do.",
+   "items": [
     {
-      "id": "dau-gia",
-      "type": "auction",
-      "title": "Phiên đấu giá di sản",
-      "minutes": 6,
-      "script": "Chào mừng các nhà sưu tầm! Mỗi nhóm có 100 đồng vàng. Hãy chọn MỘT di sản Ai Cập mà nhóm muốn sở hữu, đặt giá và nêu lí do thuyết phục. Nhóm thắng sẽ có quyền giới thiệu di sản đó ở cuối hoạt động nghiên cứu.",
-      "instructions": "Đại diện nhóm chọn 1 di sản, đặt giá (10–100, bội số của 5) và ghi lí do.",
-      "question": "Nhóm em muốn sở hữu di sản nào của Ai Cập cổ đại? Đặt giá và nêu lí do.",
-      "items": [
-        {
-          "title": "Kim tự tháp Kê-ốp",
-          "text": "Lăng mộ pharaoh ở Gi-da",
-          "image": "assets/img/packs/egypt/keop.jpg",
-          "credit": "Nina, CC BY 2.5, Wikimedia Commons"
-        },
-        {
-          "title": "Tượng Nhân sư",
-          "text": "Đầu người, mình sư tử",
-          "image": "assets/img/packs/egypt/nhan-su.jpg",
-          "credit": "Barcex, CC BY-SA 3.0, Wikimedia Commons"
-        },
-        {
-          "title": "Chữ tượng hình",
-          "text": "Khắc trên đá, viết trên giấy papyrus",
-          "image": "assets/img/packs/egypt/tuong-hinh.jpg",
-          "credit": "British Museum, Wikimedia Commons"
-        },
-        {
-          "title": "Lịch 365 ngày",
-          "text": "12 tháng, mỗi tháng 30 ngày + 5 ngày"
-        },
-        {
-          "title": "Kĩ thuật ướp xác",
-          "text": "Gắn với niềm tin về cuộc sống sau cái chết"
-        }
-      ],
-      "budget": 100,
-      "min": 10,
-      "stepBy": 5,
-      "timer": 150
+     "title": "Kim tự tháp Kê-ốp",
+     "text": "Lăng mộ pharaoh ở Gi-da",
+     "image": "assets/img/packs/egypt/keop.jpg",
+     "credit": "Nina, CC BY 2.5, Wikimedia Commons"
     },
     {
-      "id": "khai-niem",
-      "type": "poll2",
-      "title": "Văn hóa hay văn minh?",
-      "minutes": 4,
-      "script": "Vòng 1: mỗi em tự chọn trong 60 giây. Sau đó trao đổi với bạn bên cạnh, thuyết phục nhau bằng lí lẽ. Vòng 2: giữ hoặc đổi lựa chọn. Chúng ta sẽ so sánh hai vòng.",
-      "instructions": "Vòng 1 tự chọn → trao đổi cặp → vòng 2 giữ hoặc đổi.",
-      "question": "Người nguyên thuỷ biết dùng lửa, chế tác công cụ đá, vẽ tranh trên vách hang. Đó là biểu hiện của…",
-      "options": [
-        "Văn minh",
-        "Văn hóa",
-        "Cả văn hóa và văn minh",
-        "Không phải văn hóa, cũng không phải văn minh"
-      ],
-      "answer": 1,
-      "explain": "Văn hóa là tổng thể giá trị vật chất và tinh thần do con người sáng tạo ra, có từ khi loài người xuất hiện. Văn minh là trạng thái phát triển cao của văn hóa, khi xã hội đã có chữ viết và nhà nước. Người nguyên thuỷ chưa có chữ viết, nhà nước nên đó là văn hóa, chưa phải văn minh.",
-      "card": "- **Văn hóa**: mọi giá trị vật chất, tinh thần con người sáng tạo ra – có từ khi có loài người.\n- **Văn minh**: giai đoạn phát triển cao của văn hóa – dấu hiệu: có **chữ viết** và **nhà nước**.",
-      "timer": [
-        60,
-        45
-      ]
+     "title": "Tượng Nhân sư",
+     "text": "Đầu người, mình sư tử",
+     "image": "assets/img/packs/egypt/nhan-su.jpg",
+     "credit": "Barcex, CC BY-SA 3.0, Wikimedia Commons"
     },
     {
-      "id": "song-nin",
-      "type": "cards",
-      "title": "Món quà của sông Nin?",
-      "minutes": 2,
-      "script": "Nhà sử học Hy Lạp Hê-rô-đốt gọi Ai Cập là “tặng phẩm của sông Nin”. Quan sát ảnh vệ tinh: dải xanh duy nhất giữa sa mạc chính là thung lũng sông Nin.",
-      "instructions": "Chọn tối đa 6 thẻ và viết giả thuyết ≤ 30 từ.",
-      "question": "Vì sao Ai Cập được gọi là “tặng phẩm của sông Nin”? Chọn những điều kiện hoặc nhu cầu mà sông Nin mang lại.",
-      "cards": [
-        "Đất phù sa màu mỡ",
-        "Nguồn nước tưới quanh năm",
-        "Lũ dâng theo mùa, cần trị thủy",
-        "Giao thông đường sông thuận lợi",
-        "Cây papyrus mọc ven sông",
-        "Đá xây dựng ở hai bên thung lũng",
-        "Sa mạc bao quanh che chắn",
-        "Phải đo đạc lại ruộng đất sau lũ"
-      ],
-      "maxPick": 6,
-      "textPrompt": "Giả thuyết của em (≤ 30 từ)",
-      "maxWords": 30,
-      "media": {
-        "image": "assets/img/packs/egypt/song-nin.jpg",
-        "caption": "Thung lũng và châu thổ sông Nin nhìn từ vệ tinh",
-        "credit": "NASA (MODIS), phạm vi công cộng"
-      },
-      "conclusion": "Sông Nin đem lại phù sa, nước, đường giao thông, nguyên liệu; đồng thời đặt ra nhu cầu trị thủy, đo đạc, tính lịch. Đó là điều kiện rất quan trọng nhưng **không phải nguyên nhân duy nhất**: chính lao động sáng tạo của cư dân Ai Cập mới làm nên văn minh.",
-      "timer": 90
+     "title": "Chữ tượng hình",
+     "text": "Khắc trên đá, viết trên giấy papyrus",
+     "image": "assets/img/packs/egypt/tuong-hinh.jpg",
+     "credit": "British Museum, Wikimedia Commons"
     },
     {
-      "id": "nghien-cuu",
-      "type": "groupwork",
-      "title": "Nghiên cứu chuyên gia",
-      "minutes": 13,
-      "script": "Mỗi nhóm là một đoàn chuyên gia nghiên cứu một lĩnh vực của văn minh Ai Cập. Nhận vai trong 1 phút. Thành viên gửi ý vào từng mục; Thư kí tổng hợp và nộp hồ sơ A–F trước khi hết giờ.",
-      "instructions": "Đọc tư liệu của nhóm, nhận vai, gửi đóng góp; Thư kí soạn hồ sơ A–F và nộp.",
-      "task": "Nghiên cứu thành tựu được giao và hoàn thành hồ sơ chuyên gia A–F. Dùng tư liệu trên máy và SGK Lịch sử 10, Bài 4.",
-      "roles": [
-        "Thư kí",
-        "Trưởng nhóm",
-        "Chuyên gia tư liệu",
-        "Chuyên gia hình ảnh",
-        "Người kết nối (điều kiện – nhu cầu)",
-        "Người phản biện",
-        "Người thuyết trình"
-      ],
-      "fields": [
-        {
-          "key": "A",
-          "label": "Thành tựu tiêu biểu",
-          "hint": "2–3 ví dụ cụ thể"
-        },
-        {
-          "key": "B",
-          "label": "Điểm nổi bật, độc đáo"
-        },
-        {
-          "key": "C",
-          "label": "Ra đời từ điều kiện/nhu cầu nào?"
-        },
-        {
-          "key": "D",
-          "label": "Ý nghĩa với cư dân Ai Cập đương thời"
-        },
-        {
-          "key": "E",
-          "label": "Giá trị đến ngày nay"
-        },
-        {
-          "key": "F",
-          "label": "Một câu hỏi hoặc điều thú vị muốn chia sẻ"
-        }
-      ],
-      "resources": [
-        {
-          "for": [
-            1
-          ],
-          "title": "PAPYRUS – Chữ viết và văn học",
-          "image": "assets/img/packs/egypt/tuong-hinh.jpg",
-          "credit": "Chữ tượng hình trong lăng Xê-ti I – British Museum, Wikimedia Commons",
-          "body": "- Người Ai Cập sáng tạo **chữ tượng hình**: dùng hình vẽ để ghi sự vật, về sau thêm các kí hiệu ghi âm.\n- Chữ được khắc trên đá, tường đền, lăng mộ và viết trên **giấy làm từ thân cây papyrus** (cây cói mọc ven sông Nin).\n- **Phiến đá Rô-dét-ta** khắc cùng một nội dung bằng ba loại chữ; nhờ đó nhà ngôn ngữ học Pháp Săm-pô-li-ông giải mã được chữ tượng hình năm 1822.\n- Văn học gồm thơ ca, truyện, các văn bản tôn giáo."
-        },
-        {
-          "for": [
-            1
-          ],
-          "title": "Phiến đá Rô-dét-ta",
-          "image": "assets/img/packs/egypt/rosetta.jpg",
-          "credit": "Hans Hillewaert, CC BY-SA 4.0, Wikimedia Commons",
-          "body": "Đang trưng bày tại Bảo tàng Anh (London)."
-        },
-        {
-          "for": [
-            2
-          ],
-          "title": "RA – Thiên văn, lịch và toán học",
-          "image": "assets/img/packs/egypt/rhind.jpg",
-          "credit": "Giấy cói toán học Rhind – phạm vi công cộng, Wikimedia Commons",
-          "body": "- Quan sát bầu trời và mực nước sông Nin, người Ai Cập làm ra **lịch 365 ngày**: 12 tháng, mỗi tháng 30 ngày, cộng thêm 5 ngày cuối năm.\n- Toán học: dùng **hệ đếm thập phân**; tính được diện tích tam giác, hình thang, hình tròn (lấy số pi khoảng **3,16**), thể tích hình chóp cụt.\n- Kiến thức toán học phục vụ đo đạc ruộng đất sau lũ, tính toán xây dựng kim tự tháp, đền đài."
-        },
-        {
-          "for": [
-            3
-          ],
-          "title": "PYRAMID – Kiến trúc và điêu khắc",
-          "image": "assets/img/packs/egypt/giza.jpg",
-          "credit": "Quần thể kim tự tháp Gi-da – Ricardo Liberato, CC BY-SA 2.0, Wikimedia Commons",
-          "body": "- **Kim tự tháp** là lăng mộ của các pharaoh. Lớn nhất là kim tự tháp Kê-ốp ở Gi-da, cao khoảng 146 m, xây bằng hơn 2 triệu khối đá.\n- **Tượng Nhân sư** ở Gi-da có đầu người, mình sư tử.\n- Ngoài ra có nhiều đền thờ lớn (Các-nác, Lúc-xo), tượng và phù điêu.\n- Công trình thể hiện trình độ tổ chức lao động và hiểu biết toán học, kĩ thuật rất cao."
-        },
-        {
-          "for": [
-            4
-          ],
-          "title": "SPHINX – Tôn giáo và y học",
-          "image": "assets/img/packs/egypt/nhan-su.jpg",
-          "credit": "Tượng Nhân sư – Barcex, CC BY-SA 3.0, Wikimedia Commons",
-          "body": "- Người Ai Cập thờ nhiều thần; thần Mặt Trời **Ra** được tôn kính nhất. Pharaoh được coi là con của thần.\n- Tin vào cuộc sống sau cái chết nên có tục **ướp xác**.\n- Nhờ ướp xác, người Ai Cập hiểu biết về cơ thể người; y học có thầy thuốc chuyên chữa từng loại bệnh, ghi chép cách chữa bệnh trên giấy papyrus."
-        }
-      ],
-      "timer": 780
+     "title": "Lịch 365 ngày",
+     "text": "12 tháng, mỗi tháng 30 ngày + 5 ngày"
     },
     {
-      "id": "trien-lam",
-      "type": "expo",
-      "title": "Triển lãm – Báo cáo",
-      "minutes": 7,
-      "script": "Mỗi nhóm có 75 giây giới thiệu hồ sơ. Các nhóm khác ghi Phiếu 03, chấm 3 tiêu chí trên máy và đặt 1 câu hỏi.",
-      "instructions": "Nghe nhóm bạn báo cáo, chấm 3 tiêu chí và đặt câu hỏi.",
-      "source": "nghien-cuu",
-      "perGroupSec": 75,
-      "criteria": [
-        "Nội dung chính xác",
-        "Liên hệ điều kiện – nhu cầu rõ ràng",
-        "Trình bày hấp dẫn"
-      ],
-      "askQuestion": true
-    },
-    {
-      "id": "khai-quat",
-      "type": "match",
-      "title": "Khái quát hóa",
-      "minutes": 5,
-      "script": "Từ hồ sơ của 4 nhóm, hãy tìm quy luật: mỗi thành tựu ra đời để đáp ứng nhu cầu nào của cư dân sông Nin?",
-      "instructions": "Ghép mỗi nhu cầu với thành tựu tương ứng và viết 1 câu giải thích.",
-      "question": "Ghép mỗi nhu cầu của cư dân Ai Cập với thành tựu văn minh ra đời để đáp ứng nhu cầu đó.",
-      "pairs": [
-        {
-          "left": "Đo đạc lại ruộng đất sau mỗi mùa lũ",
-          "right": "Hình học: tính diện tích các hình"
-        },
-        {
-          "left": "Biết thời điểm nước lũ để gieo trồng",
-          "right": "Lịch 365 ngày"
-        },
-        {
-          "left": "Ghi chép, quản lí đất nước",
-          "right": "Chữ tượng hình trên giấy papyrus"
-        },
-        {
-          "left": "Niềm tin vào cuộc sống sau cái chết",
-          "right": "Kim tự tháp và kĩ thuật ướp xác"
-        }
-      ],
-      "whyPrompt": "Viết 1 câu nêu mối liên hệ giữa điều kiện, nhu cầu và thành tựu.",
-      "explain": "Điều kiện tự nhiên (sông Nin) → nhu cầu của con người → tổ chức xã hội (nhà nước) → thành tựu văn minh. Thành tựu ra đời từ nhu cầu thực tiễn và lao động sáng tạo.",
-      "timer": 120
-    },
-    {
-      "id": "pharaoh",
-      "type": "quiz",
-      "title": "Thử thách của Pha-ra-ông",
-      "minutes": 6,
-      "script": "6 câu, mỗi câu 20 giây. Đây là cơ hội kiểm tra điều mình hiểu, không phải chạy đua tốc độ.",
-      "instructions": "Trả lời 6 câu, mỗi câu 20 giây.",
-      "timer": 20,
-      "questions": [
-        {
-          "q": "Ai gọi Ai Cập là “tặng phẩm của sông Nin”?",
-          "options": [
-            "Săm-pô-li-ông",
-            "Hê-rô-đốt",
-            "Pi-ta-go",
-            "Ác-si-mét"
-          ],
-          "answer": 1,
-          "explain": "Nhà sử học Hy Lạp cổ đại Hê-rô-đốt nhận xét Ai Cập là tặng phẩm của sông Nin."
-        },
-        {
-          "q": "Chữ viết của người Ai Cập cổ đại là",
-          "options": [
-            "chữ hình nêm",
-            "chữ cái La-tinh",
-            "chữ tượng hình",
-            "chữ Phạn"
-          ],
-          "answer": 2,
-          "explain": "Người Ai Cập dùng chữ tượng hình; chữ hình nêm là của người Lưỡng Hà."
-        },
-        {
-          "q": "Người Ai Cập cổ đại viết chữ chủ yếu trên",
-          "options": [
-            "thẻ tre",
-            "giấy làm từ cây papyrus",
-            "phiến đất sét",
-            "lụa"
-          ],
-          "answer": 1,
-          "explain": "Giấy papyrus làm từ thân cây cói mọc ven sông Nin."
-        },
-        {
-          "q": "Lịch của người Ai Cập cổ đại chia một năm thành",
-          "options": [
-            "354 ngày, 12 tháng",
-            "360 ngày, 10 tháng",
-            "365 ngày, 10 tháng",
-            "365 ngày, 12 tháng"
-          ],
-          "answer": 3,
-          "explain": "12 tháng × 30 ngày, cộng thêm 5 ngày cuối năm = 365 ngày."
-        },
-        {
-          "q": "Công trình nào là lăng mộ của các pharaoh?",
-          "options": [
-            "Kim tự tháp",
-            "Vườn treo Ba-bi-lon",
-            "Vạn Lý Trường Thành",
-            "Đền Pác-tê-nông"
-          ],
-          "answer": 0,
-          "explain": "Kim tự tháp là lăng mộ của các pharaoh, tiêu biểu là kim tự tháp Kê-ốp."
-        },
-        {
-          "q": "Nhu cầu nào thúc đẩy người Ai Cập giỏi hình học?",
-          "options": [
-            "Xây nhà ở",
-            "Buôn bán đường biển",
-            "Đo đạc lại ruộng đất sau mỗi mùa lũ",
-            "Đúc tiền"
-          ],
-          "answer": 2,
-          "explain": "Lũ sông Nin xoá ranh giới ruộng đất, nên phải đo đạc, tính diện tích lại sau mỗi mùa lũ."
-        }
-      ]
-    },
-    {
-      "id": "thong-diep",
-      "type": "text",
-      "title": "Thông điệp gửi tương lai",
-      "minutes": 2,
-      "script": "Hoàn thành câu: “Tôi muốn thế hệ tương lai hiểu rằng…”. Tự đánh giá mức hiểu bài và ghi điều còn băn khoăn.",
-      "instructions": "Viết thông điệp ≤ 40 từ và tự đánh giá.",
-      "question": "Tôi muốn thế hệ tương lai hiểu rằng… (về văn minh Ai Cập cổ đại)",
-      "placeholder": "Tôi muốn thế hệ tương lai hiểu rằng ",
-      "maxWords": 40,
-      "selfAssess": true,
-      "askDoubt": true,
-      "sample": "Gợi ý: văn minh Ai Cập ra đời từ điều kiện sông Nin và lao động sáng tạo của con người; nhiều thành tựu (lịch, toán học, kiến trúc) vẫn còn giá trị đến nay và cần được trân trọng, bảo tồn.",
-      "timer": 120
+     "title": "Kĩ thuật ướp xác",
+     "text": "Gắn với niềm tin về cuộc sống sau cái chết"
     }
-  ]
+   ],
+   "budget": 100,
+   "min": 10,
+   "stepBy": 5,
+   "timer": 150
+  },
+  {
+   "id": "khai-niem",
+   "type": "poll2",
+   "title": "Văn hóa hay văn minh?",
+   "minutes": 4,
+   "script": "Vòng 1: mỗi em tự chọn trong 60 giây. Sau đó trao đổi với bạn bên cạnh, thuyết phục nhau bằng lí lẽ. Vòng 2: giữ hoặc đổi lựa chọn. Chúng ta sẽ so sánh hai vòng.",
+   "instructions": "Vòng 1 tự chọn → trao đổi cặp → vòng 2 giữ hoặc đổi.",
+   "question": "Người nguyên thuỷ biết dùng lửa, chế tác công cụ đá, vẽ tranh trên vách hang. Đó là biểu hiện của…",
+   "options": [
+    "Văn minh",
+    "Văn hóa",
+    "Cả văn hóa và văn minh",
+    "Không phải văn hóa, cũng không phải văn minh"
+   ],
+   "answer": 1,
+   "explain": "Văn hóa là tổng thể giá trị vật chất và tinh thần do con người sáng tạo ra, có từ khi loài người xuất hiện. Văn minh là trạng thái phát triển cao của văn hóa, khi xã hội đã có chữ viết và nhà nước. Người nguyên thuỷ chưa có chữ viết, nhà nước nên đó là văn hóa, chưa phải văn minh.",
+   "card": "- **Văn hóa**: mọi giá trị vật chất, tinh thần con người sáng tạo ra – có từ khi có loài người.\n- **Văn minh**: giai đoạn phát triển cao của văn hóa – dấu hiệu: có **chữ viết** và **nhà nước**.",
+   "timer": [
+    60,
+    45
+   ]
+  },
+  {
+   "id": "song-nin",
+   "type": "cards",
+   "title": "Món quà của sông Nin?",
+   "minutes": 2,
+   "script": "Nhà sử học Hy Lạp Hê-rô-đốt gọi Ai Cập là “tặng phẩm của sông Nin”. Quan sát ảnh vệ tinh: dải xanh duy nhất giữa sa mạc chính là thung lũng sông Nin.",
+   "instructions": "Chọn tối đa 6 thẻ và viết giả thuyết ≤ 30 từ.",
+   "question": "Vì sao Ai Cập được gọi là “tặng phẩm của sông Nin”? Chọn những điều kiện hoặc nhu cầu mà sông Nin mang lại.",
+   "cards": [
+    "Đất phù sa màu mỡ",
+    "Nguồn nước tưới quanh năm",
+    "Lũ dâng theo mùa, cần trị thủy",
+    "Giao thông đường sông thuận lợi",
+    "Cây papyrus mọc ven sông",
+    "Đá xây dựng ở hai bên thung lũng",
+    "Sa mạc bao quanh che chắn",
+    "Phải đo đạc lại ruộng đất sau lũ"
+   ],
+   "maxPick": 6,
+   "textPrompt": "Giả thuyết của em (≤ 30 từ)",
+   "maxWords": 30,
+   "media": {
+    "image": "assets/img/packs/egypt/song-nin.jpg",
+    "caption": "Thung lũng và châu thổ sông Nin nhìn từ vệ tinh",
+    "credit": "NASA (MODIS), phạm vi công cộng"
+   },
+   "conclusion": "Sông Nin đem lại phù sa, nước, đường giao thông, nguyên liệu; đồng thời đặt ra nhu cầu trị thủy, đo đạc, tính lịch. Đó là điều kiện rất quan trọng nhưng **không phải nguyên nhân duy nhất**: chính lao động sáng tạo của cư dân Ai Cập mới làm nên văn minh.",
+   "timer": 90
+  },
+  {
+   "id": "nghien-cuu",
+   "type": "groupwork",
+   "title": "Nghiên cứu chuyên gia",
+   "minutes": 13,
+   "script": "Mỗi nhóm là một đoàn chuyên gia nghiên cứu một lĩnh vực của văn minh Ai Cập. Nhận vai trong 1 phút. Thành viên gửi ý vào từng mục; Thư kí tổng hợp và nộp hồ sơ A–F trước khi hết giờ.",
+   "instructions": "Đọc tư liệu của nhóm, nhận vai, gửi đóng góp; Thư kí soạn hồ sơ A–F và nộp.",
+   "task": "Nghiên cứu thành tựu được giao và hoàn thành hồ sơ chuyên gia A–F. Dùng tư liệu trên máy và SGK Lịch sử 10, Bài 4.",
+   "roles": [
+    "Thư kí",
+    "Trưởng nhóm",
+    "Chuyên gia tư liệu",
+    "Chuyên gia hình ảnh",
+    "Người kết nối (điều kiện – nhu cầu)",
+    "Người phản biện",
+    "Người thuyết trình"
+   ],
+   "fields": [
+    {
+     "key": "A",
+     "label": "Thành tựu tiêu biểu",
+     "hint": "2–3 ví dụ cụ thể"
+    },
+    {
+     "key": "B",
+     "label": "Điểm nổi bật, độc đáo"
+    },
+    {
+     "key": "C",
+     "label": "Ra đời từ điều kiện/nhu cầu nào?"
+    },
+    {
+     "key": "D",
+     "label": "Ý nghĩa với cư dân Ai Cập đương thời"
+    },
+    {
+     "key": "E",
+     "label": "Giá trị đến ngày nay"
+    },
+    {
+     "key": "F",
+     "label": "Một câu hỏi hoặc điều thú vị muốn chia sẻ"
+    }
+   ],
+   "resources": [
+    {
+     "for": [
+      1
+     ],
+     "title": "PAPYRUS – Chữ viết và văn học",
+     "image": "assets/img/packs/egypt/tuong-hinh.jpg",
+     "credit": "Chữ tượng hình trong lăng Xê-ti I – British Museum, Wikimedia Commons",
+     "body": "- Người Ai Cập sáng tạo **chữ tượng hình**: dùng hình vẽ để ghi sự vật, về sau thêm các kí hiệu ghi âm.\n- Chữ được khắc trên đá, tường đền, lăng mộ và viết trên **giấy làm từ thân cây papyrus** (cây cói mọc ven sông Nin).\n- **Phiến đá Rô-dét-ta** khắc cùng một nội dung bằng ba loại chữ; nhờ đó nhà ngôn ngữ học Pháp Săm-pô-li-ông giải mã được chữ tượng hình năm 1822.\n- Văn học gồm thơ ca, truyện, các văn bản tôn giáo."
+    },
+    {
+     "for": [
+      1
+     ],
+     "title": "Phiến đá Rô-dét-ta",
+     "image": "assets/img/packs/egypt/rosetta.jpg",
+     "credit": "Hans Hillewaert, CC BY-SA 4.0, Wikimedia Commons",
+     "body": "Đang trưng bày tại Bảo tàng Anh (London)."
+    },
+    {
+     "for": [
+      2
+     ],
+     "title": "RA – Thiên văn, lịch và toán học",
+     "image": "assets/img/packs/egypt/rhind.jpg",
+     "credit": "Giấy cói toán học Rhind – phạm vi công cộng, Wikimedia Commons",
+     "body": "- Quan sát bầu trời và mực nước sông Nin, người Ai Cập làm ra **lịch 365 ngày**: 12 tháng, mỗi tháng 30 ngày, cộng thêm 5 ngày cuối năm.\n- Toán học: dùng **hệ đếm thập phân**; tính được diện tích tam giác, hình thang, hình tròn (lấy số pi khoảng **3,16**), thể tích hình chóp cụt.\n- Kiến thức toán học phục vụ đo đạc ruộng đất sau lũ, tính toán xây dựng kim tự tháp, đền đài."
+    },
+    {
+     "for": [
+      3
+     ],
+     "title": "PYRAMID – Kiến trúc và điêu khắc",
+     "image": "assets/img/packs/egypt/giza.jpg",
+     "credit": "Quần thể kim tự tháp Gi-da – Ricardo Liberato, CC BY-SA 2.0, Wikimedia Commons",
+     "body": "- **Kim tự tháp** là lăng mộ của các pharaoh. Lớn nhất là kim tự tháp Kê-ốp ở Gi-da, cao khoảng 146 m, xây bằng hơn 2 triệu khối đá.\n- **Tượng Nhân sư** ở Gi-da có đầu người, mình sư tử.\n- Ngoài ra có nhiều đền thờ lớn (Các-nác, Lúc-xo), tượng và phù điêu.\n- Công trình thể hiện trình độ tổ chức lao động và hiểu biết toán học, kĩ thuật rất cao."
+    },
+    {
+     "for": [
+      4
+     ],
+     "title": "SPHINX – Tôn giáo và y học",
+     "image": "assets/img/packs/egypt/nhan-su.jpg",
+     "credit": "Tượng Nhân sư – Barcex, CC BY-SA 3.0, Wikimedia Commons",
+     "body": "- Người Ai Cập thờ nhiều thần; thần Mặt Trời **Ra** được tôn kính nhất. Pharaoh được coi là con của thần.\n- Tin vào cuộc sống sau cái chết nên có tục **ướp xác**.\n- Nhờ ướp xác, người Ai Cập hiểu biết về cơ thể người; y học có thầy thuốc chuyên chữa từng loại bệnh, ghi chép cách chữa bệnh trên giấy papyrus."
+    }
+   ],
+   "timer": 780
+  },
+  {
+   "id": "trien-lam",
+   "type": "expo",
+   "title": "Triển lãm – Báo cáo",
+   "minutes": 7,
+   "script": "Mỗi nhóm có 75 giây giới thiệu hồ sơ. Các nhóm khác ghi Phiếu 03, chấm 3 tiêu chí trên máy và đặt 1 câu hỏi.",
+   "instructions": "Nghe nhóm bạn báo cáo, chấm 3 tiêu chí và đặt câu hỏi.",
+   "source": "nghien-cuu",
+   "perGroupSec": 75,
+   "criteria": [
+    "Nội dung chính xác",
+    "Liên hệ điều kiện – nhu cầu rõ ràng",
+    "Trình bày hấp dẫn"
+   ],
+   "askQuestion": true
+  },
+  {
+   "id": "khai-quat",
+   "type": "match",
+   "title": "Khái quát hóa",
+   "minutes": 5,
+   "script": "Từ hồ sơ của 4 nhóm, hãy tìm quy luật: mỗi thành tựu ra đời để đáp ứng nhu cầu nào của cư dân sông Nin?",
+   "instructions": "Ghép mỗi nhu cầu với thành tựu tương ứng và viết 1 câu giải thích.",
+   "question": "Ghép mỗi nhu cầu của cư dân Ai Cập với thành tựu văn minh ra đời để đáp ứng nhu cầu đó.",
+   "pairs": [
+    {
+     "left": "Đo đạc lại ruộng đất sau mỗi mùa lũ",
+     "right": "Hình học: tính diện tích các hình"
+    },
+    {
+     "left": "Biết thời điểm nước lũ để gieo trồng",
+     "right": "Lịch 365 ngày"
+    },
+    {
+     "left": "Ghi chép, quản lí đất nước",
+     "right": "Chữ tượng hình trên giấy papyrus"
+    },
+    {
+     "left": "Niềm tin vào cuộc sống sau cái chết",
+     "right": "Kim tự tháp và kĩ thuật ướp xác"
+    }
+   ],
+   "whyPrompt": "Viết 1 câu nêu mối liên hệ giữa điều kiện, nhu cầu và thành tựu.",
+   "explain": "Điều kiện tự nhiên (sông Nin) → nhu cầu của con người → tổ chức xã hội (nhà nước) → thành tựu văn minh. Thành tựu ra đời từ nhu cầu thực tiễn và lao động sáng tạo.",
+   "timer": 120
+  },
+  {
+   "id": "pharaoh",
+   "type": "quiz",
+   "title": "Thử thách của Pha-ra-ông",
+   "minutes": 6,
+   "script": "6 câu, mỗi câu 20 giây. Đây là cơ hội kiểm tra điều mình hiểu, không phải chạy đua tốc độ.",
+   "instructions": "Trả lời 6 câu, mỗi câu 20 giây.",
+   "timer": 20,
+   "questions": [
+    {
+     "q": "Ai gọi Ai Cập là “tặng phẩm của sông Nin”?",
+     "options": [
+      "Săm-pô-li-ông",
+      "Hê-rô-đốt",
+      "Pi-ta-go",
+      "Ác-si-mét"
+     ],
+     "answer": 1,
+     "explain": "Nhà sử học Hy Lạp cổ đại Hê-rô-đốt nhận xét Ai Cập là tặng phẩm của sông Nin."
+    },
+    {
+     "q": "Chữ viết của người Ai Cập cổ đại là",
+     "options": [
+      "chữ hình nêm",
+      "chữ cái La-tinh",
+      "chữ tượng hình",
+      "chữ Phạn"
+     ],
+     "answer": 2,
+     "explain": "Người Ai Cập dùng chữ tượng hình; chữ hình nêm là của người Lưỡng Hà."
+    },
+    {
+     "q": "Người Ai Cập cổ đại viết chữ chủ yếu trên",
+     "options": [
+      "thẻ tre ghép",
+      "giấy pa-pi-rút",
+      "phiến đất sét",
+      "tấm lụa"
+     ],
+     "answer": 1,
+     "explain": "Giấy pa-pi-rút (papyrus) làm từ thân cây cói mọc ven sông Nin."
+    },
+    {
+     "q": "Lịch của người Ai Cập cổ đại chia một năm thành",
+     "options": [
+      "354 ngày, 12 tháng",
+      "360 ngày, 10 tháng",
+      "365 ngày, 10 tháng",
+      "365 ngày, 12 tháng"
+     ],
+     "answer": 3,
+     "explain": "12 tháng × 30 ngày, cộng thêm 5 ngày cuối năm = 365 ngày."
+    },
+    {
+     "q": "Công trình nào là lăng mộ của các pharaoh?",
+     "options": [
+      "Kim tự tháp",
+      "Vườn treo Ba-bi-lon",
+      "Vạn Lý Trường Thành",
+      "Đền Pác-tê-nông"
+     ],
+     "answer": 0,
+     "explain": "Kim tự tháp là lăng mộ của các pharaoh, tiêu biểu là kim tự tháp Kê-ốp."
+    },
+    {
+     "q": "Nhu cầu nào thúc đẩy người Ai Cập giỏi hình học?",
+     "options": [
+      "Xây dựng nhà ở cho dân",
+      "Buôn bán trên đường biển",
+      "Đo đạc lại ruộng đất sau lũ",
+      "Đúc tiền đồng để trao đổi"
+     ],
+     "answer": 2,
+     "explain": "Lũ sông Nin xoá ranh giới ruộng đất, nên phải đo đạc, tính diện tích lại sau mỗi mùa lũ."
+    }
+   ]
+  },
+  {
+   "id": "thong-diep",
+   "type": "text",
+   "title": "Thông điệp gửi tương lai",
+   "minutes": 2,
+   "script": "Hoàn thành câu: “Tôi muốn thế hệ tương lai hiểu rằng…”. Tự đánh giá mức hiểu bài và ghi điều còn băn khoăn.",
+   "instructions": "Viết thông điệp ≤ 40 từ và tự đánh giá.",
+   "question": "Tôi muốn thế hệ tương lai hiểu rằng… (về văn minh Ai Cập cổ đại)",
+   "placeholder": "Tôi muốn thế hệ tương lai hiểu rằng ",
+   "maxWords": 40,
+   "selfAssess": true,
+   "askDoubt": true,
+   "sample": "Gợi ý: văn minh Ai Cập ra đời từ điều kiện sông Nin và lao động sáng tạo của con người; nhiều thành tựu (lịch, toán học, kiến trúc) vẫn còn giá trị đến nay và cần được trân trọng, bảo tồn.",
+   "timer": 120
+  }
+ ]
 }

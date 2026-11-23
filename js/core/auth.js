@@ -84,7 +84,11 @@
       try {
         subjects = JSON.parse(localStorage.getItem("l360:tsubjects") || "[]");
       } catch (e) {}
-      return (L360.Auth.teacher = { uid: "local-teacher", email: "", name, subjects, role: "admin", isAdmin: true, isLeader: true });
+      let avatar = "";
+      try {
+        avatar = localStorage.getItem("l360:tavatar") || "";
+      } catch (e) {}
+      return (L360.Auth.teacher = { uid: "local-teacher", email: "", name, subjects, avatar, role: "admin", isAdmin: true, isLeader: true });
     },
     async requireTeacher(container, { title = "Đăng nhập giáo viên" } = {}) {
       await S.ready;

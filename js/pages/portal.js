@@ -28,8 +28,7 @@
       <div><span class="pill accent">AI Educamp 2027 · Trường học số</span>
         <div class="row nowrap" style="margin-top:16px;gap:16px"><img src="assets/img/logo-l360.svg" alt="" class="pt-logo"><div><h1 class="pt-h1">Lesson 360° <span>Studio</span></h1>
         <p class="pt-sub">Xưởng AI kiến tạo bài học số từ giáo án</p></div></div>
-        <p class="muted" style="font-size:1.06rem;max-width:620px;margin-top:14px">Một bài trong SGK → một tiết học tương tác trực quan, một giáo án Word chuẩn CV 5512 có năng lực số, một bài giảng PowerPoint → một kho bài dùng chung cho cả tổ. Thầy cô không cần biết lập trình.</p>
-        <div class="row" style="margin-top:16px"><a class="btn primary lg" href="${q("studio.html?tab=tao")}">${ic("spark")} Tạo tiết học từ SGK</a><a class="btn lg" href="${q("thuvien.html")}">${ic("grid")} Thư viện bài học</a><a class="btn lg ghost" href="giaovien.html?che-do=dien-tap">Dạy thử không cần mạng</a></div></div>
+        <div class="row" style="margin-top:16px"><a class="btn primary lg" href="${q("studio.html?tab=tao")}">${ic("spark")} Tạo tiết học từ SGK</a><a class="btn lg" href="${q("thuvien.html")}">${ic("grid")} Thư viện bài học</a></div></div>
       <div class="card pt-join"><div class="row"><span class="pt-ji">${ic("users")}</span><div><h2 style="font-size:1.2rem;margin:0">Học sinh vào lớp</h2><p class="small muted" style="margin:0">Nhập mã phòng trên màn chiếu · laptop hoặc iPad</p></div></div>
         <div class="row nowrap" style="margin-top:12px"><input id="rc" type="text" placeholder="MÃ PHÒNG" autocomplete="off" style="text-transform:uppercase;font-weight:800;letter-spacing:.12em;font-size:1.25rem"><button class="btn primary lg" id="go">Vào</button></div>
         <p class="tiny muted" style="margin:10px 0 0">Không cần tài khoản. Học sinh chỉ nhập tên hiển thị; không thu thập email, số điện thoại.</p></div>
@@ -51,7 +50,7 @@
             .map((p) => {
               const sm = L360.Pack.summary(p);
               return `<div class="lib-card">${L360.Design.preview(p.design.style, p.design.palette, L360.Pack.label(p) || "Tiết mẫu")}<div style="margin-top:8px"><div class="small muted">${u.esc(C.subjectName(p.subjectId, p.grade) || p.subject)}${p.grade ? " · Lớp " + u.esc(p.grade) : ""}</div><b class="clamp2">${u.esc(p.title)}</b>
-                <p class="small muted" style="margin:4px 0 8px">${sm.steps} hoạt động · ${sm.minutes} phút</p></div><div class="row" style="gap:6px"><a class="btn sm primary" href="giaovien.html?pack=${encodeURIComponent(p.id)}&che-do=dien-tap">${ic("play")} Dạy thử</a></div></div>`;
+                <p class="small muted" style="margin:4px 0 8px">${sm.steps} hoạt động · ${sm.minutes} phút</p></div><div class="row" style="gap:6px"><a class="btn sm primary" href="giaovien.html?pack=${encodeURIComponent(p.id)}">${ic("play")} Dạy thử</a></div></div>`;
             })
             .join("")}</div></section>`
         : ""

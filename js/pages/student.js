@@ -36,6 +36,14 @@
     localStorage.setItem("l360:pts:" + R, JSON.stringify(pts));
     localStorage.setItem("l360:nb:" + R, JSON.stringify(nb));
   };
+  // Nút mở SGK đúng trang của bài (không tính là rời bài khi đang ở chế độ tự học).
+  function sgkBtn() {
+    const b = (pubMeta && pubMeta.bai) || {};
+    const C = L360.Curr;
+    const l = b.key && C ? C.lesson(b.key) : null;
+    const url = l ? C.lessonUrl(l) : "";
+    return url ? `<a class="pill sgk-pill" href="${u.esc(url)}" target="_blank" rel="noopener" data-allow-leave title="Mở SGK trang ${u.esc(l.trang || "")}">${L360.icon("sgk")} SGK${l.trang ? " tr." + l.trang : ""}</a>` : "";
+  }
   function addNote(k, t, x) {
     if (!x || nb.some((n) => n.k === k)) return;
     nb.push({ k, t, x });
@@ -197,6 +205,7 @@
     });
     watch("meta", `rooms/${R}/meta`, (v) => ((meta = v || meta), render()));
     watch("awards", `rooms/${R}/pub/awards`, (v) => ((live.awards = v || {}), render()));
+    watch("homework", `rooms/${R}/pub/homework`, (v) => ((live.homework = v || null), lastRender === "end" && ((lastRender = ""), render())));
     watch("notes", `rooms/${R}/pub/notes`, (v) => {
       u.entries(v).forEach(([k, n]) => n && addNote("n:" + k, n.t || "Ghi nhớ", n.x || ""));
     });
@@ -289,9 +298,16 @@
     }
     if (state.step >= pubMeta.steps.length) {
       head.innerHTML = "";
+      const hw = live.homework;
       main.innerHTML = `<div class="card center" style="padding:30px"><h1>Cảm ơn em!</h1><p class="muted">Tiết học đã kết thúc.</p>${Object.keys(pts).length ? `<p style="font-size:1.3rem">Điểm của em: <b>${myScore()}</b></p>` : ""}${
         nb.length ? `<button class="btn primary" id="onb">${L360.icon("ghiBai")} Xem lại Vở ghi (${nb.length})</button>` : ""
-      }</div>`;
+      }</div>${
+        hw && (hw.tasks || []).length
+          ? `<div class="card" style="margin-top:14px;border-left:6px solid #E8930C"><h2 style="margin:0 0 6px">Nhiệm vụ về nhà</h2><ol style="margin:0;padding-left:22px;line-height:1.5">${hw.tasks.map((t) => `<li>${u.esc(t)}</li>`).join("")}</ol>${
+              hw.prepare ? `<p style="margin:10px 0 0"><b style="color:#1E8E5A">Chuẩn bị cho tiết sau:</b> ${u.esc(hw.prepare)}</p>` : ""
+            }</div>`
+          : ""
+      }`;
       if (u.$("#onb")) u.$("#onb").onclick = openNotebook;
       lastRender = "end";
       return;
@@ -304,7 +320,11 @@
       const pg = live.item.pages[state.page || 0];
       B.notes(pg)
         .filter((n) => n.kind === "note")
-        .forEach((n, i) => addNote(`${step.id}#${state.page || 0}#${i}`, `${step.title}${pg.title ? " – " + pg.title : ""}`, n.text));
+        .forEach((n, i) =>
+          n.heading
+            ? addNote(`${step.id}#${state.page || 0}#${i}`, n.heading === "chude" ? "Chủ đề" : n.heading === "tenbai" ? "Tên bài" : "Đề mục", n.title)
+            : addNote(`${step.id}#${state.page || 0}#${i}`, `${step.title}${pg.title ? " – " + pg.title : ""}`, n.text)
+        );
     }
     const ctx = {
       code,
@@ -344,7 +364,7 @@
     };
     head.innerHTML = `<div class="row" style="margin-bottom:12px"><span class="ph ph-${step.phase}">${u.esc(L360.phase(step.phase).name)}</span><span class="pill">${state.step + 1}/${pubMeta.steps.length}</span><b class="grow ellipsis">${u.esc(step.title)}</b>${
       step.ghiBai ? `<span class="ghi-badge">${L360.icon("ghiBai")} Ghi vở</span>` : ""
-    }<span class="pill ${state.phase === "open" ? "ok" : ""}">${ui.phaseLabel(state, step)}</span></div>`;
+    }<span class="pill ${state.phase === "open" ? "ok" : ""}">${ui.phaseLabel(state, step)}</span>${sgkBtn()}</div>`;
     const rk = JSON.stringify([state.step, state.phase, state.q, state.round, state.page, !!ctx.sub, !!live.answer, !!live.item, !!live.featured, g && g.id, step.type === "expo" ? !!live.expo : 0, live.item && live.item.text]);
     if (rk === lastRender && T.student && T.student.update) return ctx.item ? T.student.update(main, ctx) : undefined;
     if (rk === lastRender) return;

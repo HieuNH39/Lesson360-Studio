@@ -7,6 +7,10 @@ window.L360_CONFIG = {
   school: "Trường TH, THCS & THPT FPT Bắc Giang",
   unit: "Tổ Khoa học xã hội",
   author: "Nguyễn Hữu Hiệu",
+  // Ký xác nhận ở cuối giáo án (Edoc) và đặt tên tệp theo quy định của trường.
+  toTruong: "Nguyễn Ngọc Đức",
+  diaDanh: "Bắc Giang",
+  toMa: "XaHoi",
 
   firebase: {
     apiKey: "AIzaSyC8ipSHqxF6i5_u23O9OzLJaXHsD-lQiYU",

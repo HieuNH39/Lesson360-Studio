@@ -12,10 +12,15 @@ Một giáo án → một tiết học tương tác cho mọi môn (có cả nhi
 | **LIVE – Lớp học 360** | `giaovien.html`, `manchieu.html`, `hocsinh.html` | Giáo viên điều khiển, học sinh làm trên thiết bị, màn chiếu hiện kết quả cả lớp |
 | **INSIGHT – Dữ liệu 360** | `insight.html` | Tự tổng hợp minh chứng mọi tiết dạy cho GV, TTCM, BGH |
 | **EXPLORE – Di sản 360** | mẫu hoạt động `explore` | Nhiệm vụ khám phá 31 di tích trong [Heritage Lens – Kinh Bắc Ký Sự](https://hieunh39.github.io/Kinh-Bac-ky-su/) |
+| **PLAN – Phụ lục 1** | `ppct.html` | Kế hoạch dạy học môn theo năm học: bài, số tiết, thứ tự tiết – nền cho soạn bài, mở tiết, báo giảng |
+| **REPORT – Báo giảng CSDL** | `baogiang.html` | Điền "Tiết theo PPCT" vào template báo giảng tuần theo Syllabus của trường, xuất Excel giữ nguyên mẫu |
+| **TRACK – Tiến độ** | `tiendo.html` | Tổ trưởng, quản trị theo dõi soạn bài, dạy học, báo giảng của từng giáo viên |
+
+Ngoài ra: giáo án Word/PDF đặt tên theo quy định Edoc, có bảng ký xác nhận và phiếu học tập; nhận xét 30% học sinh sau mỗi tiết; trợ lý hướng dẫn sử dụng (nút "?").
 
 ## Dùng thử ngay
 
-Mở `index.html` qua một máy chủ web tĩnh bất kì (hoặc GitHub Pages), chọn **Dạy thử ngay**. Chế độ Diễn tập chạy trên một máy: mở trang học sinh và màn chiếu ở các tab khác.
+Mở `index.html` qua GitHub Pages hoặc máy chủ web tĩnh và đăng nhập (Google hoặc email + mã mời của tổ). Bản chính thức luôn chạy trực tuyến; chế độ Diễn tập một máy chỉ dùng cho kiểm thử nội bộ (thêm `?che-do=dien-tap&dev=1`).
 
 ## Thư mục
 
@@ -26,6 +31,7 @@ Mở `index.html` qua một máy chủ web tĩnh bất kì (hoặc GitHub Pages)
 - `firebase/database.rules.json` – luật bảo mật
 - `docs/TRIEN-KHAI.md` – hướng dẫn triển khai cho một trường
 - `tools/build.js` – sinh bản JSON của gói mẫu và tài nguyên cho Skill
+- `tools/build_syllabus.py` – sinh dữ liệu Syllabus báo giảng (`data/baogiang/`) từ tệp Syllabus CSDL và HĐTN-HN của trường
 
 ## Minh bạch về AI
 

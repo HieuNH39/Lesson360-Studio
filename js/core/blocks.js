@@ -85,10 +85,18 @@
   const R = {};
   R.text = (b) => `${head(b)}<div class="md">${ui.md(b.md || b.text || "")}</div>`;
   R.list = (b) => `${head(b)}<ul class="blk-ul">${arr(b.items).map((x) => `<li>${rich(typeof x === "string" ? x : x.text)}</li>`).join("")}</ul>`;
+  // Chú thích ảnh ngắn gọn: chỉ tên ảnh (cắt phần giải thích dài); nguồn ảnh để ở chú giải khi rê chuột và ghi chú giáo viên.
+  const shortCap = (c) => {
+    c = String(c || "").replace(/\s+/g, " ").trim();
+    if (c.length <= 70) return c;
+    const m = c.match(/^(.{12,70}?)(\s[–—-]\s|:\s|\.\s|\s\()/);
+    return m ? m[1] : c.slice(0, 68).replace(/\s+\S*$/, "") + "…";
+  };
+  L360.shortCap = shortCap;
   R.image = (b) =>
-    `<figure class="blk-fig ${b.fit === "cover" ? "cover" : ""}">${b.src ? `<img src="${esc(b.src)}" alt="${esc(b.caption || b.alt || "")}" loading="lazy">` : `<div class="blk-noimg">${L360.icon("image")}<span>${esc(b.query ? "Ảnh: " + b.query : "Chưa có ảnh")}</span></div>`}${
-      b.caption || b.credit ? `<figcaption>${rich(b.caption || "")} ${credit(b)}</figcaption>` : ""
-    }</figure>`;
+    `<figure class="blk-fig ${b.fit === "cover" ? "cover" : ""}" ${b.credit ? `title="Nguồn: ${esc(b.credit)}"` : ""}>${
+      b.src ? `<img src="${esc(b.src)}" alt="${esc(b.alt || b.caption || "")}" loading="lazy">` : `<div class="blk-noimg">${L360.icon("image")}<span>${esc(b.query ? "Ảnh: " + b.query : "Chưa có ảnh")}</span></div>`
+    }${b.caption ? `<figcaption>${rich(shortCap(b.caption))}</figcaption>` : ""}</figure>`;
   R.gallery = (b) => `${head(b)}<div class="blk-gal n${Math.min(4, arr(b.images).length)}">${arr(b.images).map((im) => R.image(im)).join("")}</div>`;
   R.timeline = (b) => {
     const items = arr(b.items);
@@ -96,19 +104,43 @@
       .map((it, i) => `<div class="tl-it" style="--i:${i}"><div class="tl-t">${rich(it.time || it.year || "")}</div><div class="tl-dot"></div><div class="tl-b"><b>${rich(it.label || it.title || "")}</b>${it.desc ? `<span>${rich(it.desc)}</span>` : ""}</div></div>`)
       .join("")}</div>`;
   };
+  // Sơ đồ tư duy theo quy ước thống nhất: trung tâm = tên bài/mục; 3–6 nhánh, mỗi nhánh một màu,
+  // đánh số theo chiều kim đồng hồ bắt đầu từ góc trên bên phải; mỗi nhánh ≤ 3 ý từ khoá.
+  const MM_COL = ["#2F6FDB", "#E8930C", "#1E8E5A", "#D2453B", "#0C9A9A", "#8A5A2B"];
   R.mindmap = (b) => {
     const br = arr(b.branches).slice(0, 6);
     const n = br.length || 1;
     const pos = br.map((_, i) => {
-      const a = -Math.PI / 2 + (i * 2 * Math.PI) / n + (n === 2 ? Math.PI / 2 : 0);
-      return { x: 50 + 36 * Math.cos(a), y: 50 + 37 * Math.sin(a) };
+      const a = -Math.PI / 2 + Math.PI / n + (i * 2 * Math.PI) / n;
+      return { x: 50 + 35 * Math.cos(a), y: 50 + 36 * Math.sin(a) };
     });
-    return `${head(b)}<div class="blk-mm"><svg viewBox="0 0 100 100" preserveAspectRatio="none" class="mm-lines">${pos
-      .map((p) => `<line x1="50" y1="50" x2="${p.x.toFixed(1)}" y2="${p.y.toFixed(1)}"/>`)
-      .join("")}</svg><div class="mm-c">${rich(b.center || b.title || "")}</div>${br
-      .map((x, i) => `<div class="mm-b" style="left:${pos[i].x.toFixed(1)}%;top:${pos[i].y.toFixed(1)}%;--i:${i}"><b>${rich(x.label || x.title || "")}</b>${arr(x.items).length ? `<ul>${arr(x.items).map((y) => `<li>${rich(y)}</li>`).join("")}</ul>` : ""}</div>`)
+    return `${head(b)}<div class="blk-mm n${n}"><svg viewBox="0 0 100 100" preserveAspectRatio="none" class="mm-lines">${pos
+      .map((p, i) => {
+        const mx = (50 + p.x) / 2, my = (50 + p.y) / 2 + (p.x > 50 ? -4 : 4);
+        return `<path d="M50 50 Q${mx.toFixed(1)} ${my.toFixed(1)} ${p.x.toFixed(1)} ${p.y.toFixed(1)}" stroke="${MM_COL[i % 6]}"/>`;
+      })
+      .join("")}</svg><div class="mm-c">${b.icon ? `<span class="mm-ic">${esc(b.icon)}</span>` : ""}${rich(b.center || b.title || "")}</div>${br
+      .map(
+        (x, i) =>
+          `<div class="mm-b" style="left:${pos[i].x.toFixed(1)}%;top:${pos[i].y.toFixed(1)}%;--i:${i};--c:${MM_COL[i % 6]}"><b><span class="mm-n">${x.icon ? esc(x.icon) : i + 1}</span>${rich(x.label || x.title || "")}</b>${
+            arr(x.items).length ? `<ul>${arr(x.items).map((y) => `<li>${rich(y)}</li>`).join("")}</ul>` : ""
+          }</div>`
+      )
       .join("")}</div>`;
   };
+  // Trang mở đầu chủ đề, trang tên bài, trang tên mục: thiết kế toàn trang để học sinh ghi đề mục vào vở.
+  R.chude = (b) =>
+    `<div class="hd hd-chude"><div class="hd-orb a"></div><div class="hd-orb b"></div><div class="hd-k">${rich(b.so || "Chủ đề")}</div><div class="hd-t">${rich(b.ten || b.title || "")}</div>${
+      b.mota ? `<div class="hd-d">${rich(b.mota)}</div>` : ""
+    }${arr(b.bai).length ? `<div class="hd-list">${arr(b.bai).map((x, i) => `<span><i>${i + 1}</i>${rich(x)}</span>`).join("")}</div>` : ""}<div class="hd-ghi">${L360.icon("ghiBai")} Ghi tên chủ đề vào vở</div></div>`;
+  R.tenbai = (b) =>
+    `<div class="hd hd-bai">${b.chude ? `<div class="hd-up">${rich(b.chude)}</div>` : ""}<div class="hd-k">${rich(b.so || "Bài học")}</div><div class="hd-t">${rich(b.ten || b.title || "")}</div>${
+      arr(b.muc).length ? `<ol class="hd-mucs">${arr(b.muc).map((x) => `<li>${rich(x)}</li>`).join("")}</ol>` : ""
+    }<div class="hd-ghi">${L360.icon("ghiBai")} Ghi tên bài vào vở</div></div>`;
+  R.muc = (b) =>
+    `<div class="hd hd-muc"><div class="hd-num">${esc(b.so || "")}</div><div class="hd-body"><div class="hd-k">Mục ${esc(b.so || "")}</div><div class="hd-t">${rich(b.ten || b.title || "")}</div>${
+      arr(b.y).length ? `<ul class="hd-sub">${arr(b.y).map((x) => `<li>${rich(x)}</li>`).join("")}</ul>` : ""
+    }</div></div>`;
   R.compare = (b) => {
     const cols = arr(b.columns);
     return `${head(b)}<div class="blk-cmp-w"><table class="blk-cmp"><thead><tr>${cols.map((c) => `<th>${rich(c)}</th>`).join("")}</tr></thead><tbody>${arr(b.rows)
@@ -179,8 +211,12 @@
       ["question", "Câu hỏi thảo luận"],
       ["conclusion", "Kết luận"],
       ["note", "Ghi vào vở"],
-      ["video", "Video"]
+      ["video", "Video"],
+      ["chude", "Trang chủ đề (mở đầu chủ đề)"],
+      ["tenbai", "Trang tên bài"],
+      ["muc", "Trang tên mục"]
     ],
+    HEADINGS: ["chude", "tenbai", "muc"],
     one(b, o = {}) {
       const f = R[b && b.kind];
       if (!f) return "";
@@ -193,6 +229,8 @@
     // Một trang bài giảng: tự chia cột khi có khối hình ảnh và khối chữ.
     page(pg, o = {}) {
       const bl = arr(pg && pg.blocks);
+      const hd = bl.filter((b) => ["chude", "tenbai", "muc"].includes(b.kind));
+      if (hd.length && hd.length === bl.length) return `<div class="pg pg-hero">${bl.map((b) => blocks.one(b, o)).join("")}</div>`;
       const vis = bl.filter((b) => VISUAL.includes(b.kind));
       const rest = bl.filter((b) => !VISUAL.includes(b.kind));
       const layout = pg.layout || (vis.length && rest.length ? "split" : "stack");
@@ -204,10 +242,14 @@
     // Các nội dung cần ghi vở trong một trang.
     notes(pg) {
       return arr(pg && pg.blocks)
-        .filter((b) => b.kind === "note" || b.kind === "conclusion")
-        .map((b) => ({ kind: b.kind, title: b.title || (b.kind === "note" ? "Ghi vào vở" : "Kết luận"), text: b.text || "" }));
+        .filter((b) => b.kind === "note" || b.kind === "conclusion" || ["chude", "tenbai", "muc"].includes(b.kind))
+        .map((b) =>
+          ["chude", "tenbai", "muc"].includes(b.kind)
+            ? { kind: "note", heading: b.kind, title: b.kind === "muc" ? `${b.so || ""}. ${b.ten || ""}` : `${b.so ? b.so + ". " : ""}${b.ten || ""}`, text: "" }
+            : { kind: b.kind, title: b.title || (b.kind === "note" ? "Ghi vào vở" : "Kết luận"), text: b.text || "" }
+        );
     },
-    hasNote: (pg) => arr(pg && pg.blocks).some((b) => b.kind === "note"),
+    hasNote: (pg) => arr(pg && pg.blocks).some((b) => ["note", "chude", "tenbai", "muc"].includes(b.kind)),
     // Văn bản thô cho PPT/in ấn.
     plain(b) {
       switch (b.kind) {
@@ -235,6 +277,11 @@
           return arr(b.items).map((t) => `${t.term}: ${t.def}`).join("\n");
         case "map":
           return arr(b.pins).map((p, i) => `${i + 1}. ${p.label}`).join("\n");
+        case "chude":
+        case "tenbai":
+          return `${b.so ? b.so + ". " : ""}${b.ten || ""}`;
+        case "muc":
+          return `${b.so || ""}. ${b.ten || ""}`;
         default:
           return b.text || b.caption || "";
       }

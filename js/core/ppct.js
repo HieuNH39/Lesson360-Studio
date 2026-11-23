@@ -689,8 +689,17 @@
     },
     // Thông tin PPCT gắn vào tiết học (lưu trong gói bài học).
     infoFor(doc, b, thu) {
-      const t = b.tiet[Math.max(0, Math.min(b.tiet.length - 1, (thu || 1) - 1))];
+      const ti = Math.max(0, Math.min(b.tiet.length - 1, (thu || 1) - 1));
+      const t = b.tiet[ti];
+      // Tiết học kế tiếp (để giao nhiệm vụ chuẩn bị bài): tiết sau của cùng bài, hoặc bài kế tiếp trong Phụ lục 1.
+      let sau = null;
+      if (ti < b.tiet.length - 1) sau = { cungBai: true, ten: b.ten, noiDung: b.tiet[ti + 1].noiDung || "" };
+      else {
+        const nb = (doc.bai || [])[(doc.bai || []).indexOf(b) + 1];
+        if (nb) sau = { cungBai: false, ten: nb.ten, noiDung: ((nb.tiet || [])[0] || {}).noiDung || "" };
+      }
       return {
+        sau,
         nam: doc.nam,
         doc: doc.id,
         bai: b.id,
@@ -700,9 +709,6 @@
         tuan: t.tuan || 0,
         tuanBai: [...new Set(b.tiet.map((x) => x.tuan).filter(Boolean))],
         noiDung: t.noiDung || "",
-        thietBi: t.thietBi || "",
-        nls: t.nls || [],
-        ai: t.ai || [],
         khac: b.tiet.map((x, i) => (i === (thu || 1) - 1 ? null : { thu: i + 1, so: x.so, noiDung: x.noiDung })).filter(Boolean)
       };
     },

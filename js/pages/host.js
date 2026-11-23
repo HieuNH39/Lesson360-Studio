@@ -54,7 +54,7 @@
       L360.shell.topbar(`${L360.shell.modeBadge()}${L360.shell.userMenu(teacher)}`, { sub: "Dạy học trực tiếp", nav: "day" }) +
       `<main class="wrap" style="max-width:1400px"><h1>Mở tiết học</h1><div class="grid host-setup" style="grid-template-columns:minmax(0,2.1fr) minmax(300px,.9fr);gap:20px;align-items:start">
       <section class="card"><div class="row"><h2 class="grow">1. Chọn tiết học</h2><input id="q" type="search" placeholder="Tìm bài…" style="max-width:220px;min-height:38px"></div>
-        <p class="small muted" style="margin:0">Chọn <b>Môn → Bài → Tiết</b> theo phân phối chương trình của tổ. Gồm bài của tôi, bài mẫu và bài chọn từ <a href="thuvien.html">Thư viện trường</a>.</p>
+        <p class="small muted" style="margin:0">Chọn <b>Môn → Bài → Tiết</b> theo Phụ lục 1 của tổ. Gồm bài của tôi, bài mẫu và bài chọn từ <a href="thuvien.html">Thư viện trường</a>.</p>
         <div id="sug"></div><div id="plist"></div></section>
       <section class="card"><h2>2. Thông tin lớp</h2>
         <label class="field">Lớp<input id="cls" type="text" placeholder="VD: 10A2" value="${u.esc(localStorage.getItem("l360:lastClass") || "")}"></label>
@@ -135,7 +135,7 @@
       Object.keys(by).forEach((k) => {
         const l = !/^(ppct|t):/.test(k) ? C.lesson(k) : null;
         const ps = by[k];
-        items.push({ id: "x:" + k, ten: l ? l.label : (ps[0].bai && ps[0].bai.ten) || ps[0].title, chuong: doc ? "Bài chưa gắn với PPCT" : (l && l.chuong) || "", packs: ps });
+        items.push({ id: "x:" + k, ten: l ? l.label : (ps[0].bai && ps[0].bai.ten) || ps[0].title, chuong: doc ? "Bài chưa gắn với Phụ lục 1" : (l && l.chuong) || "", packs: ps });
       });
       return items;
     }
@@ -175,16 +175,16 @@
         col3 = b.tiet
           .map((t, i) => {
             const ps = it.packs.filter((p) => (Number(p.tiet && p.tiet.so) || 1) === i + 1);
-            return `<div class="mc-t ${pick.t === i + 1 ? "on" : ""}"><b>Tiết ${i + 1}/${b.tiet.length}</b> <span class="small muted">· PPCT tiết ${t.so}${t.tuan ? ` · tuần ${t.tuan}` : ""}</span>
+            return `<div class="mc-t ${pick.t === i + 1 ? "on" : ""}"><b>Tiết ${i + 1}/${b.tiet.length}</b> <span class="small muted">· tiết ${t.so} theo PPCT${t.tuan ? ` · tuần ${t.tuan}` : ""}</span>
               ${t.noiDung || t.ten ? `<div class="tiny muted clamp2" style="margin-top:2px">${u.esc(t.ten || t.noiDung)}</div>` : ""}
               ${ps.length ? ps.map(optHtml).join("") : `<a class="btn sm" style="margin-top:6px" href="${studioLink(PP.baiKey(doc, b), i + 1)}">${L360.icon("plus")} Soạn tiết này</a>`}</div>`;
           })
           .join("");
       } else if (it) col3 = `<div class="mc-t">${it.packs.map(optHtml).join("")}</div>`;
       u.$("#plist").innerHTML = `<div class="mc"><div class="mc-col"><div class="mc-h">MÔN HỌC</div>${gList
-        .map((x) => `<button class="mc-i ${x.k === g.k ? "on" : ""}" data-g="${u.esc(x.k)}">${u.esc(gName(x))}<small>${x.packs.length ? x.packs.length + " bài soạn" : "chưa có bài"}${docs[x.k] || ppIndex.some((y) => y.id === PP.docId(x.mon, x.lop, x.cd)) ? " · có PPCT" : ""}</small></button>`)
+        .map((x) => `<button class="mc-i ${x.k === g.k ? "on" : ""}" data-g="${u.esc(x.k)}">${u.esc(gName(x))}<small>${x.packs.length ? x.packs.length + " bài soạn" : "chưa có bài"}${docs[x.k] || ppIndex.some((y) => y.id === PP.docId(x.mon, x.lop, x.cd)) ? " · có Phụ lục 1" : ""}</small></button>`)
         .join("")}</div>
-        <div class="mc-col"><div class="mc-h">BÀI HỌC${doc ? ` · PPCT ${u.esc(PP.yearLabel(doc.nam))}` : ""}</div>${col2 || `<p class="small muted" style="padding:12px">Chưa có bài.</p>`}</div>
+        <div class="mc-col"><div class="mc-h">BÀI HỌC${doc ? ` · PHỤ LỤC 1 (${u.esc(PP.yearLabel(doc.nam))})` : ""}</div>${col2 || `<p class="small muted" style="padding:12px">Chưa có bài.</p>`}</div>
         <div class="mc-col"><div class="mc-h">TIẾT${it && it.b ? " · " + u.esc(it.b.ten.slice(0, 40)) : ""}</div>${col3 || `<p class="small muted" style="padding:12px">Chọn một bài.</p>`}</div></div>`;
       u.$$("[data-g]", u.$("#plist")).forEach((el) => (el.onclick = () => ((pick.g = el.dataset.g), (pick.b = ""), (pick.t = 0), drawCols())));
       u.$$("[data-bi]", u.$("#plist")).forEach((el) => (el.onclick = () => ((pick.b = el.dataset.bi), (pick.t = 0), drawCols())));
@@ -238,7 +238,7 @@
       }
       if (!b) return;
       const t = b.tiet[thu - 1];
-      box.innerHTML = `<button class="mc-sug" id="sugGo">${L360.icon("play")}<span>Gợi ý cho <b>${u.esc(cls)}</b> (tiết trước: ${u.esc(last.title.slice(0, 40))}): <b>${u.esc(b.ten.slice(0, 60))} · Tiết ${thu}/${b.tiet.length}</b> – PPCT tiết ${t.so}${t.tuan ? `, tuần ${t.tuan}` : ""}</span></button>`;
+      box.innerHTML = `<button class="mc-sug" id="sugGo">${L360.icon("play")}<span>Gợi ý cho <b>${u.esc(cls)}</b> (tiết trước: ${u.esc(last.title.slice(0, 40))}): <b>${u.esc(b.ten.slice(0, 60))} · Tiết ${thu}/${b.tiet.length}</b> – tiết ${t.so} theo PPCT${t.tuan ? `, tuần ${t.tuan}` : ""}</span></button>`;
       u.$("#sugGo").onclick = () => {
         pick.g = g.k;
         pick.b = "pp:" + b.id;
@@ -330,6 +330,7 @@
         <button class="btn" data-a="csv1">⬇ Minh chứng cá nhân (CSV, mở bằng Excel)</button>
         <button class="btn" data-a="csv2">⬇ Minh chứng nhóm (CSV)</button>
         <button class="btn" data-a="report">🖨 Báo cáo tổng kết tiết học (in / lưu PDF)</button>
+        <button class="btn" data-a="nx">✎ Nhận xét học sinh sau tiết (30% sĩ số)</button>
         <button class="btn" data-a="link">🔗 Sao chép đường dẫn cho học sinh</button>
         <hr><button class="btn primary" data-a="end">Kết thúc tiết & lưu vào bảng dữ liệu</button>
         <button class="btn ghost" data-a="leave">Rời phòng (về màn hình mở phòng)</button>
@@ -339,6 +340,7 @@
       if (a === "csv1") u.download(`${slug}_minh-chung-ca-nhan.csv`, Room.Stats.csvIndividual(host.pack, host.data), "text/csv;charset=utf-8");
       if (a === "csv2") u.download(`${slug}_minh-chung-nhom.csv`, Room.Stats.csvGroups(host.pack, host.data), "text/csv;charset=utf-8");
       if (a === "report") report();
+      if (a === "nx") return m.close(), comments();
       if (a === "link") (await u.copy(studentUrl(host.room))) && u.toast("Đã sao chép.", "ok");
       if (a === "end") {
         m.close();
@@ -374,6 +376,69 @@
       } catch (e) {
         u.toast("Chưa lưu được: " + (e.message || e), "bad", 5000);
       }
+    };
+  }
+
+  // Nhận xét ý thức học tập: ~30% sĩ số, mỗi em ≤ 100 kí tự, bắt đầu bằng "Con…"; tải Excel (Họ và tên | Nhận xét).
+  function comments() {
+    const NX = L360.NhanXet;
+    const cls = host.meta.className || "";
+    const ms = NX.metrics(host.pack, host.data);
+    if (!ms.length) return u.toast("Chưa có học sinh nào vào lớp để nhận xét.", "bad");
+    let names = NX.roster(cls);
+    let chosen = NX.choose(ms, host.meta.classSize, NX.history(cls));
+    const text = {};
+    chosen.forEach((m) => (text[m.code] = NX.comment(m, host.room)));
+    const lvName = { tot: "Tích cực", kha: "Khá", nhac: "Cần cố gắng", roi: "Rời bài" };
+    const md = u.modal(`<h2>Nhận xét học sinh sau tiết</h2><p class="small muted" style="margin-top:-4px">Lớp ${u.esc(cls)} · ${u.esc(host.pack.title)}. Hệ thống chọn ${Math.ceil(0.3 * (host.meta.classSize || ms.length))} em (≈30% sĩ số), ưu tiên em chưa được nhận xét ở các tiết gần đây; nhận xét dựa trên số liệu thật của tiết (tham gia, trả lời đúng, rời bài). Thầy cô sửa trực tiếp trước khi tải.</p>
+      <details class="card flat" style="margin:8px 0"><summary class="small"><b>Danh sách lớp ${u.esc(cls)}</b> ${names.length ? `(${names.length} em – đã lưu trên máy này)` : "(chưa có – dán để hiện họ tên thay cho mã số)"}</summary>
+        <p class="tiny muted" style="margin:6px 0">Dán họ tên theo đúng số thứ tự (mã học sinh 01 là dòng 1…), mỗi dòng một em. Chỉ lưu trên máy này.</p><textarea id="dsl" rows="5" placeholder="Nguyễn Văn An&#10;Trần Thị Bình&#10;…">${u.esc(names.join("\n"))}</textarea><button class="btn sm" id="dslSave" style="margin-top:6px">Lưu danh sách</button></details>
+      <div id="nxList" class="nx-list"></div>
+      <div class="row" style="margin-top:12px;gap:8px"><button class="btn ghost" id="nxAll">Chọn thêm / bớt học sinh</button><span class="spacer"></span><button class="btn" data-close>Đóng</button><button class="btn primary" id="nxDl">⬇ Tải Excel nhận xét</button></div>`);
+    let showAll = false;
+    const draw = () => {
+      const list = showAll ? ms.slice().sort((a, b) => a.code.localeCompare(b.code, "vi", { numeric: true })) : chosen;
+      u.$("#nxList", md.el).innerHTML = list
+        .map((m) => {
+          const on = chosen.some((x) => x.code === m.code);
+          const t = text[m.code] || NX.comment(m, host.room);
+          return `<div class="nx-row ${on ? "" : "off"}"><label class="nx-who"><input type="checkbox" data-nxc="${m.code}" ${on ? "checked" : ""}><b>${u.esc(NX.nameOf(m.code, names, m))}</b><span class="tiny muted">Mã ${m.code} · ${lvName[NX.level(m)]}${m.part != null ? ` · tham gia ${Math.round(m.part * 100)}%` : ""}${m.acc != null ? ` · đúng ${Math.round(m.acc * 100)}%` : ""}${m.out ? ` · rời bài ${m.out} lần` : ""}</span></label>${
+            on ? `<div class="nx-txt"><textarea rows="2" maxlength="${NX.MAX}" data-nxt="${m.code}">${u.esc(t)}</textarea><span class="tiny muted" data-nxn="${m.code}">${t.length}/${NX.MAX}</span></div>` : ""
+          }</div>`;
+        })
+        .join("");
+      u.$$("[data-nxc]", md.el).forEach(
+        (b) =>
+          (b.onchange = () => {
+            const m = ms.find((x) => x.code === b.dataset.nxc);
+            if (b.checked) chosen = chosen.concat([m]).sort((a, c) => a.code.localeCompare(c.code, "vi", { numeric: true })), (text[m.code] = text[m.code] || NX.comment(m, host.room));
+            else chosen = chosen.filter((x) => x.code !== m.code);
+            draw();
+          })
+      );
+      u.$$("[data-nxt]", md.el).forEach(
+        (t) =>
+          (t.oninput = () => {
+            text[t.dataset.nxt] = t.value;
+            u.$(`[data-nxn="${t.dataset.nxt}"]`, md.el).textContent = `${t.value.length}/${NX.MAX}`;
+          })
+      );
+    };
+    draw();
+    u.$("#nxAll", md.el).onclick = () => ((showAll = !showAll), (u.$("#nxAll", md.el).textContent = showAll ? "Chỉ hiện học sinh đã chọn" : "Chọn thêm / bớt học sinh"), draw());
+    u.$("#dslSave", md.el).onclick = () => {
+      names = u.$("#dsl", md.el).value.split(/\r?\n/).map((x) => x.replace(/^\s*\d+[.)\s-]*/, "").trim()).filter((x, i, a) => x || i < a.length - 1);
+      NX.saveRoster(cls, names);
+      u.toast(`Đã lưu danh sách ${names.filter(Boolean).length} học sinh lớp ${cls}.`, "ok");
+      draw();
+    };
+    u.$("#nxDl", md.el).onclick = async () => {
+      const rows = chosen.map((m) => ({ name: NX.nameOf(m.code, names, m), text: NX.clip(text[m.code] || NX.comment(m, host.room)) }));
+      if (!rows.length) return u.toast("Chưa chọn học sinh nào.", "bad");
+      const d = new Date();
+      await NX.exportXlsx(`NhanXet_${u.slug(cls || "lop")}_${String(d.getDate()).padStart(2, "0")}${String(d.getMonth() + 1).padStart(2, "0")}${d.getFullYear()}_${host.room}.xlsx`, rows);
+      NX.remember(cls, host.room, chosen.map((m) => m.code));
+      u.toast(`Đã tải nhận xét của ${rows.length} học sinh.`, "ok");
     };
   }
 
@@ -442,7 +507,7 @@
     const key = step ? host.key() : null;
     // Danh sách bước
     let lastPh = "";
-    u.$("#steps").innerHTML = `<div class="small muted" style="margin-bottom:6px">${u.esc(Pack.label(host.pack))} · <span data-clock>0:00</span> / ${host.pack.duration} phút</div>
+    u.$("#steps").innerHTML = `<div class="small muted" style="margin-bottom:6px">${u.esc(Pack.label(host.pack))} · đã học <span data-clock>0:00</span> · còn <b data-left>${host.pack.duration}:00</b></div>
       <button class="hstep ${st.step < 0 ? "cur" : ""}" data-go="-1"><span class="n">0</span><span>Phòng chờ</span></button>
       ${steps
         .map((s, i) => {
@@ -474,9 +539,10 @@
     } else if (!step) {
       ctrl.innerHTML = `<span class="pill ok">Tổng kết</span><h2 style="margin-top:8px">Tiết học đã đi hết các bước</h2>
         <p>${meta.status === "ended" ? "Đã lưu tổng kết vào bảng dữ liệu." : "Bấm “Kết thúc tiết & lưu” để đưa số liệu vào bảng dữ liệu INSIGHT."}</p>
-        <div class="row"><button class="btn primary" id="endb">${meta.status === "ended" ? "Lưu lại tổng kết" : "Kết thúc tiết & lưu"}</button><button class="btn" id="rep">Báo cáo tổng kết</button><a class="btn" href="insight.html">Mở bảng dữ liệu</a></div>`;
+        <div class="row"><button class="btn primary" id="endb">${meta.status === "ended" ? "Lưu lại tổng kết" : "Kết thúc tiết & lưu"}</button><button class="btn" id="nxb">✎ Nhận xét học sinh</button><button class="btn" id="rep">Báo cáo tổng kết</button><a class="btn" href="insight.html">Mở bảng dữ liệu</a></div>`;
       u.$("#endb").onclick = endLesson;
       u.$("#rep").onclick = report;
+      u.$("#nxb").onclick = comments;
     } else {
       const T = host.type || {};
       const btns = genericControls();

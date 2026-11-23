@@ -76,7 +76,7 @@
       });
       // Ghi nhớ: tối đa 6 ý mỗi trang để chữ đủ lớn khi chiếu.
       for (let i = 0; i < notes.length; i += 6) add({ k: "recap", p, notes: notes.slice(i, i + 6), part: notes.length > 6 ? `${i / 6 + 1}/${Math.ceil(notes.length / 6)}` : "" });
-      if (pi === packs.length - 1) add({ k: "end", p, vd: p.steps.find((s) => s.phase === "van-dung") });
+      if (pi === packs.length - 1) add({ k: "end", p, vd: p.steps.find((s) => s.phase === "van-dung"), hw: L360.Pack.homework(p) });
     });
     return { slides, range, packs };
   }
@@ -202,12 +202,14 @@
       card: dark ? "1A2E45" : "FFFFFF",
       line: dark ? "33506E" : "DCE2EA"
     };
-    const FONT = opt.font || "Calibri";
-    const HFONT = opt.font || (D.id === "su-lieu" ? "Cambria" : "Calibri");
+    const FONT = opt.font || "Arial";
+    const HFONT = opt.font || "Arial";
     const decor = ["su-lieu", "dong-ho"].includes(D.id) ? "frame" : ["ban-do", "so-tay", "thien-nhien"].includes(D.id) ? "band" : "circles";
 
     const imgs = {};
-    const srcs = imageSrcs(packs);
+    const LOGO_A = "assets/img/logo-l360-ngang-trong.png";
+    const LOGO_B = "assets/img/logo-hsh-goc.png";
+    const srcs = imageSrcs(packs).concat([LOGO_A, LOGO_B]);
     let done = 0;
     await Promise.all(
       srcs.map(async (s) => {
@@ -360,17 +362,10 @@
     function drawBlock(sl, b, x, y, w, h) {
       const k = b.kind;
       if (k === "image") {
-        const capH = b.caption || b.credit ? 0.42 : 0;
+        const cap = L360.shortCap ? L360.shortCap(plain(b.caption || "")) : plain(b.caption || "");
+        const capH = cap ? 0.38 : 0;
         const r = img(sl, b.src, x, y, w, h - capH, { alt: b.query || b.caption });
-        if (capH) {
-          T(sl, [{ text: plain(b.caption || ""), options: { fontSize: 11, italic: true, color: col.ink } }].concat(b.credit ? [{ text: (b.caption ? "  ·  " : "") + "Nguồn: " + b.credit, options: { fontSize: 8, color: col.muted } }] : []), {
-            x,
-            y: r.y + r.h + 0.04,
-            w,
-            h: capH - 0.04,
-            align: "center"
-          });
-        }
+        if (capH) T(sl, cap, { x, y: r.y + r.h + 0.04, w, h: capH - 0.04, fontSize: 12, italic: true, color: col.ink, align: "center" });
         return;
       }
       if (k === "gallery") {
@@ -403,7 +398,7 @@
           const lt = pins.map((p, i) => `${i + 1}. ${plain(p.label)}`).join("\n");
           T(sl, lt, { x: x + w - legW, y, w: legW, h: h - 0.3, fontSize: fit(lt, legW, h - 0.3, 15, 9), color: col.ink, paraSpaceAfter: 4 });
         }
-        if (b.caption || b.credit) T(sl, plain(b.caption || "") + (b.credit ? "  ·  Nguồn: " + b.credit : ""), { x, y: y + h - 0.28, w, h: 0.28, fontSize: 9, italic: true, color: col.muted });
+        if (b.caption) T(sl, plain(b.caption || ""), { x, y: y + h - 0.28, w, h: 0.28, fontSize: 10, italic: true, color: col.muted });
         return;
       }
       if (k === "video") {
@@ -444,25 +439,33 @@
         const cy = y + h / 2;
         const cw = Math.min(2.8, w * 0.3);
         const chh = 0.9;
-        const left = br.filter((_, i) => i % 2 === 0);
-        const right = br.filter((_, i) => i % 2 === 1);
+        // Quy ước: nhánh 1 ở góc trên bên phải, đánh số theo chiều kim đồng hồ; mỗi nhánh một màu.
+        const MMC = ["2F6FDB", "E8930C", "1E8E5A", "D2453B", "0C9A9A", "8A5A2B"];
+        br.forEach((bb, i) => (bb = br[i] = Object.assign({}, bb, { _n: i + 1, _c: MMC[i % 6] })));
+        const nr = Math.ceil(br.length / 2);
+        const right = br.slice(0, nr);
+        const left = br.slice(nr).reverse();
         const bw = Math.min(3.6, (w - cw) / 2 - 0.35);
         const side = (list, isRight) => {
           const bh = Math.min(1.7, (h - (list.length - 1) * 0.15) / Math.max(1, list.length));
           const total = list.length * bh + (list.length - 1) * 0.15;
-          list.forEach((bb, i) => anim(sl, sl._sub ? click(sl) : 0, "fade", () => {
+          // Hiện theo số thứ tự nhánh: bên phải từ trên xuống, bên trái từ dưới lên (chiều kim đồng hồ).
+          (isRight ? list.map((bb, i) => [bb, i]) : list.map((bb, i) => [bb, i]).reverse()).forEach(([bb, i]) => anim(sl, sl._sub ? click(sl) : 0, "fade", () => {
             const bx = isRight ? x + w - bw : x;
             const by = cy - total / 2 + i * (bh + 0.15);
-            sl.addShape(S.line, { x: isRight ? cx + cw / 2 : bx + bw, y: Math.min(cy, by + bh / 2), w: Math.abs((isRight ? bx : cx - cw / 2) - (isRight ? cx + cw / 2 : bx + bw)), h: Math.max(0.001, Math.abs(by + bh / 2 - cy)), line: { color: col.accent, width: 1.5 }, flipV: by + bh / 2 < cy });
-            box(sl, bx, by, bw, bh, { fill: col.card, line: col.accent, lw: 1.25 });
+            const c = bb._c;
+            sl.addShape(S.line, { x: isRight ? cx + cw / 2 : bx + bw, y: Math.min(cy, by + bh / 2), w: Math.abs((isRight ? bx : cx - cw / 2) - (isRight ? cx + cw / 2 : bx + bw)), h: Math.max(0.001, Math.abs(by + bh / 2 - cy)), line: { color: c, width: 2.5 }, flipV: by + bh / 2 < cy });
+            box(sl, bx, by, bw, bh, { fill: col.card, line: c, lw: 1.5 });
+            sl.addShape(S.rect, { x: bx + 0.06, y: by + 0.06, w: bw - 0.12, h: 0.07, fill: { color: c }, line: { type: "none" } });
             const items = arr(bb.items).map((s) => "• " + plain(s));
-            const txt = [plain(bb.label)].concat(items).join("\n");
-            const fs = fit(txt, bw - 0.2, bh - 0.1, 14, 9);
-            T(sl, [{ text: plain(bb.label), options: { bold: true, color: col.accent2, breakLine: items.length > 0 } }].concat(items.map((s, j) => ({ text: s, options: { fontSize: Math.max(8, fs - 1), breakLine: j < items.length - 1 } }))), {
+            const lab = `${bb.icon ? plain(bb.icon) : bb._n}. ${plain(bb.label)}`;
+            const txt = [lab].concat(items).join("\n");
+            const fs = fit(txt, bw - 0.2, bh - 0.18, 15, 9);
+            T(sl, [{ text: lab, options: { bold: true, color: c, breakLine: items.length > 0 } }].concat(items.map((s, j) => ({ text: s, options: { fontSize: Math.max(8, fs - 1), breakLine: j < items.length - 1 } }))), {
               x: bx + 0.1,
-              y: by + 0.05,
+              y: by + 0.13,
               w: bw - 0.2,
-              h: bh - 0.1,
+              h: bh - 0.18,
               fontSize: fs,
               valign: "middle"
             });
@@ -471,8 +474,8 @@
         sl.addShape(S.roundRect, { x: cx - cw / 2, y: cy - chh / 2, w: cw, h: chh, rectRadius: 0.45, fill: { color: col.accent }, line: { type: "none" } });
         const ct = plain(b.center || b.title || "");
         T(sl, ct, { x: cx - cw / 2 + 0.1, y: cy - chh / 2, w: cw - 0.2, h: chh, fontSize: fit(ct, cw - 0.2, chh, 18, 11), bold: true, color: "FFFFFF", align: "center", valign: "middle" });
-        side(left, false);
         side(right, true);
+        side(left, false);
         return;
       }
       if (k === "compare") {
@@ -708,9 +711,69 @@
       T(sl, list.map((t, i) => ({ text: t, options: { bullet: { code: "25CF" }, breakLine: i < list.length - 1 } })), { x: MX + 0.1, y: 4.0, w: W - 2 * MX - 3, h: 2.6, fontSize: fit(list.join("\n"), W - 2 * MX - 3, 2.6, 22, 12), color: "FFFFFF", paraSpaceAfter: 6 });
       footer(sl, d.p, n, true);
     };
+    // Trang chủ đề / tên bài / tên mục: thiết kế toàn trang, có nhắc ghi vở.
+    function hero(sl, b, d, n) {
+      const ghi = (t, x, y, dark) => {
+        sl.addShape(S.roundRect, { x, y, w: 3.3, h: 0.42, rectRadius: 0.21, fill: { color: dark ? "FFFFFF" : b.kind === "muc" ? "FFFFFF" : col.soft, transparency: dark ? 82 : 0 }, line: { type: "none" } });
+        T(sl, "✎  " + t, { x, y, w: 3.3, h: 0.42, fontSize: 13, bold: true, color: dark ? "FFFFFF" : col.accent2, align: "center", valign: "middle", margin: 0 });
+      };
+      if (b.kind === "chude") {
+        sl.background = { color: col.accent2 };
+        sl.addShape(S.ellipse, { x: W - 5.2, y: -2.6, w: 7.4, h: 7.4, fill: { color: col.accent, transparency: 35 }, line: { type: "none" } });
+        sl.addShape(S.ellipse, { x: W - 7.8, y: 4.6, w: 4.4, h: 4.4, fill: { color: "FFFFFF", transparency: 90 }, line: { type: "none" } });
+        sl.addShape(S.ellipse, { x: W - 3.6, y: -1.2, w: 3, h: 3, fill: { type: "none" }, line: { color: "FFFFFF", width: 1.5, transparency: 55 } });
+        const k = plain(b.so || "Chủ đề").toUpperCase();
+        T(sl, k, { x: MX + 0.1, y: 1.35, w: 8, h: 0.5, fontSize: 18, bold: true, color: "FFFFFF", transparency: 20, charSpacing: 2 });
+        sl.addShape(S.rect, { x: MX + 0.12, y: 1.9, w: 1.2, h: 0.07, fill: { color: "FFFFFF" }, line: { type: "none" } });
+        const t = plain(b.ten || b.title || "");
+        T(sl, t, { x: MX + 0.1, y: 2.1, w: 9.6, h: 2.0, fontFace: HFONT, fontSize: fit(t, 9.6, 2.0, 48, 26, 0.55), bold: true, color: "FFFFFF", valign: "middle" });
+        if (b.mota) T(sl, plain(b.mota), { x: MX + 0.1, y: 4.15, w: 9.2, h: 0.8, fontSize: fit(plain(b.mota), 9.2, 0.8, 18, 12), color: "FFFFFF", transparency: 10 });
+        let cx = MX + 0.1;
+        arr(b.bai).slice(0, 5).forEach((x, i) => {
+          const tx = `${i + 1}  ${plain(x)}`;
+          const cw = Math.min(4.2, 0.11 * tx.length + 0.5);
+          if (cx + cw > W - MX) return;
+          sl.addShape(S.roundRect, { x: cx, y: 5.1, w: cw, h: 0.48, rectRadius: 0.12, fill: { color: "FFFFFF", transparency: 84 }, line: { type: "none" } });
+          T(sl, tx, { x: cx, y: 5.1, w: cw, h: 0.48, fontSize: 13, bold: true, color: "FFFFFF", align: "center", valign: "middle", margin: 0 });
+          cx += cw + 0.15;
+        });
+        ghi("Ghi tên chủ đề vào vở", MX + 0.1, 6.0, true);
+      } else if (b.kind === "tenbai") {
+        sl.background = { color: "FFFFFF" };
+        ["E8930C", "2F6FDB", "1E8E5A", "D2453B"].forEach((c, i) => sl.addShape(S.rect, { x: 0, y: (H / 4) * i, w: 0.28, h: H / 4, fill: { color: c }, line: { type: "none" } }));
+        sl.addShape(S.ellipse, { x: W - 4.4, y: H - 3.9, w: 6, h: 6, fill: { color: col.soft }, line: { type: "none" } });
+        if (b.chude) T(sl, plain(b.chude), { x: 1.2, y: 1.2, w: 10, h: 0.45, fontSize: 15, bold: true, color: col.muted });
+        pill(sl, plain(b.so || "Bài học").toUpperCase(), 1.2, 1.75, col.accent, { size: 14, h: 0.42 });
+        const t = plain(b.ten || b.title || "");
+        T(sl, t, { x: 1.2, y: 2.35, w: 10.6, h: 2.2, fontFace: HFONT, fontSize: fit(t, 10.6, 2.2, 46, 24, 0.55), bold: true, color: col.ink, valign: "middle" });
+        let cx = 1.2;
+        arr(b.muc).slice(0, 5).forEach((x, i) => {
+          const tx = `${i + 1}. ${plain(x)}`;
+          const cw = Math.min(4.4, 0.11 * tx.length + 0.45);
+          if (cx + cw > W - MX) return;
+          box(sl, cx, 4.8, cw, 0.48, { fill: col.soft });
+          T(sl, tx, { x: cx, y: 4.8, w: cw, h: 0.48, fontSize: 13, bold: true, color: col.accent2, align: "center", valign: "middle", margin: 0 });
+          cx += cw + 0.15;
+        });
+        ghi("Ghi tên bài vào vở", 1.2, 5.75, false);
+      } else {
+        sl.background = { color: col.soft };
+        sl.addShape(S.roundRect, { x: MX + 0.3, y: 2.0, w: 3.0, h: 3.0, rectRadius: 0.6, fill: { color: col.accent }, line: { type: "none" }, shadow: { type: "outer", blur: 10, offset: 3, angle: 90, color: "000000", opacity: 0.18 } });
+        T(sl, plain(b.so || ""), { x: MX + 0.3, y: 2.0, w: 3.0, h: 3.0, fontFace: HFONT, fontSize: 110, bold: true, color: "FFFFFF", align: "center", valign: "middle", margin: 0 });
+        T(sl, `MỤC ${plain(b.so || "")}`, { x: 4.4, y: 2.0, w: 8, h: 0.5, fontSize: 18, bold: true, color: col.accent, charSpacing: 2 });
+        const t = plain(b.ten || b.title || "");
+        T(sl, t, { x: 4.4, y: 2.5, w: W - 4.4 - MX, h: 1.7, fontFace: HFONT, fontSize: fit(t, W - 4.4 - MX, 1.7, 42, 22, 0.55), bold: true, color: col.ink, valign: "middle" });
+        const ys = arr(b.y).map(plain).slice(0, 4);
+        if (ys.length) T(sl, ys.map((x, i) => ({ text: x, options: { bullet: true, breakLine: i < ys.length - 1 } })), { x: 4.4, y: 4.3, w: W - 4.4 - MX, h: 1.4, fontSize: fit(ys.join("\n"), W - 4.4 - MX, 1.4, 18, 12), color: col.muted });
+        ghi("Ghi tên mục vào vở", 4.4, 5.9, false);
+      }
+      footer(sl, d.p, n, b.kind === "chude");
+    }
     R.page = (sl, d, n) => {
       const pg = d.pg;
       const bl = arr(pg.blocks);
+      const hds = bl.filter((b) => ["chude", "tenbai", "muc"].includes(b.kind));
+      if (hds.length && hds.length === bl.length) return hero(sl, hds[0], d, n);
       const ghi = bl.some((b) => b.kind === "note");
       header(sl, d.s.phase, pg.title || d.s.title, { chip: d.n > 1 ? `${d.i + 1}/${d.n}` : "", ghi });
       const vis = bl.filter((b) => VIS.includes(b.kind));
@@ -742,14 +805,18 @@
       const qt = plain(q.q);
       const hasImg = q.image && imgs[q.image];
       const qw = hasImg ? 7.4 : W - 2 * MX;
-      box(sl, MX, 1.95, qw, 1.45, { fill: col.card, line: col.line, shadow: true });
-      T(sl, qt, { x: MX + 0.2, y: 1.98, w: qw - 0.4, h: 1.4, fontSize: fit(qt, qw - 0.4, 1.4, 26, 14), bold: true, valign: "middle" });
+      // Khung câu hỏi co theo độ dài; phần đáp án chiếm phần còn lại, chừa chỗ cho dòng giải thích.
+      const qh = qt.length > 140 ? 1.45 : qt.length > 70 ? 1.2 : 0.95;
+      const optTop = 1.95 + qh + 0.22;
+      const optBottom = H - (q.explain && !q.opinion ? 1.22 : 0.72);
+      box(sl, MX, 1.95, qw, qh, { fill: col.card, line: col.line, shadow: true });
+      T(sl, qt, { x: MX + 0.2, y: 1.97, w: qw - 0.4, h: qh - 0.04, fontSize: fit(qt, qw - 0.4, qh - 0.04, 26, 16), bold: true, valign: "middle" });
       if (hasImg) img(sl, q.image, MX + qw + 0.25, 1.95, W - 2 * MX - qw - 0.25, 4.8);
       const ow = hasImg ? qw : W - 2 * MX;
       if (q.kind === "tf") {
         const st = arr(q.statements);
         st.forEach((x, i) => {
-          const y = 3.6 + i * 0.8;
+          const y = optTop + i * 0.8;
           box(sl, MX, y, ow, 0.68, { fill: col.soft });
           T(sl, "abcd"[i] + ")", { x: MX + 0.15, y, w: 0.5, h: 0.68, fontSize: 18, bold: true, color: col.accent2, valign: "middle" });
           T(sl, plain(x.text), { x: MX + 0.65, y, w: ow - 2.3, h: 0.68, fontSize: fit(plain(x.text), ow - 2.3, 0.68, 18, 10), valign: "middle" });
@@ -761,42 +828,101 @@
         // Bấm: hiện đáp án từng ý (ô Đ/S đúng tô xanh).
         const kA = click(sl);
         st.forEach((x, i) => {
-          const y = 3.6 + i * 0.8;
+          const y = optTop + i * 0.8;
           const j = x.answer ? 0 : 1;
           anim(sl, kA, "appear", () => {
             sl.addShape(S.roundRect, { x: MX + ow - 1.5 + j * 0.7, y: y + 0.12, w: 0.55, h: 0.44, rectRadius: 0.08, fill: { color: "1E8E5A" }, line: { color: "1E8E5A", width: 1 } });
             T(sl, j ? "S" : "Đ", { x: MX + ow - 1.5 + j * 0.7, y: y + 0.12, w: 0.55, h: 0.44, fontSize: 14, bold: true, align: "center", valign: "middle", color: "FFFFFF", margin: 0 });
           });
         });
-      } else if (q.kind === "short") {
-        box(sl, MX, 3.75, ow, 1.1, { fill: col.card, line: col.accent, dash: "dash" });
-        T(sl, `Trả lời ngắn${q.unit ? " (đơn vị: " + q.unit + ")" : ""}: ……………………………`, { x: MX + 0.25, y: 3.75, w: ow - 0.5, h: 1.1, fontSize: 22, color: col.muted, valign: "middle" });
+      } else if (q.kind === "fill") {
+        // Điền khuyết: đoạn văn có chỗ trống đánh số, hàng "từ gợi ý"; bấm: hiện đáp án từng chỗ trống.
+        const f = L360.fillParse(q.text);
+        const passage = f.parts.map((t, i) => [{ text: plain(t) }].concat(i < f.blanks.length ? [{ text: ` (${i + 1}) ………… `, options: { bold: true, color: col.accent2 } }] : [])).flat();
+        const ph = optBottom - optTop - 1.0;
+        box(sl, MX, optTop, ow, ph, { fill: col.card, line: col.line });
+        const ptxt = passage.map((r) => r.text).join("");
+        T(sl, passage, { x: MX + 0.25, y: optTop + 0.05, w: ow - 0.5, h: ph - 0.1, fontSize: fit(ptxt, ow - 0.5, ph - 0.1, 24, 14, 0.5), valign: "middle", lineSpacingMultiple: 1.25 });
+        const words = f.blanks.map((b) => b.answer).concat(arr(q.bank)).map(plain).sort((a, b) => a.localeCompare(b, "vi"));
+        const by = optBottom - 0.82;
+        T(sl, "Từ gợi ý:", { x: MX, y: by, w: 1.3, h: 0.62, fontSize: 15, bold: true, color: col.muted, valign: "middle" });
+        let cx = MX + 1.35, cy = by + 0.08;
+        words.forEach((w) => {
+          const cw = Math.min(4, 0.12 * w.length + 0.45);
+          if (cx + cw > MX + ow) return;
+          box(sl, cx, cy, cw, 0.46, { fill: col.soft, line: col.line });
+          T(sl, w, { x: cx, y: cy, w: cw, h: 0.46, fontSize: 14, bold: true, align: "center", valign: "middle", margin: 0 });
+          cx += cw + 0.12;
+        });
         anim(sl, click(sl), "appear", () => {
-          box(sl, MX, 3.75, ow, 1.1, { fill: "E3F4EB", line: "1E8E5A", lw: 1.5 });
-          T(sl, [{ text: "Đáp án: ", options: { color: "1E8E5A" } }, { text: String(q.answer == null ? "" : q.answer) + (q.unit ? " " + q.unit : ""), options: { color: "0F2742" } }], { x: MX + 0.25, y: 3.75, w: ow - 0.5, h: 1.1, fontSize: 26, bold: true, valign: "middle" });
+          box(sl, MX, by - 0.02, ow, 0.66, { fill: "E3F4EB", line: "1E8E5A" });
+          const at = f.blanks.map((b, i) => `(${i + 1}) ${plain(b.answer)}`).join("   ");
+          T(sl, [{ text: "Đáp án:  ", options: { bold: true, color: "1E8E5A" } }, { text: at, options: { bold: true, color: "0F2742" } }], { x: MX + 0.2, y: by - 0.02, w: ow - 0.4, h: 0.66, fontSize: fit("Đáp án:  " + at, ow - 0.4, 0.66, 18, 11), valign: "middle" });
+        });
+      } else if (q.kind === "sort") {
+        // Kéo thả phân loại: các mục ở trên, cột nhóm ở dưới; bấm: các mục hiện vào đúng cột.
+        const groups = arr(q.groups).map(plain);
+        const items = arr(q.items);
+        const ng = Math.max(1, groups.length);
+        let cx = MX, cy = optTop;
+        items.forEach((it, i) => {
+          const t = `${i + 1}. ${plain(it.text)}`;
+          const cw = Math.min(5.5, 0.105 * t.length + 0.4);
+          if (cx + cw > MX + ow) (cx = MX), (cy += 0.52);
+          box(sl, cx, cy, cw, 0.44, { fill: col.soft, line: col.line });
+          T(sl, t, { x: cx, y: cy, w: cw, h: 0.44, fontSize: 13, align: "center", valign: "middle", margin: 0 });
+          cx += cw + 0.12;
+        });
+        const gy = cy + 0.65;
+        const gh = optBottom - gy;
+        const gw = (ow - (ng - 1) * 0.2) / ng;
+        const gcol = ["2F6FDB", "E8930C", "1E8E5A", "D2453B"];
+        groups.forEach((g, gi) => {
+          const gx = MX + gi * (gw + 0.2);
+          box(sl, gx, gy, gw, gh, { fill: col.card, line: gcol[gi % 4], dash: "dash" });
+          sl.addShape(S.rect, { x: gx, y: gy, w: gw, h: 0.5, fill: { color: gcol[gi % 4] }, line: { type: "none" } });
+          T(sl, g, { x: gx, y: gy, w: gw, h: 0.5, fontSize: fit(g, gw, 0.5, 17, 11), bold: true, color: "FFFFFF", align: "center", valign: "middle" });
+        });
+        const kS = click(sl);
+        groups.forEach((g, gi) => {
+          const its = items.map((it, i) => ({ t: `${i + 1}. ${plain(it.text)}`, g: Number(it.group) || 0 })).filter((x) => x.g === gi);
+          if (!its.length) return;
+          const gx = MX + gi * (gw + 0.2);
+          anim(sl, kS, "appear", () => {
+            T(sl, its.map((x, j) => ({ text: x.t, options: { breakLine: j < its.length - 1, bullet: false, paraSpaceAfter: 4 } })), { x: gx + 0.15, y: gy + 0.58, w: gw - 0.3, h: gh - 0.66, fontSize: fit(its.map((x) => x.t).join("\n"), gw - 0.3, gh - 0.66, 16, 10), color: "0F2742" });
+          });
+        });
+      } else if (q.kind === "short") {
+        box(sl, MX, optTop + 0.15, ow, 1.1, { fill: col.card, line: col.accent, dash: "dash" });
+        T(sl, `Trả lời ngắn${q.unit ? " (đơn vị: " + q.unit + ")" : ""}: ……………………………`, { x: MX + 0.25, y: optTop + 0.15, w: ow - 0.5, h: 1.1, fontSize: 22, color: col.muted, valign: "middle" });
+        anim(sl, click(sl), "appear", () => {
+          box(sl, MX, optTop + 0.15, ow, 1.1, { fill: "E3F4EB", line: "1E8E5A", lw: 1.5 });
+          T(sl, [{ text: "Đáp án: ", options: { color: "1E8E5A" } }, { text: String(q.answer == null ? "" : q.answer) + (q.unit ? " " + q.unit : ""), options: { color: "0F2742" } }], { x: MX + 0.25, y: optTop + 0.15, w: ow - 0.5, h: 1.1, fontSize: 26, bold: true, valign: "middle" });
         });
       } else {
         const op = arr(q.options);
-        const two = op.length > 2 && op.every((o) => plain(o).length < 60);
+        const two = op.length > 2 && op.every((o) => plain(o).length < (hasImg ? 45 : 80));
         const cols = two ? 2 : 1;
         const rows = Math.ceil(op.length / cols);
-        const ohh = Math.min(1.25, (3.2 - (rows - 1) * 0.15) / rows);
+        const ohh = Math.min(1.25, (optBottom - optTop - (rows - 1) * 0.15) / rows);
         const cw = (ow - (cols - 1) * 0.2) / cols;
+        // Mọi phương án cùng một cỡ chữ (cỡ nhỏ nhất vừa khung của cả 4 phương án).
+        const ofs = Math.max(14, Math.min(...op.map((o) => fit(plain(o), cw - 0.95, ohh, 22, 14))));
         const colors = ["E8930C", "2F6FDB", "1E8E5A", "D2453B", "0C9A9A", "8A5A2B"];
         op.forEach((o, i) => {
           const x = MX + (i % cols) * (cw + 0.2);
-          const y = 3.6 + Math.floor(i / cols) * (ohh + 0.15);
+          const y = optTop + Math.floor(i / cols) * (ohh + 0.15);
           box(sl, x, y, cw, ohh, { fill: col.card, line: col.line });
           sl.addShape(S.roundRect, { x: x + 0.12, y: y + ohh / 2 - 0.27, w: 0.54, h: 0.54, rectRadius: 0.1, fill: { color: colors[i % 6] }, line: { type: "none" } });
           T(sl, LET[i], { x: x + 0.12, y: y + ohh / 2 - 0.27, w: 0.54, h: 0.54, fontSize: 18, bold: true, color: "FFFFFF", align: "center", valign: "middle", margin: 0 });
-          T(sl, plain(o), { x: x + 0.8, y, w: cw - 0.95, h: ohh, fontSize: fit(plain(o), cw - 0.95, ohh, 20, 10), valign: "middle" });
+          T(sl, plain(o), { x: x + 0.8, y, w: cw - 0.95, h: ohh, fontSize: ofs, valign: "middle", fit: "shrink" });
         });
         // Bấm: khoanh đáp án đúng (câu hỏi ý kiến thì không có đáp án).
         const ai = Number(q.answer);
         if (!q.opinion && q.answer != null && ai >= 0 && ai < op.length)
           anim(sl, click(sl), "appear", () => {
             const x = MX + (ai % cols) * (cw + 0.2);
-            const y = 3.6 + Math.floor(ai / cols) * (ohh + 0.15);
+            const y = optTop + Math.floor(ai / cols) * (ohh + 0.15);
             sl.addShape(S.roundRect, { x: x - 0.04, y: y - 0.04, w: cw + 0.08, h: ohh + 0.08, rectRadius: 0.14, fill: { type: "none" }, line: { color: "1E8E5A", width: 4 } });
             sl.addShape(S.ellipse, { x: x + cw - 0.5, y: y + ohh / 2 - 0.2, w: 0.4, h: 0.4, fill: { color: "1E8E5A" }, line: { type: "none" } });
             T(sl, "✓", { x: x + cw - 0.5, y: y + ohh / 2 - 0.2, w: 0.4, h: 0.4, fontSize: 15, bold: true, color: "FFFFFF", align: "center", valign: "middle", margin: 0 });
@@ -805,8 +931,9 @@
       // Bấm tiếp: giải thích.
       if (q.explain && !q.opinion)
         anim(sl, click(sl), "fade", () => {
-          const ex = "Giải thích: " + plain(q.explain);
-          T(sl, ex, { x: MX, y: H - 1.02, w: ow, h: 0.56, fontSize: fit(ex, ow, 0.56, 15, 10), italic: true, color: col.accent2, valign: "middle" });
+          const ex = plain(q.explain);
+          box(sl, MX, H - 1.12, W - 2 * MX, 0.62, { fill: "E3F4EB", line: "1E8E5A" });
+          T(sl, [{ text: "Giải thích: ", options: { bold: true, color: "1E8E5A" } }, { text: ex, options: { color: "123B2A" } }], { x: MX + 0.15, y: H - 1.12, w: W - 2 * MX - 0.3, h: 0.62, fontSize: fit(ex + "Giải thích: ", W - 2 * MX - 0.3, 0.62, 15, 11), valign: "middle", fit: "shrink" });
         });
       footer(sl, d.p, n);
     };
@@ -814,7 +941,7 @@
       header(sl, d.s.phase, d.s.title + " – Đáp án", { chip: "Đáp án" });
       const rows = [[{ text: "Câu", options: { bold: true, color: "FFFFFF", fill: { color: col.accent }, align: "center" } }, { text: "Đáp án", options: { bold: true, color: "FFFFFF", fill: { color: col.accent } } }, { text: "Giải thích", options: { bold: true, color: "FFFFFF", fill: { color: col.accent } } }]].concat(
         d.qs.map((q, i) => {
-          const a = q.kind === "tf" ? arr(q.statements).map((x, j) => `${"abcd"[j]}) ${x.answer ? "Đúng" : "Sai"}`).join("; ") : q.kind === "short" ? String(q.answer) : `${LET[Number(q.answer) || 0]}. ${plain(arr(q.options)[Number(q.answer) || 0] || "")}`;
+          const a = q.kind === "tf" ? arr(q.statements).map((x, j) => `${"abcd"[j]}) ${x.answer ? "Đúng" : "Sai"}`).join("; ") : q.kind === "short" ? String(q.answer) : q.kind === "fill" ? L360.fillParse(q.text).blanks.map((b, j) => `(${j + 1}) ${b.answer}`).join("; ") : q.kind === "sort" ? arr(q.items).map((x, j) => `${j + 1}→${plain(arr(q.groups)[Number(x.group) || 0] || "")}`).join("; ") : `${LET[Number(q.answer) || 0]}. ${plain(arr(q.options)[Number(q.answer) || 0] || "")}`;
           const f = { fill: { color: i % 2 ? col.card : col.soft }, color: dark ? "0F1B2D" : col.ink };
           return [{ text: String(i + 1), options: Object.assign({ align: "center", bold: true }, f) }, { text: a, options: Object.assign({ bold: true }, f) }, { text: plain(q.explain || ""), options: f }];
         })
@@ -1017,15 +1144,51 @@
       });
       footer(sl, d.p, n);
     };
+    // Trang kết: lời cảm ơn, nhiệm vụ về nhà – chuẩn bị tiết sau, logo ứng dụng.
     R.end = (sl, d, n) => {
       sl.background = { color: col.accent };
-      decorate(sl, true);
-      T(sl, d.vd ? "Nhiệm vụ về nhà" : "Cảm ơn các em!", { x: MX, y: 1.6, w: W - 2 * MX, h: 1.1, fontSize: 44, bold: true, color: "FFFFFF", fontFace: HFONT });
-      if (d.vd) {
-        const t = plain(d.vd.question || d.vd.task || d.vd.instructions || d.vd.title);
-        T(sl, t, { x: MX, y: 2.9, w: W - 2 * MX - 1, h: 2.6, fontSize: fit(t, W - 2 * MX - 1, 2.6, 26, 14), color: "FFFFFF" });
+      // Hoạ tiết: các vòng tròn lớn mờ và dải màu bốn pha ở đáy.
+      [[W - 3.2, -2.2, 6.4, 18], [W - 5.6, 3.6, 5.2, 12], [-1.6, 4.8, 4.2, 14]].forEach(([x, y, r, t]) => sl.addShape(S.ellipse, { x, y, w: r, h: r, fill: { color: "FFFFFF", transparency: 100 - t }, line: { type: "none" } }));
+      sl.addShape(S.ellipse, { x: W - 4.3, y: -1.1, w: 4.2, h: 4.2, fill: { type: "none" }, line: { color: "FFFFFF", width: 1.5, transparency: 55 } });
+      const PH = ["E8930C", "2F6FDB", "1E8E5A", "D2453B"];
+      PH.forEach((c, i) => sl.addShape(S.rect, { x: (W / 4) * i, y: H - 0.12, w: W / 4, h: 0.12, fill: { color: c }, line: { type: "none" } }));
+      // Bên trái: lời cảm ơn.
+      pill(sl, "KẾT THÚC TIẾT HỌC", MX, 1.0, "FFFFFF", { color: col.accent2, size: 12 });
+      T(sl, "Cảm ơn các em!", { x: MX, y: 1.5, w: 6.4, h: 1.35, fontFace: HFONT, fontSize: 50, bold: true, color: "FFFFFF", valign: "middle" });
+      T(sl, "Hẹn gặp lại các em ở tiết học sau.", { x: MX, y: 2.85, w: 6.4, h: 0.55, fontSize: 20, color: "FFFFFF", transparency: 10 });
+      const lbl = [L360.Pack.label(d.p), d.p.bai && d.p.bai.ten].filter(Boolean).join(" · ");
+      T(sl, lbl, { x: MX, y: 3.5, w: 6.4, h: 0.8, fontSize: fit(lbl, 6.4, 0.8, 16, 11), color: "FFFFFF", transparency: 25 });
+      // Bên phải: thẻ nhiệm vụ về nhà / chuẩn bị bài.
+      const hw = d.hw || {};
+      const tasks = arr(hw.tasks).map(plain).filter(Boolean);
+      if (!tasks.length && d.vd) tasks.push(plain(d.vd.question || d.vd.task || d.vd.instructions || d.vd.title));
+      const prep = plain(hw.prepare || "");
+      const cx = 7.35, cy = 0.95, cw = W - MX - cx, ch = 4.75;
+      box(sl, cx, cy, cw, ch, { fill: "FFFFFF", shadow: true });
+      sl.addShape(S.rect, { x: cx, y: cy + 0.35, w: 0.09, h: 0.5, fill: { color: "E8930C" }, line: { type: "none" } });
+      T(sl, "✎  NHIỆM VỤ VỀ NHÀ", { x: cx + 0.3, y: cy + 0.3, w: cw - 0.5, h: 0.6, fontSize: 18, bold: true, color: col.accent2, valign: "middle" });
+      const list = tasks.length ? tasks : (d.notes || []).map(plain).slice(0, 3);
+      const body = list.slice(0, 4).map((t, i) => ({ text: t, options: { bullet: { type: "number" }, breakLine: i < Math.min(4, list.length) - 1, paraSpaceAfter: 6 } }));
+      const bh = prep ? 2.15 : 3.6;
+      T(sl, body.length ? body : "Ôn lại nội dung đã ghi vở.", { x: cx + 0.3, y: cy + 0.95, w: cw - 0.6, h: bh, fontSize: fit(list.join("\n"), cw - 0.6, bh, 17, 11), color: "0F2742" });
+      if (prep) {
+        sl.addShape(S.line, { x: cx + 0.3, y: cy + 3.2, w: cw - 0.6, h: 0, line: { color: "DCE2EA", width: 1 } });
+        T(sl, "➜  CHUẨN BỊ CHO TIẾT SAU", { x: cx + 0.3, y: cy + 3.3, w: cw - 0.5, h: 0.45, fontSize: 14, bold: true, color: "1E8E5A", valign: "middle" });
+        T(sl, prep, { x: cx + 0.3, y: cy + 3.75, w: cw - 0.6, h: 0.9, fontSize: fit(prep, cw - 0.6, 0.9, 15, 10), color: "0F2742" });
       }
-      T(sl, "Lesson 360° Studio", { x: MX, y: H - 1.0, w: 6, h: 0.4, fontSize: 12, color: "FFFFFF", transparency: 30 });
+      // Logo ứng dụng và thương hiệu giáo viên.
+      box(sl, MX, H - 1.5, 6.4, 0.95, { fill: "FFFFFF" });
+      const la = imgs[LOGO_A], lb = imgs[LOGO_B];
+      const logo = (im, x, w, maxH) => {
+        let lw = w, lh = (w * im.h) / im.w;
+        if (lh > maxH) (lh = maxH), (lw = (maxH * im.w) / im.h);
+        sl.addImage({ data: im.data.replace(/^data:/, ""), x, y: H - 1.5 + (0.95 - lh) / 2, w: lw, h: lh });
+      };
+      if (la) logo(la, MX + 0.25, 2.9, 0.62);
+      if (lb) sl.addShape(S.line, { x: MX + 3.3, y: H - 1.32, w: 0, h: 0.6, line: { color: "DCE2EA", width: 1 } });
+      if (lb) logo(lb, MX + 3.5, 2.6, 0.7);
+      if (!la && !lb) T(sl, "Lesson 360° Studio", { x: MX + 0.2, y: H - 1.5, w: 6, h: 0.95, fontSize: 18, bold: true, color: col.accent2, valign: "middle" });
+      T(sl, "Bài giảng tạo bằng Lesson 360° Studio", { x: cx, y: H - 1.25, w: cw, h: 0.4, fontSize: 11, color: "FFFFFF", transparency: 30, align: "right" });
       footer(sl, d.p, n, true);
     };
 
@@ -1040,6 +1203,12 @@
       }
       if (d.k === "q" && L360.Khbd) out.push("Đáp án: " + L360.Khbd.qLine(d.q, d.i) + (d.q.explain ? "\nGiải thích: " + plain(d.q.explain) : ""));
       if (d.k === "page") L360.blocks.notes(d.pg).forEach((x) => out.push(`${x.title}: ${plain(x.text)}`));
+      // Nguồn ảnh ghi trong phần ghi chú (không chèn lên trang chiếu).
+      if (d.k === "page") {
+        const cr = [];
+        arr(d.pg.blocks).forEach((b) => (b.kind === "gallery" ? arr(b.images) : [b]).forEach((im) => im.credit && cr.push(`${plain(L360.shortCap ? L360.shortCap(im.caption || "Ảnh") : im.caption || "Ảnh")} – ${plain(im.credit)}`)));
+        if (cr.length) out.push("Nguồn ảnh: " + cr.join("; "));
+      }
       if (d.k === "cw" && !d.reveal) out.push("Đáp án: " + arr(s.rows).map((r, i) => `${i + 1}) ${r.answer}`).join("; ") + `; từ khoá ${s.keyword}`);
       if (s && s.ghiBai) out.push("HS ghi vở: " + plain(s.ghiBai));
       return out.join("\n");

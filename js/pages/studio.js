@@ -239,7 +239,7 @@
           })
           .join("");
         body = `<div class="grid" style="grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:18px">
-          <section class="card"><h2>${pdoc && w.src === "ppct" ? "Chọn bài theo PPCT" : "Chọn bài trong SGK"}</h2>
+          <section class="card"><h2>${pdoc && w.src === "ppct" ? "Chọn bài theo Phụ lục 1" : "Chọn bài trong SGK"}</h2>
             <div class="row" style="margin:6px 0 12px"><div class="seg">${C.levels.map((lv) => `<button class="${w.level === lv.id ? "on" : ""}" data-lv="${lv.id}">${u.esc(lv.name)}</button>`).join("")}</div></div>
             <div class="chips">${C.subjects
               .filter((s) => s.levels.includes(w.level))
@@ -249,17 +249,17 @@
               ${books.length > 1 ? `<div class="seg">${books.map((b) => `<button class="${b.book.id + (b.book.part || "") === w.book ? "on" : ""}" data-bk="${b.book.id + (b.book.part || "")}">${u.esc(b.book.local ? "Tỉnh " + ((b.book.title.match(/tỉnh (.+?) –/) || [])[1] || "") : b.book.title.replace(/^.*?(tập một|tập hai|Chuyên đề.*)$/i, (m, x) => x[0].toUpperCase() + x.slice(1)))}</button>`).join("")}</div>` : ""}</div>
             ${
               pdoc
-                ? `<div class="row small" style="margin:-2px 0 8px;gap:8px"><span class="muted">Danh sách bài theo:</span><div class="seg sm"><button class="${usePp ? "on" : ""}" data-src="ppct">PPCT ${u.esc(PP.yearLabel(pdoc.nam))}</button><button class="${usePp ? "" : "on"}" data-src="sgk">Mục lục SGK</button></div><a class="small" href="ppct.html?nam=${u.esc(pdoc.nam)}&bang=${u.esc(pdoc.id)}${dt ? "&che-do=dien-tap" : ""}" target="_blank">Xem PPCT ↗</a></div>`
-                : `<p class="small muted" style="margin:-2px 0 8px">Môn – lớp này chưa có PPCT của tổ: chọn theo mục lục SGK. <a href="ppct.html${dt ? "?che-do=dien-tap" : ""}" target="_blank">Trang PPCT ↗</a></p>`
+                ? `<div class="row small" style="margin:-2px 0 8px;gap:8px"><span class="muted">Danh sách bài theo:</span><div class="seg sm"><button class="${usePp ? "on" : ""}" data-src="ppct">Phụ lục 1 (${u.esc(PP.yearLabel(pdoc.nam))})</button><button class="${usePp ? "" : "on"}" data-src="sgk">Mục lục SGK</button></div><a class="small" href="ppct.html?nam=${u.esc(pdoc.nam)}&bang=${u.esc(pdoc.id)}${dt ? "&che-do=dien-tap" : ""}" target="_blank">Xem Phụ lục 1 ↗</a></div>`
+                : `<p class="small muted" style="margin:-2px 0 8px">Môn – lớp này chưa có Phụ lục 1 của tổ: chọn theo mục lục SGK. <a href="ppct.html${dt ? "?che-do=dien-tap" : ""}" target="_blank">Trang Phụ lục 1 ↗</a></p>`
             }
             ${
               usePp
-                ? `<label class="field">Bài (theo PPCT)<select id="bai"><option value="">– Chọn bài –</option>${ppOpts}</select></label>`
+                ? `<label class="field">Bài (theo Phụ lục 1)<select id="bai"><option value="">– Chọn bài –</option>${ppOpts}</select></label>`
                 : les.length
                 ? `<label class="field">Bài<select id="bai"><option value="">– Chọn bài –</option>${opts}${ch ? "</optgroup>" : ""}</select></label>`
                 : `<p class="muted">Sách này chưa có mục lục trong dữ liệu – thầy cô vẫn có thể soạn bằng cách nhập tên bài.</p><label class="field">Tên bài<input id="baiTen" value="${u.esc(w.baiTen || "")}"></label>`
             }
-            ${pb && !lesson ? `<div class="card flat st-lesson"><div class="small muted">Bài riêng trong PPCT của tổ${pb.chuong ? " · " + u.esc(pb.chuong) : ""}</div><b>${u.esc(pb.ten)}</b></div>` : ""}
+            ${pb && !lesson ? `<div class="card flat st-lesson"><div class="small muted">Bài riêng trong Phụ lục 1 của tổ${pb.chuong ? " · " + u.esc(pb.chuong) : ""}</div><b>${u.esc(pb.ten)}</b></div>` : ""}
             ${lesson ? `<div class="card flat st-lesson"><div class="small muted">${u.esc(lesson.bookTitle || "")}${lesson.chuong ? " · " + u.esc(lesson.chuong) : ""}</div><b>${u.esc(lesson.label)}</b>
               <div class="row small" style="margin-top:6px">${lesson.trang ? `<span>Trang ${lesson.trang}</span>` : ""}${C.lessonUrl(lesson) ? `<a href="${u.esc(C.lessonUrl(lesson))}" target="_blank" rel="noopener">${icon("sgk")} Mở SGK đúng trang ↗</a>` : ""}${
                 C.eduVideos(lesson).length ? `<span class="pill accent">${C.eduVideos(lesson).length} video EduHistory</span>` : ""
@@ -267,22 +267,21 @@
           <section class="card"><h2>Tiết học</h2>
             ${
               pb
-                ? `<p class="small muted" style="margin:0 0 8px">Theo PPCT ${u.esc(PP.yearLabel(pdoc.nam))}: bài dạy <b>${PP.tietText(pb)}</b>. Chọn tiết cần soạn:</p>
+                ? `<p class="small muted" style="margin:0 0 8px">Theo Phụ lục 1 (${u.esc(PP.yearLabel(pdoc.nam))}): bài dạy <b>${PP.tietText(pb)}</b>. Chọn tiết cần soạn:</p>
               <div class="st-tiets">${pb.tiet
-                .map((t, i) => `<button class="st-tiet ${w.so === i + 1 ? "on" : ""}" data-thu="${i + 1}"><b>Tiết ${i + 1}/${pb.tiet.length}</b><span>PPCT tiết ${t.so}${t.tuan ? ` · tuần ${t.tuan}` : ""}</span></button>`)
+                .map((t, i) => `<button class="st-tiet ${w.so === i + 1 ? "on" : ""}" data-thu="${i + 1}"><b>Tiết ${i + 1}/${pb.tiet.length}</b><span>Tiết ${t.so} theo PPCT${t.tuan ? ` · tuần ${t.tuan}` : ""}</span></button>`)
                 .join("")}</div>
               ${(() => {
                 const t = pb.tiet[w.so - 1] || pb.tiet[0];
-                return `<div class="card flat st-ppct">${t.ten ? `<b>${u.esc(t.ten)}</b><br>` : ""}${t.noiDung ? `<span class="small"><b>Nội dung:</b> ${u.esc(t.noiDung)}</span>` : `<span class="small muted">PPCT không ghi nội dung riêng cho tiết này.</span>`}${
-                  t.thietBi ? `<div class="tiny muted" style="margin-top:4px"><b>Thiết bị:</b> ${u.esc(t.thietBi.slice(0, 220))}</div>` : ""
-                }${t.nls && t.nls.length ? `<div class="tiny" style="margin-top:4px;color:#C00000"><b>Năng lực số:</b> ${t.nls.map(u.esc).join(", ")}</div>` : ""}${t.ai && t.ai.length ? `<div class="tiny" style="margin-top:2px;color:#00803C"><b>Năng lực AI:</b> ${t.ai.join(", ")}</div>` : ""}</div>`;
+                return `<div class="card flat st-ppct">${t.ten ? `<b>${u.esc(t.ten)}</b><br>` : ""}${t.noiDung ? `<span class="small"><b>Gợi ý nội dung tiết (Phụ lục 1):</b> ${u.esc(t.noiDung)}</span>` : `<span class="small muted">Phụ lục 1 không ghi nội dung riêng cho tiết này.</span>`}
+                  <div class="tiny muted" style="margin-top:4px">Năng lực số, năng lực AI và thiết bị dạy học sẽ được xây dựng theo chính giáo án soạn ra (đúng khung TT 02/2025 và QĐ 2422).</div></div>`;
               })()}
               <div class="grid g2" style="margin-top:10px"><label class="field">Thời lượng (phút)<input type="number" id="dur" value="${w.duration}"></label><label class="field">Số nhóm<input type="number" min="2" max="6" id="grp" value="${w.groups}"></label></div>`
                 : `<div class="grid g2"><label class="field">Tiết thứ<input type="number" min="1" id="so" value="${w.so}"></label><label class="field">Bài có tổng số tiết<input type="number" min="1" id="tong" value="${w.tong}"></label>
               <label class="field">Thời lượng (phút)<input type="number" id="dur" value="${w.duration}"></label><label class="field">Số nhóm<input type="number" min="2" max="6" id="grp" value="${w.groups}"></label></div>`
             }
             <p class="small st-rule">Mỗi bài chỉ có <b>1 khởi động</b> (ở tiết đầu), <b>1 luyện tập</b> và <b>1 vận dụng</b> (ở tiết cuối). Tiết ${w.so}/${w.tong} dùng các pha: <b>${allowed.map((x) => L360.phase(x).name).join(" · ")}</b>.</p>
-            <label class="field">${pb ? "Ghi chú thêm cho tiết này (không bắt buộc)" : "Nội dung tiết này (không bắt buộc)"}<textarea id="ct" rows="3" placeholder="${pb ? "Nội dung tiết đã lấy theo PPCT; ghi thêm trọng tâm, tư liệu muốn dùng…" : "Ví dụ: mục 1 và 2 của bài; trọng tâm…"}">${u.esc(w.content || "")}</textarea></label></section></div>`;
+            <label class="field">${pb ? "Ghi chú thêm cho tiết này (không bắt buộc)" : "Nội dung tiết này (không bắt buộc)"}<textarea id="ct" rows="3" placeholder="${pb ? "Nội dung tiết đã lấy theo Phụ lục 1; ghi thêm trọng tâm, tư liệu muốn dùng…" : "Ví dụ: mục 1 và 2 của bài; trọng tâm…"}">${u.esc(w.content || "")}</textarea></label></section></div>`;
       } else if (w.step === 2) {
         body = `<section class="card"><div class="row"><h2 class="grow" style="margin:0">Tích chọn hoạt động cho tiết ${w.so}/${w.tong}</h2><span class="small muted">Đã chọn ${w.acts.filter((id) => (A.ACTS.find((a) => a.id === id) || {}).phase && allowed.includes(A.ACTS.find((a) => a.id === id).phase)).length + (w.acts.includes("bai-giang") ? 0 : 1)} hoạt động</span></div>
           <p class="small muted">Trợ lý AI dựng đúng các hoạt động được chọn. Khởi động, luyện tập, vận dụng: chọn <b>1</b> hoạt động mỗi pha (nhiều câu hỏi gộp trong một hoạt động).</p>
@@ -349,6 +348,21 @@
         design: { style: w.style, palette: w.palette },
         videos: lesson ? C.eduVideos(lesson) : [],
         content: [pinfo && pinfo.noiDung ? pinfo.noiDung : "", w.content || ""].filter(Boolean).join(" – "),
+        // Bài đầu tiên của một chủ đề/chương → tiết 1 có thêm trang mở đầu chủ đề.
+        firstOfTopic: (() => {
+          try {
+            if (lesson && lesson.chuong) {
+              const all = C.lessons(w.subject, w.grade).flatMap((x) => x.lessons);
+              const f = all.find((l) => l.chuong === lesson.chuong);
+              return f && f.key === lesson.key ? lesson.chuong : "";
+            }
+            if (pb && pb.chuong) {
+              const i = pdoc.bai.indexOf(pb);
+              return i === 0 || (pdoc.bai[i - 1] || {}).chuong !== pb.chuong ? pb.chuong : "";
+            }
+          } catch (e) {}
+          return "";
+        })(),
         _subj: subj
       };
     };
@@ -527,6 +541,7 @@
       <aside class="st-side"><section class="card"><h3>Xem trước</h3><div id="prev" class="host-prev st-prev"></div></section>
         <section class="card"><h3>Kiểm tra</h3><div id="val"></div>
           <div class="col" style="margin-top:12px;gap:8px"><button class="btn" id="imgs">${icon("image")} Tìm ảnh cho khối còn thiếu</button>
+          <button class="btn" id="hds" title="Trang tên bài (tiết 1) và trang tên mục trước mỗi nội dung, để học sinh ghi đề mục vào vở">${icon("ghiBai")} Thêm trang đề mục</button>
           <button class="btn primary" id="saveB">${icon("save")} Lưu nháp</button><button class="btn" id="pub">${icon("upload")} Đăng lên thư viện trường</button>
           <a class="btn" id="teach" href="#">${icon("play")} Dạy thử</a><div class="row" style="gap:6px"><button class="btn sm grow" data-goto="giaoan">Giáo án Word</button><button class="btn sm grow" data-goto="ppt">PowerPoint</button></div>
           <button class="btn sm ghost" id="dl">Tải tệp .json</button></div></section></aside></div>`;
@@ -567,12 +582,28 @@
     );
     u.$$("[data-goto]", pane).forEach((b) => (b.onclick = () => go(b.dataset.goto)));
     u.$("#imgs").onclick = () => autoImages(false);
+    u.$("#hds").onclick = () => {
+      const lesson = cur.bai && cur.bai.key && C.lesson(cur.bai.key);
+      let chude = "";
+      try {
+        if (lesson && lesson.chuong) {
+          const all = C.lessons(cur.subjectId, cur.grade).flatMap((x) => x.lessons);
+          const f = all.find((l) => l.chuong === lesson.chuong);
+          if (f && f.key === lesson.key) chude = lesson.chuong;
+        }
+      } catch (e) {}
+      const n = Pack.addHeadings(cur, { chude });
+      if (!n) return u.toast("Bài đã có đủ trang đề mục.", "", 2500);
+      changed();
+      drawSteps();
+      u.toast(`Đã thêm ${n} trang đề mục.`, "ok", 2500);
+    };
     u.$("#saveB").onclick = () => saveDraft(false);
     u.$("#pub").onclick = publish;
     u.$("#teach").onclick = async (e) => {
       e.preventDefault();
       await saveDraft(true);
-      location.href = `giaovien.html?pack=${encodeURIComponent(cur.id)}&che-do=dien-tap`;
+      location.href = `giaovien.html?pack=${encodeURIComponent(cur.id)}${dt}`;
     };
     u.$("#dl").onclick = () => u.download(`${cur.id}.l360.json`, JSON.stringify(cur, null, 2), "application/json");
   }
@@ -696,10 +727,14 @@
     } else if (LINES[k]) body = `${k === "mindmap" || k === "cycle" ? f("center", "Ở giữa") : ""}<label class="field">${LINES[k][2]}<textarea data-si="${i}" data-bl="${path}" data-lk="${k}" rows="4">${u.esc(LINES[k][0](b))}</textarea></label>`;
     else if (k === "quote") body = f("text", "Tư liệu", true) + f("source", "Nguồn");
     else if (k === "text") body = f("md", "Nội dung (dòng bắt đầu bằng - là gạch đầu dòng; **đậm**)", true, 4);
+    else if (k === "chude") body = `<div class="grid g2">${f("so", "Số chủ đề (ví dụ: Chủ đề 2)")}${f("ten", "Tên chủ đề")}</div>${f("mota", "Câu dẫn ngắn")}`;
+    else if (k === "tenbai") body = `<div class="grid g2">${f("so", "Số bài (ví dụ: Bài 4)")}${f("ten", "Tên bài (đúng SGK)")}</div>${f("chude", "Thuộc chủ đề/chương")}`;
+    else if (k === "muc") body = `<div class="grid g2">${f("so", "Số mục (1, 2, 3…)")}${f("ten", "Tên mục (đúng SGK)")}</div>`;
     else body = f("text", k === "note" ? `${icon("ghiBai")} Nội dung học sinh ghi vở` : k === "question" ? "Câu hỏi" : "Nội dung", true);
-    const titled = !["image", "note", "conclusion", "question"].includes(k);
+    const titled = !["image", "note", "conclusion", "question", "chude", "tenbai", "muc"].includes(k);
+    const mmHint = k === "mindmap" ? `<p class="tiny muted" style="margin:4px 0 0">Quy ước sơ đồ tư duy: ở giữa là tên bài/mục (≤ 6 chữ); 3–6 nhánh, tên nhánh ≤ 5 chữ, xếp theo logic nội dung; mỗi nhánh ≤ 3 ý từ khoá ≤ 8 chữ. Màn chiếu tự tô màu và đánh số nhánh theo chiều kim đồng hồ.</p>` : "";
     return `<div class="st-blk" data-kind="${k}"><div class="row nowrap"><b class="grow small">${u.esc(KIND_NAME[k] || k)}</b>${titled ? `<input class="sm" data-si="${i}" data-bp="${path}.title" value="${u.esc(b.title || "")}" placeholder="Tiêu đề khối (không bắt buộc)" style="max-width:220px">` : ""}
-      <button class="btn sm ghost" data-bmv="${path}" data-d="-1" data-si="${i}">▲</button><button class="btn sm ghost" data-bmv="${path}" data-d="1" data-si="${i}">▼</button><button class="btn sm ghost" data-brm="${path}" data-si="${i}">✕</button></div>${body}</div>`;
+      <button class="btn sm ghost" data-bmv="${path}" data-d="-1" data-si="${i}">▲</button><button class="btn sm ghost" data-bmv="${path}" data-d="1" data-si="${i}">▼</button><button class="btn sm ghost" data-brm="${path}" data-si="${i}">✕</button></div>${body}${mmHint}</div>`;
   }
   function pagesEd(s, i) {
     const pages = s.pages || [];
@@ -731,7 +766,10 @@
     question: { text: "" },
     conclusion: { text: "" },
     note: { text: "- " },
-    video: { edu: "", url: "" }
+    video: { edu: "", url: "" },
+    chude: { so: "Chủ đề 1", ten: "", mota: "" },
+    tenbai: { so: "Bài 1", ten: "", chude: "" },
+    muc: { so: "1", ten: "" }
   };
 
   /* ----- Câu hỏi ----- */
@@ -745,6 +783,13 @@
           body = (q.statements || [])
             .map((st, j) => `<div class="row nowrap" style="margin-top:6px"><b>${"abcd"[j]})</b><input data-si="${i}" data-q="${qi}" data-st="${j}" value="${u.esc(st.text)}"><label class="chip ${st.answer ? "sel" : ""}"><input type="checkbox" data-si="${i}" data-q="${qi}" data-sta="${j}" ${st.answer ? "checked" : ""} hidden>${st.answer ? "Đúng" : "Sai"}</label></div>`)
             .join("");
+        else if (kind === "fill")
+          body = `<label class="small" style="display:block;margin-top:6px">Đoạn văn – đặt đáp án trong [[ ]] (ví dụ: Năm [[938]], [[Ngô Quyền]] đánh tan quân Nam Hán)<textarea rows="3" data-si="${i}" data-q="${qi}" data-qf="text">${u.esc(q.text || "")}</textarea></label>
+            <input style="margin-top:6px" data-si="${i}" data-q="${qi}" data-qf="bank" value="${u.esc((q.bank || []).join("; "))}" placeholder="Từ nhiễu thêm vào ô gợi ý (cách nhau dấu ;)">
+            <p class="tiny muted" style="margin:4px 0 0">${(L360.fillParse(q.text).blanks.length || 0)} chỗ trống · học sinh kéo thả hoặc chạm để điền.</p>`;
+        else if (kind === "sort")
+          body = `<div class="grid g2" style="margin-top:6px"><label class="small">Các nhóm (mỗi dòng 1 nhóm, 2–4 nhóm)<textarea rows="4" data-si="${i}" data-q="${qi}" data-qf="groups">${u.esc((q.groups || []).join("\n"))}</textarea></label>
+            <label class="small">Các mục: mỗi dòng "nội dung | số nhóm" (1, 2…)<textarea rows="4" data-si="${i}" data-q="${qi}" data-qf="items">${u.esc((q.items || []).map((x) => `${x.text} | ${(Number(x.group) || 0) + 1}`).join("\n"))}</textarea></label></div>`;
         else if (kind === "short")
           body = `<div class="grid g2" style="margin-top:6px"><input data-si="${i}" data-q="${qi}" data-qf="answer" value="${u.esc(q.answer == null ? "" : q.answer)}" placeholder="Đáp án"><input data-si="${i}" data-q="${qi}" data-qf="accept" value="${u.esc((q.accept || []).join(", "))}" placeholder="Cách viết khác được chấp nhận (cách nhau dấu phẩy)"></div>`;
         else
@@ -761,7 +806,9 @@
           <textarea rows="2" data-si="${i}" data-q="${qi}" data-qf="q" placeholder="Nội dung câu hỏi / đoạn tư liệu">${u.esc(q.q || "")}</textarea>${body}
           <input style="margin-top:6px" placeholder="Giải thích đáp án" data-si="${i}" data-q="${qi}" data-qf="explain" value="${u.esc(q.explain || "")}"></div>`;
       })
-      .join("")}<div class="row"><button class="btn sm" data-qadd="mcq" data-si="${i}">+ Câu 4 lựa chọn</button><button class="btn sm" data-qadd="tf" data-si="${i}">+ Câu Đúng/Sai</button><button class="btn sm" data-qadd="short" data-si="${i}">+ Câu trả lời ngắn</button></div></div>`;
+      .join("")}<div class="row"><button class="btn sm" data-qadd="mcq" data-si="${i}">+ Câu 4 lựa chọn</button><button class="btn sm" data-qadd="tf" data-si="${i}">+ Câu Đúng/Sai</button><button class="btn sm" data-qadd="short" data-si="${i}">+ Câu trả lời ngắn</button><button class="btn sm" data-qadd="fill" data-si="${i}">+ Điền khuyết</button>${
+        s.type === "quiz" ? `<button class="btn sm" data-qadd="sort" data-si="${i}">+ Kéo thả phân loại</button>` : ""
+      }</div></div>`;
   }
   function cwEd(s, i) {
     return `<div class="grid g2"><label class="field">Từ khoá hàng dọc (viết liền, không dấu)<input data-si="${i}" data-k="keyword" value="${u.esc(s.keyword || "")}"></label><label class="field">Gợi ý từ khoá<input data-si="${i}" data-k="keyClue" value="${u.esc(s.keyClue || "")}"></label></div>
@@ -1004,7 +1051,18 @@
     on("[data-qf]", "input", (el) => {
       const q = Q(el);
       const f = el.dataset.qf;
-      q[f] = f === "accept" ? el.value.split(",").map((x) => x.trim()).filter(Boolean) : f === "t" ? Number(el.value) || 0 : el.value;
+      if (f === "bank") q.bank = el.value.split(";").map((x) => x.trim()).filter(Boolean);
+      else if (f === "groups") q.groups = el.value.split("\n").map((x) => x.trim()).filter(Boolean).slice(0, 4);
+      else if (f === "items")
+        q.items = el.value
+          .split("\n")
+          .map((ln) => ln.trim())
+          .filter(Boolean)
+          .map((ln) => {
+            const m = ln.match(/^(.*?)\s*\|\s*(\d+)\s*$/);
+            return m ? { text: m[1].trim(), group: Math.max(0, Number(m[2]) - 1) } : { text: ln, group: 0 };
+          });
+      else q[f] = f === "accept" ? el.value.split(",").map((x) => x.trim()).filter(Boolean) : f === "t" ? Number(el.value) || 0 : el.value;
       changed();
     });
     on("[data-qopt]", "input", (el) => ((Q(el).options[Number(el.dataset.qopt)] = el.value), changed()));
@@ -1017,6 +1075,8 @@
       if (q.kind === "mcq" && !(q.options || []).length) Object.assign(q, { options: ["", "", "", ""], answer: 0 });
       if (q.kind === "tf" && (q.statements || []).length !== 4) q.statements = [0, 1, 2, 3].map((j) => ({ text: "", answer: j % 2 === 0 }));
       if (q.kind === "short" && q.answer == null) q.answer = "";
+      if (q.kind === "fill" && q.text == null) Object.assign(q, { text: "", bank: [] });
+      if (q.kind === "sort" && !Array.isArray(q.groups)) Object.assign(q, { groups: ["Nhóm 1", "Nhóm 2"], items: [] });
       changed();
       redraw();
     });
@@ -1028,7 +1088,15 @@
           const s = S0(b);
           s.questions = s.questions || [];
           s.questions.push(
-            k === "tf" ? { kind: "tf", q: "", statements: [0, 1, 2, 3].map((j) => ({ text: "", answer: j % 2 === 0 })), explain: "" } : k === "short" ? { kind: "short", q: "", answer: "", accept: [], explain: "" } : { kind: "mcq", q: "", options: ["", "", "", ""], answer: 0, explain: "" }
+            k === "tf"
+              ? { kind: "tf", q: "", statements: [0, 1, 2, 3].map((j) => ({ text: "", answer: j % 2 === 0 })), explain: "" }
+              : k === "short"
+              ? { kind: "short", q: "", answer: "", accept: [], explain: "" }
+              : k === "fill"
+              ? { kind: "fill", q: "Chọn từ thích hợp điền vào chỗ trống.", text: "", bank: [], explain: "" }
+              : k === "sort"
+              ? { kind: "sort", q: "Kéo mỗi ý vào đúng nhóm.", groups: ["Nhóm 1", "Nhóm 2"], items: [], explain: "" }
+              : { kind: "mcq", q: "", options: ["", "", "", ""], answer: 0, explain: "" }
           );
           changed();
           redraw();
@@ -1250,6 +1318,14 @@
     const list = await siblings();
     const st = { sel: list.map((p) => p.id), k: cur.khbd ? L360.Khbd.normalize(cur.khbd) : null, ppct: (cur.meta && cur.meta.ppct) || (cur.ppct && cur.ppct.cacTiet ? cur.ppct.cacTiet.join(", ") : ""), tuan: (cur.meta && cur.meta.tuan) || (cur.ppct && cur.ppct.tuanBai ? cur.ppct.tuanBai.join(", ") : ""), extra: "" };
     const chosen = () => list.filter((p) => st.sel.includes(p.id));
+    st.v = Number((cur.meta && cur.meta.khbdV) || 1);
+    // Tên tệp Edoc: lấy môn, lớp, tuần, tiết theo Phụ lục 1, tên bài theo SGK, tên giáo viên.
+    const edoc = () => {
+      const p0 = chosen()[0] || cur;
+      const l = p0.bai && p0.bai.key ? C.lesson(p0.bai.key) : null;
+      const cd = !!((l && /^cd/.test(l.bookId)) || (p0.ppct && /^cd-/.test(p0.ppct.doc || "")));
+      return L360.Khbd.edocName({ lop: p0.grade, mon: p0.subjectId, monTen: p0.subject, cd, tuan: st.tuan, tiet: st.ppct, tenBai: (l && l.ten) || (p0.bai && p0.bai.ten) || p0.title, gv: (st.k && st.k.giaoVien) || teacher.name || "", v: st.v });
+    };
     const draw = () => {
       const v = st.k ? L360.Khbd.validate(st.k) : null;
       pane.innerHTML = `<div class="st-kh"><aside class="col" style="gap:14px">
@@ -1267,8 +1343,10 @@
           st.k
             ? `<section class="card"><h3>3. Tải về</h3>${v.errors.length ? `<ul class="small" style="color:var(--bad)">${v.errors.map((e) => `<li>${u.esc(e)}</li>`).join("")}</ul>` : ""}${
                 v.warnings.length ? `<ul class="small" style="color:var(--warn)">${v.warnings.map((e) => `<li>${u.esc(e)}</li>`).join("")}</ul>` : ""
-              }<div class="col" style="gap:8px"><button class="btn primary" id="kdoc">${icon("download")} Tải Word (.docx)</button><button class="btn" id="ksave">${icon("save")} Lưu giáo án vào tiết học</button><button class="btn sm ghost" id="kjson">Tải JSON giáo án</button></div>
-              <p class="tiny muted" style="margin-top:8px">Tệp Word đúng mẫu của tổ: A4, Times New Roman 13, lề 2–2–2–2,5 cm, chân trang 04.07-BM//ĐT/HDCV/FE-FSC và số trang. Mã năng lực số tô đỏ, năng lực AI tô xanh.</p></section>`
+              }<label class="field">Tên tệp nộp Edoc<span class="hint">Cấp học_Khối_Tổ-Môn_KHBD_Tuần-Tiết_Tên bài_Tên giáo viên_v#</span><input id="kname" value="${u.esc(edoc())}" style="font-size:.82rem"></label>
+              <div class="row nowrap" style="gap:8px;margin:-4px 0 10px"><label class="small row nowrap" style="gap:6px">Phiên bản v<input id="kv" type="number" min="1" value="${st.v}" style="width:64px"></label><button class="btn sm ghost" id="kcp">${icon("copy")} Sao chép tên</button></div>
+              <div class="col" style="gap:8px"><button class="btn primary" id="kdoc">${icon("download")} Tải Word (.docx)</button><button class="btn" id="kpdf">${icon("print")} Tải PDF (in / lưu PDF)</button><button class="btn" id="ksave">${icon("save")} Lưu giáo án vào tiết học</button><button class="btn sm ghost" id="kjson">Tải JSON giáo án</button></div>
+              <p class="tiny muted" style="margin-top:8px">Đúng mẫu của tổ: A4, Times New Roman 13, lề 2–2–2–2,5 cm, chân trang 04.07-BM//ĐT/HDCV/FE-FSC; cuối giáo án có bảng ký “Xác nhận của Tổ chuyên môn – Người soạn”; phụ lục có phiếu học tập trước, trong và sau giờ học. Mã năng lực số tô đỏ, năng lực AI tô xanh.</p></section>`
             : ""
         }</aside>
         <section class="card st-kh-prev">${st.k ? L360.Khbd.html(st.k) : `<div class="empty" style="padding:60px 20px">${icon("doc")}<br>Xem trước giáo án hiện ở đây.</div>`}</section></div>`;
@@ -1306,16 +1384,29 @@
           b.disabled = true;
           b.textContent = "Đang tạo tệp Word…";
           try {
-            await L360.Khbd.download(st.k);
+            await L360.Khbd.download(st.k, (u.$("#kname").value.trim() || edoc()) + ".docx");
           } catch (e) {
             u.toast("Không tạo được tệp Word: " + e.message, "bad");
           }
           b.disabled = false;
           b.innerHTML = `${icon("download")} Tải Word (.docx)`;
         };
+        u.$("#kpdf").onclick = () => {
+          try {
+            L360.Khbd.pdf(st.k, u.$("#kname").value.trim() || edoc());
+          } catch (e) {
+            u.toast(e.message, "bad", 5000);
+          }
+        };
+        u.$("#kv").onchange = (e) => {
+          st.v = Math.max(1, Number(e.target.value) || 1);
+          cur.meta = Object.assign({}, cur.meta, { khbdV: st.v });
+          u.$("#kname").value = edoc();
+        };
+        u.$("#kcp").onclick = async () => (await u.copy(u.$("#kname").value)) && u.toast("Đã sao chép tên tệp.", "ok");
         u.$("#ksave").onclick = async () => {
           cur.khbd = st.k;
-          cur.meta = Object.assign({}, cur.meta, { ppct: st.ppct, tuan: st.tuan });
+          cur.meta = Object.assign({}, cur.meta, { ppct: st.ppct, tuan: st.tuan, khbdV: st.v });
           await saveDraft(false);
         };
         u.$("#kjson").onclick = () => u.download(`khbd-${cur.id}.json`, JSON.stringify(st.k, null, 2), "application/json");
@@ -1338,14 +1429,14 @@
     if (!cur) return needPack(pane, "Bài giảng PowerPoint được dựng từ tiết học đã soạn.");
     if (dirty) await saveDraft(true);
     const list = await siblings();
-    const st = { sel: [cur.id], font: localStorage.getItem("l360:pptFont") || "Calibri" };
+    const st = { sel: [cur.id], font: localStorage.getItem("l360:pptFont") || "Arial" };
     const draw = () => {
       const chosen = list.filter((p) => st.sel.includes(p.id));
       const pl = chosen.length ? L360.Pptx.plan(chosen) : { slides: [] };
       const NAMES = { title: "Trang bìa", goals: "Mục tiêu", phase: "Chuyển pha", page: "Bài giảng", video: "Video", q: "Câu hỏi", qans: "Đáp án", cw: "Ô chữ", match: "Ghép nối", order: "Sắp xếp", group: "Nhiệm vụ nhóm", sheet: "Phiếu học tập", cards: "Chọn thẻ", auction: "Đấu giá", task: "Nhiệm vụ", recap: "Ghi nhớ", end: "Kết thúc" };
       const per = chosen.length ? Math.round(pl.slides.length / chosen.length) : 0;
       pane.innerHTML = `<div class="st-kh"><aside class="col" style="gap:14px"><section class="card"><h3>Các tiết</h3>${packPicker(list, st.sel)}
-          <label class="field" style="margin-top:10px">Phông chữ<select id="font">${["Calibri", "Arial", "Times New Roman", "Be Vietnam Pro"].map((f) => `<option ${f === st.font ? "selected" : ""}>${f}</option>`).join("")}</select><span class="hint">Calibri, Arial, Times New Roman có sẵn trên mọi máy Windows/Mac nên trình chiếu offline không lỗi phông. Be Vietnam Pro chỉ đúng khi máy chiếu đã cài phông này.</span></label>
+          <label class="field" style="margin-top:10px">Phông chữ<select id="font">${["Arial", "Calibri", "Times New Roman", "Be Vietnam Pro"].map((f) => `<option ${f === st.font ? "selected" : ""}>${f}</option>`).join("")}</select><span class="hint">Arial có sẵn trên mọi máy (Windows, Mac, iPad, Google Trang trình bày) nên trình chiếu offline không lỗi phông; Calibri cần máy có cài Office. Be Vietnam Pro chỉ đúng khi máy chiếu đã cài phông này.</span></label>
           <div class="note small" style="margin-top:10px">${L360.icon("info")} Tệp dùng được <b>không cần mạng</b>: ảnh đã nhúng sẵn, có hiệu ứng bấm để hiện (từng ý, đáp án đúng, giải thích, ô chữ lật từng hàng, ghép nối, sơ đồ hiện từng nhánh) và <b>thanh đếm giờ</b> ở trang hoạt động: bấm để chạy, hết giờ hiện “Hết giờ!”. Video cần mạng khi chiếu.</div>
           <button class="btn primary block lg" id="mk" style="margin-top:10px">${icon("download")} Tải PowerPoint (.pptx)</button><p class="small muted" id="mkmsg" style="margin-top:8px"></p></section>
         <section class="card small"><b>Có gì trong tệp?</b><ul><li>Trang bìa, mục tiêu, trang chuyển pha theo màu Khởi động – Hình thành – Luyện tập – Vận dụng.</li><li>Bài giảng trực quan: ảnh, dòng thời gian, sơ đồ tư duy, bảng so sánh, quy trình, số liệu, khung <b>✎ Ghi vào vở</b>.</li><li>Câu hỏi 4 lựa chọn, Đúng/Sai, trả lời ngắn kèm trang đáp án; ô chữ có trang đáp án.</li><li>Lời dẫn và đáp án nằm trong phần <b>Ghi chú</b> của từng trang.</li></ul></section></aside>
@@ -1388,6 +1479,14 @@
         ? `<p><b>Câu ${k + 1}.</b> ${u.esc(q.q)}</p><table class="t">${(q.statements || []).map((x, j) => `<tr><td>${"abcd"[j]}) ${u.esc(x.text)}</td><td style="width:60px">Đ ☐</td><td style="width:60px">S ☐</td></tr>`).join("")}</table>`
         : q.kind === "short"
         ? `<p><b>Câu ${k + 1}.</b> ${u.esc(q.q)}</p><p>Trả lời: ____________________</p>`
+        : q.kind === "fill"
+        ? (() => {
+            const f = L360.fillParse(q.text);
+            const words = f.blanks.map((b) => b.answer).concat(q.bank || []).sort((a, b) => a.localeCompare(b, "vi"));
+            return `<p><b>Câu ${k + 1}.</b> ${u.esc(q.q)}</p><p style="line-height:2">${f.parts.map((t, j) => u.esc(t) + (j < f.blanks.length ? ` (${j + 1}) ……………… ` : "")).join("")}</p><p class="small"><i>Từ gợi ý: ${u.esc(words.join(" · "))}</i></p>`;
+          })()
+        : q.kind === "sort"
+        ? `<p><b>Câu ${k + 1}.</b> ${u.esc(q.q)}</p><p class="small">${(q.items || []).map((x, j) => `${j + 1}. ${u.esc(x.text)}`).join("; ")}</p><table class="t"><tr>${(q.groups || []).map((g) => `<th>${u.esc(g)}</th>`).join("")}</tr><tr>${(q.groups || []).map(() => `<td style="height:60px"></td>`).join("")}</tr></table>`
         : `<p><b>Câu ${k + 1}.</b> ${u.esc(q.q)}</p>${opts(q.options)}`;
     switch (s.type) {
       case "slide": {
