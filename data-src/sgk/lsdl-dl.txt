@@ -1,0 +1,116 @@
+BOOK|lsdl-dl-6|6|dia-li|Lịch sử và Địa lí 6 – phần Địa lí|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-lich-su-va-dia-li-6.4830326427|-1
+B|Mở đầu|Bài mở đầu|98
+C|Chương 1. Bản đồ – Phương tiện thể hiện bề mặt Trái Đất|101
+B|1|Hệ thống kinh, vĩ tuyến. Toạ độ địa lí|102
+B|2|Bản đồ. Một số lưới kinh, vĩ tuyến. Phương hướng trên bản đồ|104
+B|3|Tỉ lệ bản đồ. Tính khoảng cách thực tế dựa vào tỉ lệ bản đồ|106
+B|4|Kí hiệu và bảng chú giải bản đồ. Tìm đường đi trên bản đồ|108
+B|5|Lược đồ trí nhớ|113
+C|Chương 2. Trái Đất – hành tinh của hệ Mặt Trời|115
+B|6|Trái Đất trong hệ Mặt Trời|116
+B|7|Chuyển động tự quay quanh trục của Trái Đất và hệ quả|118
+B|8|Chuyển động của Trái Đất quanh Mặt Trời và hệ quả|122
+B|9|Xác định phương hướng ngoài thực tế|125
+C|Chương 3. Cấu tạo của Trái Đất. Vỏ Trái Đất|128
+B|10|Cấu tạo của Trái Đất. Các mảng kiến tạo|129
+B|11|Quá trình nội sinh và quá trình ngoại sinh. Hiện tượng tạo núi|131
+B|12|Núi lửa và động đất|133
+B|13|Các dạng địa hình chính trên Trái Đất. Khoáng sản|135
+B|14|Thực hành: Đọc lược đồ địa hình tỉ lệ lớn và lát cắt địa hình đơn giản|139
+C|Chương 4. Khí hậu và biến đổi khí hậu|141
+B|15|Lớp vỏ khí của Trái Đất. Khí áp và gió|142
+B|16|Nhiệt độ không khí. Mây và mưa|146
+B|17|Thời tiết và khí hậu. Biến đổi khí hậu|150
+B|18|Thực hành: Phân tích biểu đồ nhiệt độ, lượng mưa|153
+C|Chương 5. Nước trên Trái Đất|155
+B|19|Thuỷ quyển và vòng tuần hoàn lớn của nước|156
+B|20|Sông và hồ. Nước ngầm và băng hà|158
+B|21|Biển và đại dương|163
+C|Chương 6. Đất và sinh vật trên Trái Đất|167
+B|22|Lớp đất trên Trái Đất|168
+B|23|Sự sống trên Trái Đất|171
+B|24|Rừng nhiệt đới|173
+B|25|Sự phân bố các đới thiên nhiên trên Trái Đất|175
+B|26|Thực hành: Tìm hiểu môi trường tự nhiên địa phương|177
+C|Chương 7. Con người và thiên nhiên|179
+B|27|Dân số và sự phân bố dân cư trên thế giới|180
+B|28|Mối quan hệ giữa con người và thiên nhiên|184
+B|29|Bảo vệ tự nhiên và khai thác thông minh các tài nguyên thiên nhiên vì sự phát triển bền vững|187
+B|30|Thực hành: Tìm hiểu mối quan hệ giữa con người và thiên nhiên ở địa phương|189
+BOOK|lsdl-dl-7|7|dia-li|Lịch sử và Địa lí 7 – phần Địa lí|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-lich-su-va-dia-li-7.4830359644|-1
+C|Chương 1. Châu Âu|96
+B|1|Vị trí địa lí, đặc điểm tự nhiên châu Âu|96
+B|2|Đặc điểm dân cư, xã hội châu Âu|101
+B|3|Khai thác, sử dụng và bảo vệ thiên nhiên ở châu Âu|104
+B|4|Liên minh châu Âu|107
+C|Chương 2. Châu Á|109
+B|5|Vị trí địa lí, đặc điểm tự nhiên châu Á|109
+B|6|Đặc điểm dân cư, xã hội châu Á|115
+B|7|Bản đồ chính trị châu Á, các khu vực của châu Á|118
+B|8|Thực hành: Tìm hiểu về các nền kinh tế lớn và kinh tế mới nổi của châu Á|126
+C|Chương 3. Châu Phi|127
+B|9|Vị trí địa lí, đặc điểm tự nhiên châu Phi|127
+B|10|Đặc điểm dân cư, xã hội châu Phi|133
+B|11|Phương thức con người khai thác, sử dụng và bảo vệ thiên nhiên ở châu Phi|135
+B|12|Thực hành: Tìm hiểu khái quát Cộng hoà Nam Phi|138
+C|Chương 4. Châu Mỹ|139
+B|13|Vị trí địa lí, phạm vi châu Mỹ. Sự phát kiến ra châu Mỹ|139
+B|14|Đặc điểm tự nhiên Bắc Mỹ|142
+B|15|Đặc điểm dân cư, xã hội, phương thức khai thác tự nhiên bền vững ở Bắc Mỹ|145
+B|16|Đặc điểm tự nhiên Trung và Nam Mỹ|149
+B|17|Đặc điểm dân cư, xã hội Trung và Nam Mỹ, khai thác, sử dụng và bảo vệ rừng A-ma-dôn|152
+C|Chương 5. Châu Đại Dương và châu Nam Cực|156
+B|18|Châu Đại Dương|156
+B|19|Châu Nam Cực|162
+C|Chủ đề chung|166
+B|Chủ đề chung 1|Các cuộc đại phát kiến địa lí|166
+B|Chủ đề chung 2|Đô thị: Lịch sử và hiện tại|170
+BOOK|lsdl-dl-8|8|dia-li|Lịch sử và Địa lí 8 – phần Địa lí|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-lich-su-dia-li-8.4830375637|-1
+C|Chương 1. Vị trí địa lí và phạm vi lãnh thổ, địa hình và khoáng sản Việt Nam|95
+B|1|Vị trí địa lí và phạm vi lãnh thổ Việt Nam|95
+B|2|Địa hình Việt Nam|99
+B|3|Khoáng sản Việt Nam|111
+C|Chương 2. Khí hậu và thuỷ văn Việt Nam|115
+B|4|Khí hậu Việt Nam|115
+B|5|Thực hành: Đọc biểu đồ khí hậu|120
+B|6|Thuỷ văn Việt Nam|121
+B|7|Vai trò của tài nguyên khí hậu và tài nguyên nước đối với sự phát triển kinh tế – xã hội của nước ta|128
+B|8|Tác động của biến đổi khí hậu đối với tự nhiên Việt Nam|132
+C|Chương 3. Thổ nhưỡng và sinh vật Việt Nam|136
+B|9|Thổ nhưỡng Việt Nam|136
+B|10|Sinh vật Việt Nam|143
+C|Chương 4. Biển đảo Việt Nam|147
+B|11|Phạm vi Biển Đông. Vùng biển đảo và đặc điểm tự nhiên vùng biển đảo Việt Nam|147
+B|12|Môi trường và tài nguyên biển đảo Việt Nam|152
+C|Chủ đề chung|155
+B|Chủ đề chung 1|Văn minh châu thổ sông Hồng và sông Cửu Long|155
+B|Chủ đề chung 2|Bảo vệ chủ quyền, các quyền và lợi ích hợp pháp của Việt Nam ở Biển Đông|162
+BOOK|lsdl-dl-9|9|dia-li|Lịch sử và Địa lí 9 – phần Địa lí|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-lich-su-va-dia-li-9.4844021301|-1
+C|Chương 1. Địa lí dân cư Việt Nam|117
+B|1|Dân tộc và dân số|117
+B|2|Phân bố dân cư và các loại hình quần cư|120
+B|3|Lao động và việc làm|123
+B|4|Thực hành: Tìm hiểu vấn đề việc làm ở địa phương và phân hoá thu nhập theo vùng|127
+C|Chương 2. Địa lí các ngành kinh tế|129
+B|5|Nông nghiệp|129
+B|6|Lâm nghiệp và thuỷ sản|136
+B|7|Thực hành: Viết báo cáo về một mô hình sản xuất nông nghiệp có hiệu quả|141
+B|8|Công nghiệp|142
+B|9|Thực hành: Xác định một số hình thức tổ chức lãnh thổ công nghiệp ở nước ta|151
+B|10|Dịch vụ|152
+B|11|Thực hành: Tìm hiểu xu hướng phát triển ngành thương mại, du lịch|157
+C|Chương 3. Địa lí các vùng kinh tế – xã hội|158
+B|12|Vùng Trung du và miền núi phía Bắc|158
+B|13|Vùng Đồng bằng sông Hồng|166
+B|14|Vùng Bắc Trung Bộ|176
+B|15|Thực hành: Tìm hiểu vấn đề phòng, chống thiên tai và ứng phó với biến đổi khí hậu ở vùng Bắc Trung Bộ|185
+B|16|Vùng Duyên hải Nam Trung Bộ và Tây Nguyên|186
+B|17|Vùng Đông Nam Bộ|195
+B|18|Thực hành: Phân tích ý nghĩa của việc tăng cường kết nối liên vùng đối với sự phát triển của vùng Đông Nam Bộ|204
+B|19|Vùng Đồng bằng sông Cửu Long|205
+B|20|Thực hành: Tìm hiểu về tác động của biến đổi khí hậu đối với vùng Đồng bằng sông Cửu Long|213
+B|21|Phát triển tổng hợp kinh tế và bảo vệ tài nguyên, môi trường biển, đảo|214
+C|Chủ đề chung|221
+B|Chủ đề chung 1|Đô thị: Lịch sử và hiện tại (2)|221
+B|Chủ đề chung 2|Văn minh châu thổ sông Hồng và sông Cửu Long (2)|225
+B|Chủ đề chung 3|Bảo vệ chủ quyền, các quyền và lợi ích hợp pháp của Việt Nam ở Biển Đông (2)|230

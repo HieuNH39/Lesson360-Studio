@@ -488,7 +488,7 @@
   async function download(raw, name) {
     const blob = await docxBlob(raw);
     const k = normalize(raw);
-    const fn = name || `KHBD - ${(k.tenBai || "bai-day").replace(/[\\/:*?"<>|]+/g, " ").slice(0, 80)}.docx`;
+    const fn = name || `KHBD - ${((t) => (t.length <= 80 ? t : t.slice(0, 80).replace(/\s+\S*$/, "").replace(/[\s.,;:–-]+$/, "")))((k.tenBai || "bai-day").replace(/[\\/:*?"<>|]+/g, " "))}.docx`;
     u.downloadBlob(fn, blob);
   }
 
@@ -520,7 +520,7 @@
         break;
       case "poll2":
         out.questions.push({ kind: "mcq", q: s.question, options: s.options || [], answer: s.answer, explain: s.explain });
-        if (s.card) out.notes.push(s.card);
+        if (s.card && !s.ghiBai) out.notes.push(s.card);
         break;
       case "crossword":
         out.lines.push(`Ô chữ ${(s.rows || []).length} hàng ngang, từ khoá ${String(s.keyword || "").length} chữ cái: ${s.keyClue || ""}`);

@@ -354,7 +354,7 @@
     {
       "id": "thong-diep",
       "type": "text",
-      "title": "Message to the Future",
+      "title": "Thông điệp gửi tương lai",
       "minutes": 2,
       "script": "Hoàn thành câu: “Tôi muốn thế hệ tương lai hiểu rằng…”. Tự đánh giá mức hiểu bài và ghi điều còn băn khoăn.",
       "instructions": "Viết thông điệp ≤ 40 từ và tự đánh giá.",

@@ -169,7 +169,7 @@
           trang: it[3],
           edu: it[4] || null,
           chuong,
-          label: so === "Chủ đề" ? `Chủ đề. ${it[2]}` : isCd ? `${so.replace(/^CĐ\s*/, "Chuyên đề ")}. ${it[2]}` : `Bài ${so}. ${it[2]}`
+          label: so === "Chủ đề" ? `Chủ đề. ${it[2]}` : isCd ? `${so.replace(/^CĐ\s*/, "Chuyên đề ")}. ${it[2]}` : /^\d/.test(so) ? `Bài ${so}. ${it[2]}` : it[2]
         });
       }
     });

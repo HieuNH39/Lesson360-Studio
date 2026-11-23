@@ -1,0 +1,31 @@
+BOOK|ktpl-11|11|gdktpl|Giáo dục Kinh tế và Pháp luật 11|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-giao-duc-kinh-te-va-phap-luat-11.4720430286|-1
+C|Chủ đề 1: Cạnh tranh, cung – cầu trong nền kinh tế thị trường|6
+B|1|Cạnh tranh trong nền kinh tế thị trường|6
+B|2|Cung – cầu trong nền kinh tế thị trường|11
+C|Chủ đề 2: Lạm phát, thất nghiệp|16
+B|3|Lạm phát|16
+B|4|Thất nghiệp|22
+C|Chủ đề 3: Thị trường lao động và việc làm|29
+B|5|Thị trường lao động và việc làm|29
+C|Chủ đề 4: Ý tưởng, cơ hội kinh doanh và các năng lực cần thiết của người kinh doanh|36
+B|6|Ý tưởng, cơ hội kinh doanh và các năng lực cần thiết của người kinh doanh|36
+C|Chủ đề 5: Đạo đức kinh doanh|41
+B|7|Đạo đức kinh doanh|41
+C|Chủ đề 6: Văn hoá tiêu dùng|45
+B|8|Văn hoá tiêu dùng|45
+C|Chủ đề 7: Quyền bình đẳng của công dân trước pháp luật|54
+B|9|Quyền bình đẳng của công dân trước pháp luật|54
+B|10|Bình đẳng giới trong các lĩnh vực|60
+B|11|Quyền bình đẳng giữa các dân tộc|68
+B|12|Quyền bình đẳng giữa các tôn giáo|75
+C|Chủ đề 8: Một số quyền dân chủ cơ bản của công dân|81
+B|13|Quyền và nghĩa vụ của công dân trong tham gia quản lí nhà nước và xã hội|81
+B|14|Quyền và nghĩa vụ của công dân về bầu cử và ứng cử|86
+B|15|Quyền và nghĩa vụ của công dân về khiếu nại, tố cáo|94
+B|16|Quyền và nghĩa vụ của công dân về bảo vệ Tổ quốc|102
+C|Chủ đề 9: Một số quyền tự do cơ bản của công dân|108
+B|17|Quyền bất khả xâm phạm về thân thể và quyền được pháp luật bảo hộ về tính mạng, sức khoẻ, danh dự, nhân phẩm của công dân|108
+B|18|Quyền bất khả xâm phạm về chỗ ở của công dân|117
+B|19|Quyền được bảo đảm an toàn và bí mật thư tín, điện thoại, điện tín của công dân|122
+B|20|Quyền và nghĩa vụ của công dân về tự do ngôn luận, báo chí và tiếp cận thông tin|128
+B|21|Quyền và nghĩa vụ của công dân về tự do tín ngưỡng và tôn giáo|136

@@ -1,13 +1,17 @@
-/* Gói bài học mẫu: EGYPT 360° viết lại thành gói bài học Lesson 360°.
+/* Tiết mẫu Lịch sử: EGYPT 360° – tiết thao giảng của thầy Nguyễn Hữu Hiệu, nâng cấp lên định dạng Lesson 360° v2
+   (pha khởi động – hình thành – luyện tập – vận dụng, bài giảng trực quan có bản đồ, sơ đồ tư duy, khung ghi vở).
    Lịch sử 10 (Kết nối tri thức) – Bài 4, mục 1 và 2a. Dạy thao giảng cấp trường ngày 17/11/2026, lớp 10A2. */
 window.L360.packs.push({
-  schema: "l360-pack/1",
+  schema: "l360-pack/2",
   id: "ls10-b4-van-minh-ai-cap",
   title: "EGYPT 360° – Hành trình giải mã văn minh sông Nin",
+  subjectId: "lich-su",
   subject: "Lịch sử",
   grade: "10",
-  book: "Kết nối tri thức với cuộc sống",
-  lessonRef: "Bài 4. Khái niệm văn minh. Một số nền văn minh phương Đông thời kì cổ – trung đại (mục 1 và 2a)",
+  bai: { key: "ls-10:4", so: "4", ten: "Khái niệm văn minh. Một số nền văn minh phương Đông thời cổ – trung đại" },
+  tiet: { so: 1, tong: 1 },
+  design: { style: "su-lieu", palette: "trong-dong" },
+  lessonRef: "Bài 4 – mục 1 (Khái niệm văn minh) và 2a (Văn minh Ai Cập)",
   duration: 45,
   author: "Nguyễn Hữu Hiệu",
   objectives: [
@@ -16,7 +20,6 @@ window.L360.packs.push({
     "Nêu và đánh giá được một số thành tựu tiêu biểu của văn minh Ai Cập cổ đại: chữ viết, toán học, lịch, kiến trúc, tôn giáo – y học.",
     "Rút ra mối liên hệ: điều kiện → nhu cầu → thành tựu; trân trọng di sản văn minh nhân loại."
   ],
-  theme: { accent: "#9A6B12", accent2: "#7A5410", bg: "#FAF5EA" },
   groups: [
     { name: "PAPYRUS", color: "#4E7A35" },
     { name: "RA", color: "#C98A12" },
@@ -27,6 +30,7 @@ window.L360.packs.push({
   steps: [
     {
       id: "dau-gia",
+      phase: "khoi-dong",
       type: "auction",
       title: "Phiên đấu giá di sản",
       minutes: 6,
@@ -48,6 +52,8 @@ window.L360.packs.push({
     },
     {
       id: "khai-niem",
+      phase: "hinh-thanh",
+      ghiBai: "- **Văn hoá**: tổng thể giá trị vật chất và tinh thần do con người sáng tạo ra – có từ khi loài người xuất hiện.\n- **Văn minh**: trạng thái phát triển cao của văn hoá – dấu hiệu: có **chữ viết** và **nhà nước**.",
       type: "poll2",
       title: "Văn hóa hay văn minh?",
       minutes: 4,
@@ -64,6 +70,7 @@ window.L360.packs.push({
     },
     {
       id: "song-nin",
+      phase: "hinh-thanh",
       type: "cards",
       title: "Món quà của sông Nin?",
       minutes: 2,
@@ -89,7 +96,37 @@ window.L360.packs.push({
       timer: 90
     },
     {
+      id: "ai-cap-nin",
+      phase: "hinh-thanh",
+      type: "slide",
+      title: "Ai Cập – tặng phẩm của sông Nin",
+      minutes: 2,
+      script: "Chiếu bản đồ: Ai Cập cổ đại nằm dọc hạ lưu sông Nin, Thượng Ai Cập ở phía nam, Hạ Ai Cập là vùng châu thổ phía bắc. Nhấn mạnh: điều kiện tự nhiên thuận lợi nhưng chính lao động sáng tạo của cư dân mới làm nên văn minh.",
+      instructions: "Quan sát bản đồ, ảnh vệ tinh và ghi vào vở điều kiện hình thành văn minh Ai Cập.",
+      pages: [
+        {
+          title: "Điều kiện hình thành văn minh Ai Cập",
+          layout: "split",
+          blocks: [
+            { kind: "map", src: "assets/img/packs/egypt/ban-do-ai-cap.jpg", query: "Ancient Egypt map vi", caption: "Ai Cập cổ đại dọc theo sông Nin", credit: "Jeff Dahl (bản tiếng Việt), CC BY-SA 3.0 – Wikimedia Commons", pins: [] },
+            { kind: "list", title: "Sông Nin mang lại", items: ["Đất phù sa màu mỡ, nguồn nước tưới", "Đường giao thông chính nối các vùng", "Cây papyrus, đá xây dựng ở hai bên thung lũng"] },
+            { kind: "question", text: "Lũ sông Nin dâng theo mùa đặt ra cho cư dân những **nhu cầu** gì?" }
+          ]
+        },
+        {
+          title: "Điều kiện → nhu cầu → văn minh",
+          layout: "split",
+          blocks: [
+            { kind: "image", src: "assets/img/packs/egypt/nin-ve-tinh.jpg", query: "Nile River and delta from orbit", caption: "Thung lũng và châu thổ sông Nin nhìn từ vệ tinh", credit: "Jacques Descloitres, MODIS – NASA, phạm vi công cộng – Wikimedia Commons" },
+            { kind: "flow", steps: [{ label: "Sông Nin", desc: "phù sa, nước, lũ theo mùa" }, { label: "Nhu cầu", desc: "trị thuỷ, đo ruộng, tính lịch" }, { label: "Nhà nước", desc: "tổ chức lao động" }, { label: "Thành tựu", desc: "chữ viết, toán, lịch…" }] },
+            { kind: "note", text: "- Văn minh Ai Cập hình thành ở **lưu vực sông Nin**: đất phù sa màu mỡ, nguồn nước dồi dào, giao thông thuận lợi.\n- Điều kiện tự nhiên rất quan trọng, nhưng **lao động sáng tạo** của cư dân mới làm nên văn minh." }
+          ]
+        }
+      ]
+    },
+    {
       id: "nghien-cuu",
+      phase: "hinh-thanh",
       type: "groupwork",
       title: "Nghiên cứu chuyên gia",
       minutes: 13,
@@ -145,9 +182,10 @@ window.L360.packs.push({
     },
     {
       id: "trien-lam",
+      phase: "hinh-thanh",
       type: "expo",
       title: "Triển lãm – Báo cáo",
-      minutes: 7,
+      minutes: 5,
       script: "Mỗi nhóm có 75 giây giới thiệu hồ sơ. Các nhóm khác ghi Phiếu 03, chấm 3 tiêu chí trên máy và đặt 1 câu hỏi.",
       instructions: "Nghe nhóm bạn báo cáo, chấm 3 tiêu chí và đặt câu hỏi.",
       source: "nghien-cuu",
@@ -157,9 +195,10 @@ window.L360.packs.push({
     },
     {
       id: "khai-quat",
+      phase: "hinh-thanh",
       type: "match",
       title: "Khái quát hóa",
-      minutes: 5,
+      minutes: 3,
       script: "Từ hồ sơ của 4 nhóm, hãy tìm quy luật: mỗi thành tựu ra đời để đáp ứng nhu cầu nào của cư dân sông Nin?",
       instructions: "Ghép mỗi nhu cầu với thành tựu tương ứng và viết 1 câu giải thích.",
       question: "Ghép mỗi nhu cầu của cư dân Ai Cập với thành tựu văn minh ra đời để đáp ứng nhu cầu đó.",
@@ -174,7 +213,52 @@ window.L360.packs.push({
       timer: 120
     },
     {
+      id: "chot-thanh-tuu",
+      phase: "hinh-thanh",
+      type: "slide",
+      title: "Chốt kiến thức – thành tựu văn minh Ai Cập",
+      minutes: 2,
+      script: "Tổng hợp từ hồ sơ của 4 nhóm chuyên gia. Học sinh ghi sơ đồ vào vở; ảnh trên màn chiếu giúp nhớ nhanh từng thành tựu.",
+      instructions: "Ghi sơ đồ thành tựu văn minh Ai Cập vào vở.",
+      pages: [
+        {
+          title: "Thành tựu tiêu biểu của văn minh Ai Cập cổ đại",
+          layout: "stack",
+          blocks: [
+            {
+              kind: "gallery",
+              images: [
+                { src: "assets/img/packs/egypt/tuong-hinh.jpg", caption: "Chữ tượng hình", credit: "British Museum – Wikimedia Commons" },
+                { src: "assets/img/packs/egypt/rhind.jpg", caption: "Giấy cói toán học Rhind", credit: "Phạm vi công cộng – Wikimedia Commons" },
+                { src: "assets/img/packs/egypt/giza.jpg", caption: "Quần thể kim tự tháp Gi-da", credit: "Ricardo Liberato, CC BY-SA 2.0 – Wikimedia Commons" },
+                { src: "assets/img/packs/egypt/nhan-su.jpg", caption: "Tượng Nhân sư", credit: "Barcex, CC BY-SA 3.0 – Wikimedia Commons" }
+              ]
+            }
+          ]
+        },
+        {
+          title: "Sơ đồ ghi bài",
+          layout: "stack",
+          blocks: [
+            {
+              kind: "mindmap",
+              center: "Văn minh Ai Cập cổ đại",
+              branches: [
+                { label: "Chữ viết", items: ["Chữ tượng hình", "Viết trên giấy papyrus"] },
+                { label: "Lịch – thiên văn", items: ["Lịch 365 ngày", "12 tháng × 30 ngày + 5 ngày"] },
+                { label: "Toán học", items: ["Hệ đếm thập phân", "Tính diện tích, thể tích"] },
+                { label: "Kiến trúc – điêu khắc", items: ["Kim tự tháp", "Tượng Nhân sư"] },
+                { label: "Tôn giáo – y học", items: ["Thờ nhiều thần, thần Ra", "Ướp xác, chữa bệnh"] }
+              ]
+            },
+            { kind: "note", text: "- Thành tựu: chữ tượng hình (giấy papyrus); lịch 365 ngày; hệ đếm thập phân, hình học; kim tự tháp, tượng Nhân sư; ướp xác, y học.\n- Các thành tựu ra đời từ **nhu cầu** của cuộc sống bên sông Nin và còn giá trị đến ngày nay." }
+          ]
+        }
+      ]
+    },
+    {
       id: "pharaoh",
+      phase: "luyen-tap",
       type: "quiz",
       title: "Pharaoh's Challenge",
       minutes: 6,
@@ -222,8 +306,9 @@ window.L360.packs.push({
     },
     {
       id: "thong-diep",
+      phase: "van-dung",
       type: "text",
-      title: "Message to the Future",
+      title: "Thông điệp gửi tương lai",
       minutes: 2,
       script: "Hoàn thành câu: “Tôi muốn thế hệ tương lai hiểu rằng…”. Tự đánh giá mức hiểu bài và ghi điều còn băn khoăn.",
       instructions: "Viết thông điệp ≤ 40 từ và tự đánh giá.",

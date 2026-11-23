@@ -1,0 +1,17 @@
+BOOK|cdktpl-11|11|gdktpl|Chuyên đề học tập Giáo dục Kinh tế và Pháp luật 11|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-chuyen-de-hoc-tap-giao-duc-kinh-te-va-phap-luat-11.4720833913|-1
+C|Chuyên đề 1: Phát triển kinh tế và sự biến đổi môi trường tự nhiên|5
+B|1|Tác động tiêu cực và nguyên nhân phát sinh tác động của phát triển kinh tế đến môi trường tự nhiên|5
+B|2|Sự cần thiết và biện pháp giải quyết vấn đề tác động tiêu cực của phát triển kinh tế đến môi trường tự nhiên|15
+C|Chuyên đề 2: Một số vấn đề về pháp luật dân sự|22
+B|3|Khái niệm, các nguyên tắc cơ bản của pháp luật dân sự|22
+B|4|Một số chế định của pháp luật dân sự về nghĩa vụ dân sự và hợp đồng dân sự|26
+B|5|Một số chế định của pháp luật dân sự về hôn nhân và gia đình, thừa kế di sản|33
+B|6|Một số chế định của pháp luật dân sự về sở hữu trí tuệ và chuyển giao công nghệ|42
+C|Chuyên đề 3: Một số vấn đề về pháp luật lao động|48
+B|7|Khái niệm, các nguyên tắc cơ bản của pháp luật lao động|48
+B|8|Một số quy định của pháp luật lao động về hợp đồng lao động, tiền lương và thưởng, bảo hiểm xã hội|54
+B|9|Một số quy định của pháp luật lao động về tranh chấp lao động và giải quyết tranh chấp lao động|66
+BOOK|cdktpl-12|12|gdktpl|Chuyên đề học tập Giáo dục Kinh tế và Pháp luật 12|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-chuyen-de-hoc-tap-giao-duc-kinh-te-va-phap-luat-12.4714920788|-1
+B|CĐ1|Phát triển kinh tế và sự biến đổi văn hoá, xã hội|5
+B|CĐ2|Một số vấn đề về luật doanh nghiệp|15
+B|CĐ3|Việt Nam trong tiến trình hội nhập kinh tế quốc tế|32

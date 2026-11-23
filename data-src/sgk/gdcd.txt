@@ -1,0 +1,46 @@
+BOOK|gdcd-6|6|gdcd|Giáo dục công dân 6|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-giao-duc-cong-dan-6.4726791109|-1
+B|1|Tự hào về truyền thống gia đình, dòng họ|5
+B|2|Yêu thương con người|9
+B|3|Siêng năng, kiên trì|13
+B|4|Tôn trọng sự thật|17
+B|5|Tự lập|22
+B|6|Tự nhận thức bản thân|26
+B|7|Ứng phó với tình huống nguy hiểm|30
+B|8|Tiết kiệm|35
+B|9|Công dân nước Cộng hoà xã hội chủ nghĩa Việt Nam|41
+B|10|Quyền và nghĩa vụ cơ bản của công dân|45
+B|11|Quyền cơ bản của trẻ em|50
+B|12|Thực hiện quyền trẻ em|55
+BOOK|gdcd-7|7|gdcd|Giáo dục công dân 7|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-giao-duc-cong-dan-7.4726822635|x
+B|1|Tự hào về truyền thống quê hương|
+B|2|Quan tâm, cảm thông và chia sẻ|
+B|3|Học tập tự giác, tích cực|
+B|4|Giữ chữ tín|
+B|5|Bảo tồn di sản văn hoá|
+B|6|Ứng phó với tâm lí căng thẳng|
+B|7|Phòng, chống bạo lực học đường|
+B|8|Quản lí tiền|
+B|9|Phòng, chống tệ nạn xã hội|
+B|10|Quyền và nghĩa vụ của công dân trong gia đình|
+BOOK|gdcd-8|8|gdcd|Giáo dục công dân 8|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-giao-duc-cong-dan-8.4726856411|-1
+B|1|Tự hào về truyền thống dân tộc Việt Nam|5
+B|2|Tôn trọng sự đa dạng của các dân tộc|10
+B|3|Lao động cần cù, sáng tạo|16
+B|4|Bảo vệ lẽ phải|20
+B|5|Bảo vệ môi trường và tài nguyên thiên nhiên|25
+B|6|Xác định mục tiêu cá nhân|35
+B|7|Phòng, chống bạo lực gia đình|41
+B|8|Lập kế hoạch chi tiêu|48
+B|9|Phòng ngừa tai nạn vũ khí, cháy, nổ và các chất độc hại|52
+B|10|Quyền và nghĩa vụ lao động của công dân|59
+BOOK|gdcd-9|9|gdcd|Giáo dục công dân 9|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-giao-duc-cong-dan-9.4714947143|-1
+B|1|Sống có lí tưởng|5
+B|2|Khoan dung|10
+B|3|Tích cực tham gia các hoạt động cộng đồng|14
+B|4|Khách quan và công bằng|19
+B|5|Bảo vệ hoà bình|24
+B|6|Quản lí thời gian hiệu quả|30
+B|7|Thích ứng với thay đổi|34
+B|8|Tiêu dùng thông minh|38
+B|9|Vi phạm pháp luật và trách nhiệm pháp lí|42
+B|10|Quyền tự do kinh doanh và nghĩa vụ nộp thuế|49

@@ -1,0 +1,93 @@
+BOOK|nv-11-1|11|ngu-van|Ngữ văn 11, tập một|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-ngu-van-11-tap-mot.4701014733|-2
+B|1|Câu chuyện và điểm nhìn trong truyện kể|9
+B|2|Cấu tứ và hình ảnh trong thơ trữ tình|54
+B|3|Cấu trúc của văn bản nghị luận|75
+B|4|Tự sự trong truyện thơ dân gian và trong thơ trữ tình|101
+B|5|Nhân vật và xung đột trong bi kịch|125
+BOOK|nv-11-2|11|ngu-van|Ngữ văn 11, tập hai|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-ngu-van-11-tap-hai.4701023518|-1
+B|6|Nguyễn Du – “Những điều trông thấy mà đau đớn lòng”|4
+B|7|Ghi chép và tưởng tượng trong kí|33
+B|8|Cấu trúc của văn bản thông tin|64
+B|9|Lựa chọn và hành động|93
+BOOK|cdnv-11|11|ngu-van|Chuyên đề học tập Ngữ văn 11|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-chuyen-de-hoc-tap-ngu-van-11.4701039764|0
+B|CĐ1|Tập nghiên cứu và viết báo cáo về một vấn đề văn học trung đại Việt Nam|4
+B|CĐ2|Tìm hiểu ngôn ngữ trong đời sống xã hội hiện đại|35
+B|CĐ3|Đọc, viết và giới thiệu về một tác giả văn học|58
+BOOK|nv-10-1|10|ngu-van|Ngữ văn 10, tập một|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-ngu-van-10-tap-mot.21113|0
+B|1|Sức hấp dẫn của truyện kể|9
+B|2|Vẻ đẹp của thơ ca|43
+B|3|Nghệ thuật thuyết phục trong văn nghị luận|72
+B|4|Sức sống của sử thi|97
+B|5|Tích trò sân khấu dân gian|125
+BOOK|nv-10-2|10|ngu-van|Ngữ văn 10, tập hai|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-ngu-van-10-tap-hai.4700663155|-2
+B|6|Nguyễn Trãi – “Dành còn để trợ dân này”|4
+B|7|Quyền năng của người kể chuyện|37
+B|8|Thế giới đa dạng của thông tin|73
+B|9|Hành trang cuộc sống|99
+BOOK|cdnv-10|10|ngu-van|Chuyên đề học tập Ngữ văn 10|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-chuyen-de-hoc-tap-ngu-van-10.4700668351|-1
+B|CĐ1|Tập nghiên cứu và viết báo cáo về một vấn đề văn học dân gian|4
+B|CĐ2|Sân khấu hoá tác phẩm văn học|43
+B|CĐ3|Đọc, viết, giới thiệu một tập thơ, một tập truyện ngắn hoặc một tiểu thuyết|67
+BOOK|nv-12-1|12|ngu-van|Ngữ văn 12, tập một|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-ngu-van-12-tap-mot.4701645717|-1
+B|1|Khả năng lớn lao của tiểu thuyết|9
+B|2|Những thế giới thơ|40
+B|3|Lập luận trong văn bản nghị luận|62
+B|4|Yếu tố kì ảo trong truyện kể|92
+B|5|Tiếng cười của hài kịch|130
+BOOK|nv-12-2|12|ngu-van|Ngữ văn 12, tập hai|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-ngu-van-12-tap-hai.4701652341|-1
+B|6|Hồ Chí Minh – “Văn hoá phải soi đường cho quốc dân đi”|4
+B|7|Sự thật trong tác phẩm kí|38
+B|8|Dữ liệu trong văn bản thông tin|63
+B|9|Văn học và cuộc đời|91
+BOOK|cdnv-12|12|ngu-van|Chuyên đề học tập Ngữ văn 12|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-chuyen-de-hoc-tap-ngu-van-12.4701659743|0
+B|CĐ1|Tập nghiên cứu và viết báo cáo về một vấn đề văn học hiện đại|4
+B|CĐ2|Tìm hiểu về một tác phẩm nghệ thuật chuyển thể từ văn học|34
+B|CĐ3|Tìm hiểu phong cách sáng tác của một trường phái văn học: cổ điển, hiện thực hoặc lãng mạn|56
+BOOK|nv-6-1|6|ngu-van|Ngữ văn 6, tập một|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-ngu-van-6-tap-mot.4699839775|-1
+B|1|Tôi và các bạn|10
+B|2|Gõ cửa trái tim|38
+B|3|Yêu thương và chia sẻ|59
+B|4|Quê hương yêu dấu|88
+B|5|Những nẻo đường xứ sở|108
+BOOK|nv-6-2|6|ngu-van|Ngữ văn 6, tập hai|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-ngu-van-6-tap-hai.4699846798|-1
+B|6|Chuyện kể về những người anh hùng|4
+B|7|Thế giới cổ tích|24
+B|8|Khác biệt và gần gũi|52
+B|9|Trái Đất – ngôi nhà chung|76
+B|10|Cuốn sách tôi yêu|98
+BOOK|nv-7-1|7|ngu-van|Ngữ văn 7, tập một|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-ngu-van-7-tap-mot.4699959987|-1
+B|1|Bầu trời tuổi thơ|9
+B|2|Khúc nhạc tâm hồn|38
+B|3|Cội nguồn yêu thương|57
+B|4|Giai điệu đất nước|88
+B|5|Màu sắc trăm miền|105
+BOOK|nv-7-2|7|ngu-van|Ngữ văn 7, tập hai|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-ngu-van-7-tap-hai.4700000210|-1
+B|6|Bài học cuộc sống|4
+B|7|Thế giới viễn tưởng|25
+B|8|Trải nghiệm để trưởng thành|54
+B|9|Hoà điệu với tự nhiên|76
+B|10|Trang sách và cuộc sống|101
+BOOK|nv-8-1|8|ngu-van|Ngữ văn 8, tập một|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-ngu-van-8-tap-mot.4700073646|-1
+B|1|Câu chuyện của lịch sử|8
+B|2|Vẻ đẹp cổ điển|38
+B|3|Lời sông núi|57
+B|4|Tiếng cười trào phúng trong thơ|80
+B|5|Những câu chuyện hài|99
+BOOK|nv-8-2|8|ngu-van|Ngữ văn 8, tập hai|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-ngu-van-8-tap-hai.4700085484|-1
+B|6|Chân dung cuộc sống|4
+B|7|Tin yêu và ước vọng|36
+B|8|Nhà văn và trang viết|59
+B|9|Hôm nay và ngày mai|86
+B|10|Sách – người bạn đồng hành|115
+BOOK|nv-9-1|9|ngu-van|Ngữ văn 9, tập một|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-ngu-van-9-tap-mot.4700220434|-1
+B|1|Thế giới kì ảo|8
+B|2|Những cung bậc tâm trạng|39
+B|3|Hồn nước nằm trong tiếng mẹ cha|63
+B|4|Khám phá vẻ đẹp văn chương|87
+B|5|Đối diện với nỗi đau|116
+BOOK|nv-9-2|9|ngu-van|Ngữ văn 9, tập hai|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-ngu-van-9-tap-hai.4714685580|-1
+B|6|Giải mã những bí mật|4
+B|7|Hồn thơ muôn điệu|44
+B|8|Tiếng nói của lương tri|66
+B|9|Đi và suy ngẫm|89
+B|10|Văn học – lịch sử tâm hồn|113

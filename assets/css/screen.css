@@ -63,7 +63,10 @@ html,body{height:100%;overflow:hidden;background:#0B1220}
 .s-main .md{font-size:26px;line-height:1.45}
 .s-main .blk-ul{gap:12px;font-size:26px}
 .s-main .blk-ul li::before{width:13px;height:13px}
-.s-main .blk-fig img{max-height:560px}
+.s-main .blk-fig img{max-height:min(560px,58vh)}
+.s-main .blk-gal .blk-fig img{max-height:min(300px,27vh);width:100%;object-fit:cover}
+.s-main .blk-map img{max-height:min(620px,62vh)}
+.s-main .pg-split .pg-l .blk-fig img{max-height:min(600px,62vh)}
 .s-main .blk-fig.cover img{height:520px}
 .s-main .tl-t{font-size:24px}
 .s-main .tl-b{font-size:20px} .s-main .tl-b span{font-size:17px}

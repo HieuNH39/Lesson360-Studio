@@ -113,7 +113,7 @@
           const bold = /^\*\*[^*]+\*\*$/.test(part);
           out.push({
             text: bold ? part.slice(2, -2) : part.replace(/(^|\s)\*([^*\s][^*]*)\*/g, "$1$2"),
-            options: Object.assign({}, base, bold ? { bold: true } : {}, bullet ? { bullet: { indent: 16 } } : {}, i === parts.length - 1 ? { breakLine: true } : {})
+            options: Object.assign({}, base, bold ? { bold: true } : {}, bullet && i === 0 ? { bullet: { indent: 16 } } : {}, i === parts.length - 1 ? { breakLine: true } : {})
           });
         });
       });
@@ -177,6 +177,7 @@
           })
         );
         (s.questions || []).forEach((q) => q.image && out.add(q.image));
+        if (s.type === "auction") (s.items || []).forEach((x) => x.image && out.add(x.image));
         if (s.type === "video") {
           const v = L360.videoSource ? L360.videoSource(s.source || {}) : {};
           if (v.poster) out.add(v.poster);
@@ -805,11 +806,15 @@
       T(sl, plain(s.question), { x: MX, y: 1.95, w: W - 2 * MX, h: 0.7, fontSize: 20, bold: true });
       const it = arr(s.items);
       const cw = (W - 2 * MX - (it.length - 1) * 0.2) / Math.max(1, it.length);
+      const tfs = Math.min(18, ...it.map((x) => fit(plain(x.title), cw - 0.3, 0.62, 18, 11)));
       it.forEach((x, i) => {
         const bx = MX + i * (cw + 0.2);
         box(sl, bx, 2.85, cw, 3.8, { fill: col.card, line: col.accent, lw: 1.25, shadow: true });
-        T(sl, plain(x.title), { x: bx + 0.15, y: 2.95, w: cw - 0.3, h: 0.7, fontSize: 18, bold: true, color: col.accent2 });
-        T(sl, plain(x.text || ""), { x: bx + 0.15, y: 3.7, w: cw - 0.3, h: 2.85, fontSize: fit(plain(x.text || ""), cw - 0.3, 2.85, 16, 9) });
+        const hasIm = x.image && imgs[x.image];
+        if (hasIm) img(sl, x.image, bx + 0.1, 2.95, cw - 0.2, 1.6, { cover: false });
+        const ty = hasIm ? 4.62 : 2.95;
+        T(sl, plain(x.title), { x: bx + 0.15, y: ty, w: cw - 0.3, h: 0.62, fontSize: tfs, bold: true, color: col.accent2 });
+        T(sl, plain(x.text || ""), { x: bx + 0.15, y: ty + 0.66, w: cw - 0.3, h: 6.55 - ty - 0.66, fontSize: fit(plain(x.text || ""), cw - 0.3, 6.55 - ty - 0.66, 16, 9) });
       });
       footer(sl, d.p, n);
     };
@@ -914,7 +919,8 @@
     const { pptx, count } = await build(packs, opt);
     const p = plan(packs).packs[0];
     const b = p.bai || {};
-    const name = `${b.so ? "Bai " + b.so + " - " : ""}${(b.ten || p.title).replace(/[\\/:*?"<>|]+/g, " ").slice(0, 70)}${packs.length === 1 && p.tiet.tong > 1 ? ` - Tiet ${p.tiet.so}` : ""}.pptx`;
+    const cut = (t, n) => (t.length <= n ? t : t.slice(0, n).replace(/\s+\S*$/, "").replace(/[\s.,;:–-]+$/, ""));
+    const name = `${b.so ? "Bài " + b.so + " - " : ""}${cut((b.ten || p.title).replace(/[\\/:*?"<>|]+/g, " "), 90)}${packs.length === 1 && p.tiet.tong > 1 ? ` - Tiết ${p.tiet.so}` : ""}.pptx`;
     await pptx.writeFile({ fileName: opt.fileName || name });
     return count;
   }

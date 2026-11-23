@@ -1,0 +1,26 @@
+BOOK|ktpl-12|12|gdktpl|Giáo dục Kinh tế và Pháp luật 12|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-giao-duc-kinh-te-va-phap-luat-12.4714912573|-1
+C|Chủ đề 1: Tăng trưởng và phát triển kinh tế|6
+B|1|Tăng trưởng và phát triển kinh tế|6
+C|Chủ đề 2: Hội nhập kinh tế quốc tế|18
+B|2|Hội nhập kinh tế quốc tế|18
+C|Chủ đề 3: Bảo hiểm và an sinh xã hội|27
+B|3|Bảo hiểm|27
+B|4|An sinh xã hội|33
+C|Chủ đề 4: Lập kế hoạch kinh doanh|39
+B|5|Lập kế hoạch kinh doanh|39
+C|Chủ đề 5: Trách nhiệm xã hội của doanh nghiệp|46
+B|6|Trách nhiệm xã hội của doanh nghiệp|46
+C|Chủ đề 6: Quản lí thu, chi trong gia đình|52
+B|7|Quản lí thu, chi trong gia đình|52
+C|Chủ đề 7: Một số quyền và nghĩa vụ của công dân về kinh tế|59
+B|8|Quyền và nghĩa vụ của công dân về kinh doanh và nộp thuế|59
+B|9|Quyền và nghĩa vụ của công dân về sở hữu tài sản và nghĩa vụ tôn trọng tài sản của người khác|67
+C|Chủ đề 8: Quyền và nghĩa vụ của công dân về văn hoá, xã hội|74
+B|10|Quyền và nghĩa vụ của công dân trong hôn nhân và gia đình|74
+B|11|Quyền và nghĩa vụ của công dân trong học tập|84
+B|12|Quyền và nghĩa vụ của công dân trong bảo vệ, chăm sóc sức khoẻ và bảo đảm an sinh xã hội|90
+B|13|Quyền và nghĩa vụ của công dân trong bảo vệ di sản văn hoá, môi trường và tài nguyên thiên nhiên|97
+C|Chủ đề 9: Một số vấn đề cơ bản của luật quốc tế|103
+B|14|Một số vấn đề chung về pháp luật quốc tế|103
+B|15|Công pháp quốc tế về dân cư, lãnh thổ và chủ quyền quốc gia|111
+B|16|Nguyên tắc cơ bản của Tổ chức Thương mại Thế giới và hợp đồng thương mại quốc tế|125

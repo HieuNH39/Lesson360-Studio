@@ -249,8 +249,9 @@
     const st = host.state;
     const step = host.step;
     const T = host.type;
-    if (!step || T.noSubmit) return [];
+    if (!step) return [];
     if (T.controls) return T.controls({ host, state: st, step, groups: host.meta.groups || [] });
+    if (T.noSubmit) return [];
     const c = [];
     const dur = host.defaultDur();
     if (st.phase === "observe") c.push({ label: `▶ Mở nhận bài${dur ? ` (${u.fmtSec(dur)})` : ""}`, cls: "primary", fn: () => host.open() });
