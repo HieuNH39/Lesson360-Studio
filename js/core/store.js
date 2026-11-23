@@ -103,6 +103,14 @@
           if (i >= 0) listeners.splice(i, 1);
         };
       },
+      // Lọc các con theo một trường (Firebase: orderByChild + equalTo).
+      query(path, child, value) {
+        return this.get(path).then((v) => {
+          const out = {};
+          Object.entries(v || {}).forEach(([k, x]) => x && x[child] === value && (out[k] = x));
+          return out;
+        });
+      },
       get(path) {
         tree = read();
         const v = u.get(tree, ROOT + "/" + path);
@@ -154,6 +162,10 @@
         async signUpTeacher(email) {
           return api.auth.signInTeacher(email);
         },
+        async signInGoogle() {
+          return api.auth.signInTeacher("giaovien@dien-tap");
+        },
+        async resetPassword() {},
         async signOut() {
           sessionStorage.removeItem("l360:teacher");
           api.auth.user = null;
@@ -211,6 +223,7 @@
         return () => r.off("value", h);
       },
       get: (path) => ref(path).get().then((s) => s.val()),
+      query: (path, child, value) => ref(path).orderByChild(child).equalTo(value).get().then((s) => s.val() || {}),
       set: (path, v) => ref(path).set(v),
       update: (path, o) => ref(path).update(o),
       remove: (path) => ref(path).remove(),
@@ -241,7 +254,7 @@
       auth: {
         get user() {
           const cu = auth.currentUser || currentUser;
-          return cu ? { uid: cu.uid, email: cu.email, anonymous: cu.isAnonymous } : null;
+          return cu ? { uid: cu.uid, email: cu.email, name: cu.displayName || "", anonymous: cu.isAnonymous } : null;
         },
         onChange(cb) {
           return auth.onAuthStateChanged((usr) => {
@@ -256,6 +269,15 @@
         async signUpTeacher(email, pw) {
           await auth.createUserWithEmailAndPassword(email, pw);
           return api.auth.user;
+        },
+        async signInGoogle() {
+          const pv = new firebase.auth.GoogleAuthProvider();
+          pv.setCustomParameters({ prompt: "select_account" });
+          await auth.signInWithPopup(pv);
+          return api.auth.user;
+        },
+        async resetPassword(email) {
+          await auth.sendPasswordResetEmail(email);
         },
         async signOut() {
           await auth.signOut();

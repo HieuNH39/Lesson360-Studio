@@ -5,15 +5,18 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Màn chiếu – Lesson 360°</title>
 <meta name="description" content="Lesson 360° Studio – Xưởng AI kiến tạo bài học số từ giáo án. Trường TH, THCS & THPT FPT Bắc Giang.">
-<link rel="icon" href="assets/img/icon.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap">
+<meta name="theme-color" content="#0F2742">
+<link rel="icon" href="assets/img/logo-l360.svg" type="image/svg+xml">
+<link rel="icon" href="assets/img/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+<link rel="preload" href="assets/fonts/be-vietnam-pro-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/be-vietnam-pro-700-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/css/l360.css">
 <link rel="stylesheet" href="assets/css/screen.css">
 </head>
 <body>
 <div class="stage" id="stage"></div>
+<div id="toast"></div>
 <script src="js/config.js"></script>
 <script src="js/vendor/qrcode.js"></script>
 <script src="js/vendor/firebase/firebase-app-compat.js"></script>
@@ -21,17 +24,27 @@
 <script src="js/vendor/firebase/firebase-database-compat.js"></script>
 <script src="js/core/util.js"></script>
 <script src="js/core/store.js"></script>
-<script src="js/core/pack.js"></script>
+<script src="js/core/design.js"></script>
+<script src="js/core/sound.js"></script>
 <script src="js/core/ui.js"></script>
+<script src="js/core/blocks.js"></script>
+<script src="js/data/sgk.js"></script>
+<script src="js/data/eduhistory.js"></script>
+<script src="js/core/curriculum.js"></script>
+<script src="js/core/pack.js"></script>
 <script src="js/core/room.js"></script>
 <script src="js/core/shell.js"></script>
 <script src="js/core/auth.js"></script>
-<script src="js/core/architect.js"></script>
+<script src="js/core/library.js"></script>
 <script src="js/data/heritage-sites.js"></script>
 <script src="js/activities/basic.js"></script>
+<script src="js/activities/game.js"></script>
 <script src="js/activities/interactive.js"></script>
 <script src="js/activities/group.js"></script>
 <script src="js/activities/explore.js"></script>
+<script src="packs/gddp-di-san-kinh-bac.js"></script>
+<script src="packs/hdtn10-hanh-trang-nghe-nghiep.js"></script>
+<script src="packs/ls10-van-minh-ai-cap.js"></script>
 <script src="js/pages/screen.js"></script>
 </body>
 </html>

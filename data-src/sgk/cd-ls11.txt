@@ -1,0 +1,4 @@
+BOOK|cdls-11|11|lich-su|Chuyên đề học tập Lịch sử 11|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-chuyen-de-hoc-tap-lich-su-11.4720332514|-1
+B|CĐ1|Lịch sử nghệ thuật truyền thống Việt Nam|6
+B|CĐ2|Chiến tranh và hoà bình trong thế kỉ XX|20
+B|CĐ3|Danh nhân trong lịch sử Việt Nam|40

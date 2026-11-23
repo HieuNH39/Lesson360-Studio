@@ -1,0 +1,130 @@
+BOOK|gddp-bg-6|6|gddp|Tài liệu GDĐP tỉnh Bắc Giang – Lớp 6||
+C|Chủ đề. Địa lí Bắc Giang|5
+B|1|Vị trí địa lí và phạm vi lãnh thổ Bắc Giang|6
+B|2|Thực hành: Tìm hiểu về xã/thị trấn/phường nơi em đang học tập|11
+C|Chủ đề. Lịch sử Bắc Giang|12
+B|3|Bắc Giang thời nguyên thuỷ|13
+B|4|Bắc Giang thời dựng nước Văn Lang – Âu Lạc|19
+B|5|Bắc Giang thời kì Bắc thuộc|25
+C|Chủ đề. Ngữ văn Bắc Giang|31
+B|6|Truyền thuyết Bắc Giang|32
+B|7|Truyện cổ tích Bắc Giang|37
+B|8|Sân khấu hoá truyện dân gian Bắc Giang|42
+B|9|Ca dao Bắc Giang|44
+C|Chủ đề. Âm nhạc truyền thống Bắc Giang|47
+B|10|Vùng đất hội tụ sắc màu âm nhạc truyền thống|48
+B|11|Hát quan họ ở Bắc Giang|55
+C|Chủ đề. Làng nghề ở Bắc Giang|58
+B|12|Khái quát chung về làng nghề ở Bắc Giang|59
+B|13|Vai trò và tác động của làng nghề đối với sự phát triển kinh tế – xã hội ở Bắc Giang|63
+B|14|Tìm hiểu và trải nghiệm làng nghề ở Bắc Giang|66
+BOOK|gddp-bg-7|7|gddp|Tài liệu GDĐP tỉnh Bắc Giang – Lớp 7||
+C|Chủ đề. Địa lí Bắc Giang|5
+B|1|Điều kiện tự nhiên và tài nguyên thiên nhiên Bắc Giang|6
+B|2|Thực hành: Tìm hiểu môi trường tự nhiên ở địa phương|14
+C|Chủ đề. Lịch sử Bắc Giang|17
+B|3|Bắc Giang từ thế kỉ X đến đầu thế kỉ XIII|18
+B|4|Bắc Giang từ thế kỉ XIII đến thế kỉ XIV|25
+B|5|Bắc Giang từ đầu thế kỉ XV đến đầu thế kỉ XVI|33
+C|Chủ đề. Ngữ văn Bắc Giang|40
+B|6|Tục ngữ, câu đố Bắc Giang|41
+B|7|Thực hành: Tìm hiểu từ ngữ địa phương Bắc Giang|46
+B|8|Thơ Bắc Giang|49
+C|Chủ đề. Đa dạng sinh học Bắc Giang|55
+B|9|Đa dạng loài hệ thực vật, động vật ở Bắc Giang|56
+B|10|Sự suy giảm hệ thực vật, động vật và bảo vệ đa dạng hệ thực vật, động vật ở Bắc Giang|63
+C|Chủ đề. Mĩ thuật truyền thống Bắc Giang|68
+B|11|Bắc Giang – vùng đất của mĩ thuật truyền thống|69
+B|12|Nghệ thuật kiến trúc, điêu khắc, chạm khắc, tranh thờ ở Bắc Giang|74
+BOOK|gddp-bg-8|8|gddp|Tài liệu GDĐP tỉnh Bắc Giang – Lớp 8||
+C|Chủ đề 1: Địa lí Bắc Giang|5
+B|1|Sử dụng và bảo vệ tài nguyên thiên nhiên tỉnh Bắc Giang|6
+B|2|Bảo vệ môi trường và phòng chống thiên tai tỉnh Bắc Giang|14
+B|3|Thực hành: Tìm hiểu về tình hình khai thác, sử dụng và bảo vệ tài nguyên thiên nhiên tỉnh Bắc Giang|20
+C|Chủ đề 2: Lịch sử Bắc Giang|23
+B|4|Bắc Giang từ đầu thế kỉ XVI đến thế kỉ XVIII|24
+B|5|Bắc Giang từ đầu thế kỉ XIX đến đầu thế kỉ XX|32
+C|Chủ đề 3: Ngữ văn Bắc Giang|45
+B|6|Truyện cười dân gian Bắc Giang|46
+B|7|Thơ Đường luật Bắc Giang|50
+B|8|Tuỳ bút, tản văn Bắc Giang|54
+C|Chủ đề 4: An sinh xã hội|61
+B|9|Chính sách an sinh xã hội tỉnh Bắc Giang|62
+C|Chủ đề 5: Âm nhạc trong đời sống đương đại ở Bắc Giang|71
+B|10|Một số hoạt động âm nhạc ở tỉnh Bắc Giang|74
+B|11|Một số nhạc sĩ tiêu biểu ở tỉnh Bắc Giang|77
+C|Chủ đề 6: Du lịch Bắc Giang|84
+B|12|Tiềm năng du lịch tỉnh Bắc Giang|85
+B|13|Tình hình phát triển du lịch tỉnh Bắc Giang|93
+B|14|Tìm hiểu và giới thiệu du lịch ở tỉnh Bắc Giang|99
+BOOK|gddp-bg-9|9|gddp|Tài liệu GDĐP tỉnh Bắc Giang – Lớp 9||
+C|Chủ đề 1: Địa lí kinh tế – xã hội|5
+B|1|Dân cư tỉnh Bắc Giang|5
+B|2|Tăng trưởng và chuyển dịch cơ cấu kinh tế tỉnh Bắc Giang|11
+B|3|Ngành nông nghiệp, lâm nghiệp và thuỷ sản tỉnh Bắc Giang|14
+B|4|Công nghiệp tỉnh Bắc Giang|20
+B|5|Các ngành dịch vụ tỉnh Bắc Giang|23
+C|Chủ đề 2: Lịch sử|27
+B|6|Bắc Giang từ năm 1918 đến Cách mạng tháng Tám năm 1945|27
+B|7|Bắc Giang từ sau Cách mạng tháng Tám đến năm 1975|34
+B|8|Bắc Giang từ năm 1976 đến nay|42
+C|Chủ đề 3: Ngữ văn Bắc Giang|48
+B|9|Thơ Bắc Giang|48
+B|10|Truyện ngắn Bắc Giang|54
+B|11|Giới thiệu một cuốn sách viết về Bắc Giang|67
+C|Chủ đề 4: Mĩ thuật hiện đại Bắc Giang|73
+B|12|Mĩ thuật hiện đại Bắc Giang và một số tác phẩm tiêu biểu|73
+C|Chủ đề 5: Hệ thống chính trị|87
+B|13|Hệ thống chính trị địa phương tỉnh Bắc Giang|87
+C|Chủ đề 6: Định hướng cho học sinh sau tốt nghiệp trung học cơ sở|102
+B|14|Thị trường lao động trên địa bàn tỉnh Bắc Giang|102
+B|15|Đào tạo nghề cho học sinh sau tốt nghiệp trung học cơ sở trên địa bàn tỉnh Bắc Giang|110
+BOOK|gddp-bg-10|10|gddp|Tài liệu GDĐP tỉnh Bắc Giang – Lớp 10||
+C|Chủ đề. Địa lí Bắc Giang|5
+B|1|Nguồn lực phát triển kinh tế – xã hội tỉnh Bắc Giang|6
+B|2|Thực hành: Viết báo cáo về một nguồn lực phát triển kinh tế – xã hội của huyện/thành phố nơi em đang học tập|17
+C|Chủ đề. Di tích lịch sử – văn hoá tỉnh Bắc Giang|18
+B|3|Khái quát về di tích lịch sử – văn hoá ở Bắc Giang|19
+B|4|Một số di tích lịch sử tiêu biểu ở Bắc Giang|24
+B|5|Một số di tích kiến trúc, nghệ thuật tiêu biểu ở Bắc Giang|35
+C|Chủ đề. Ngữ văn Bắc Giang|47
+B|6|Khái quát văn học dân gian Bắc Giang|48
+B|7|Ca dao Bắc Giang|56
+B|8|Báo cáo về một vấn đề văn học dân gian Bắc Giang|59
+B|9|Một số văn bản thông tin về Bắc Giang|62
+C|Chủ đề. Cách mạng công nghiệp lần thứ tư và sự dịch chuyển nghề nghiệp ở tỉnh Bắc Giang|68
+B|10|Ảnh hưởng của cuộc Cách mạng công nghiệp lần thứ tư tới cơ cấu nghề nghiệp ở tỉnh Bắc Giang|69
+B|11|Xu thế dịch chuyển nghề nghiệp ở tỉnh Bắc Giang|74
+C|Chủ đề. Ngân sách địa phương tỉnh Bắc Giang|77
+B|Chủ đề|Ngân sách địa phương tỉnh Bắc Giang|77
+BOOK|gddp-bg-11|11|gddp|Tài liệu GDĐP tỉnh Bắc Giang – Lớp 11||
+C|Chủ đề 1. Địa lí – Hướng nghiệp|6
+B|1|Khái quát chung về kinh tế tỉnh Bắc Giang|6
+B|2|Ngành nông nghiệp, lâm nghiệp và thuỷ sản tỉnh Bắc Giang|12
+B|3|Ngành công nghiệp tỉnh Bắc Giang|20
+B|4|Các ngành dịch vụ tỉnh Bắc Giang|26
+B|5|Thực hành: Giới thiệu về nông sản quê hương em|34
+B|6|Trải nghiệm ngành, nghề tỉnh Bắc Giang|37
+C|Chủ đề 2. Lịch sử Bắc Giang|41
+B|7|Khái quát về danh nhân Bắc Giang|41
+B|8|Một số danh nhân tiêu biểu ở Bắc Giang|45
+B|9|Thực hành: Giới thiệu về danh nhân Bắc Giang|60
+C|Chủ đề 3. Ngữ văn Bắc Giang|63
+B|10|Khái quát văn học viết Bắc Giang|63
+B|11|Phú Xương Giang|76
+B|12|Thơ Bắc Giang|83
+BOOK|gddp-bg-12|12|gddp|Tài liệu GDĐP tỉnh Bắc Giang – Lớp 12||
+C|Chủ đề 1: Chính trị, xã hội và môi trường tỉnh Bắc Giang|5
+B|1|Đảng bộ tỉnh Bắc Giang|5
+B|2|Bình đẳng giới và chăm sóc sức khoẻ sinh sản vị thành niên trên địa bàn tỉnh Bắc Giang|17
+B|3|Bảo vệ môi trường ở tỉnh Bắc Giang|26
+B|4|Thực hiện dự án tái chế rác thải nhựa bảo vệ môi trường|26
+C|Chủ đề 2: Văn hoá, truyền thống của người Bắc Giang|33
+B|5|Di sản văn hoá phi vật thể ở tỉnh Bắc Giang|33
+B|6|Truyền thống của nhân dân tỉnh Bắc Giang|43
+B|7|Thực hành về di sản văn hoá phi vật thể ở tỉnh Bắc Giang|50
+C|Chủ đề 3: Ngữ văn Bắc Giang|53
+B|8|Thơ Bắc Giang|53
+B|9|Truyện ngắn Bắc Giang|58
+B|10|Kí Bắc Giang|73
+B|11|Giới thiệu về một tác giả văn học Bắc Giang|85

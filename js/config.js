@@ -9,11 +9,11 @@ window.L360_CONFIG = {
   author: "Nguyễn Hữu Hiệu",
 
   firebase: {
-    apiKey: "",
-    authDomain: "",
-    databaseURL: "",
-    projectId: "",
-    appId: ""
+    apiKey: "AIzaSyC8ipSHqxF6i5_u23O9OzLJaXHsD-lQiYU",
+    authDomain: "lesson360-studio.firebaseapp.com",
+    databaseURL: "https://lesson360-studio-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "lesson360-studio",
+    appId: "1:353741355347:web:631d6bd9392334c2d009a6"
   },
   dbRoot: "l360",
 

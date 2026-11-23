@@ -1,0 +1,4 @@
+BOOK|cddl-12|12|dia-li|Chuyên đề học tập Địa lí 12|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-chuyen-de-hoc-tap-dia-li-12.4755858537|-1
+B|CĐ 12.1|Thiên tai và biện pháp phòng chống|5
+B|CĐ 12.2|Phát triển vùng|19
+B|CĐ 12.3|Phát triển làng nghề|41

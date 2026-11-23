@@ -30,8 +30,8 @@
       })
       .join("")}</div>`;
 
-  ui.options = (options, { selected, answer, disabled, multi, name = "opt", mine } = {}) =>
-    `<div class="opts">${options
+  ui.options = (options, { selected, answer, disabled, multi, name = "opt", mine, cls = "" } = {}) =>
+    `<div class="opts ${cls}">${options
       .map((o, i) => {
         const sel = multi ? (selected || []).includes(i) : selected === i;
         let cls = sel ? "sel" : "";
@@ -47,7 +47,7 @@
     if (!m) return "";
     let out = "";
     if (m.image)
-      out += `<figure style="margin:0 0 12px"><img src="${u.esc(m.image)}" alt="${u.esc(m.caption || "")}" loading="lazy" style="width:100%;max-height:${big ? "52vh" : "320px"};object-fit:contain;border-radius:12px;background:#EFE7D8">${
+      out += `<figure style="margin:0 0 12px"><img src="${u.esc(m.image)}" alt="${u.esc(m.caption || "")}" loading="lazy" style="width:100%;max-height:${big ? "52vh" : "320px"};object-fit:contain;border-radius:12px;background:#fff">${
         m.caption || m.credit
           ? `<figcaption class="tiny muted" style="margin-top:4px">${u.esc(m.caption || "")}${m.credit ? ` <i>Nguồn: ${u.esc(m.credit)}</i>` : ""}</figcaption>`
           : ""
@@ -124,7 +124,7 @@
 
   ui.phaseLabel = (st, step) => {
     if (!step) return "";
-    if (step.noSubmit) return "Trình chiếu";
+    if (step.noSubmit) return step.type === "video" ? "Video" : "Trình chiếu";
     return { observe: "Quan sát", open: "Đang nhận bài", locked: "Đã khoá", revealed: "Đã công bố" }[st.phase] || "";
   };
 

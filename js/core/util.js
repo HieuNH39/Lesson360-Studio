@@ -135,6 +135,31 @@
       a.remove();
     }, 500);
   };
+  u.downloadBlob = (name, blob) => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      URL.revokeObjectURL(a.href);
+      a.remove();
+    }, 1500);
+  };
+  // Tải thư viện lớn (docx, pptxgenjs) khi cần.
+  const loaded = {};
+  u.loadScript = (src) =>
+    loaded[src] ||
+    (loaded[src] = new Promise((res, rej) => {
+      const s = document.createElement("script");
+      s.src = src;
+      s.onload = () => res();
+      s.onerror = () => {
+        delete loaded[src];
+        rej(new Error("Không tải được " + src));
+      };
+      document.head.appendChild(s);
+    }));
   u.copy = async (text) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -165,8 +190,8 @@
     box.appendChild(el);
     setTimeout(() => el.remove(), ms);
   };
-  u.modal = (innerHtml, { onClose } = {}) => {
-    const bg = u.html(`<div class="modal-bg"><div class="modal">${innerHtml}</div></div>`);
+  u.modal = (innerHtml, { onClose, wide } = {}) => {
+    const bg = u.html(`<div class="modal-bg"><div class="modal ${wide ? "wide" : ""}">${innerHtml}</div></div>`);
     const close = () => {
       bg.remove();
       onClose && onClose();

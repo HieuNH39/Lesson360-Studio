@@ -1,0 +1,4 @@
+BOOK|cdls-10|10|lich-su|Chuyên đề học tập Lịch sử 10|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-chuyen-de-hoc-tap-lich-su-10.4755634780|-1
+B|CĐ1|Các lĩnh vực của Sử học|6
+B|CĐ2|Bảo tồn và phát huy giá trị di sản văn hoá ở Việt Nam|23
+B|CĐ3|Nhà nước và pháp luật Việt Nam trong lịch sử|45

@@ -1,0 +1,794 @@
+/* Kế hoạch bài dạy (KHBD) theo Phụ lục IV – Công văn 5512/BGDĐT-GDTrH,
+   tích hợp Năng lực số (Thông tư 02/2025/TT-BGDĐT, hướng dẫn tại CV 3456/BGDĐT-GDPT)
+   và Năng lực trí tuệ nhân tạo (Quyết định 2422/QĐ-BGDĐT).
+   Định dạng dữ liệu: "l360-khbd/1". Một mô hình trang dùng chung cho xem trước (HTML) và tệp Word (.docx),
+   bám mẫu giáo án của tổ: A4, lề T2/D2/P2/T2,5 cm, Times New Roman 13, chân trang mã biểu mẫu + số trang. */
+(function () {
+  const L360 = window.L360;
+  const u = L360.u;
+  const arr = (x) => (Array.isArray(x) ? x : x == null || x === "" ? [] : [x]);
+  const str = (x) => (x == null ? "" : String(x));
+
+  /* ---------- Danh mục chuẩn ---------- */
+  // Khung năng lực số: 6 miền, 24 năng lực thành phần.
+  const NLS = [
+    { id: "1", ten: "Khai thác dữ liệu và thông tin", items: [["1.1", "Duyệt, tìm kiếm và lọc dữ liệu, thông tin và nội dung số"], ["1.2", "Đánh giá dữ liệu, thông tin và nội dung số"], ["1.3", "Quản lí dữ liệu, thông tin và nội dung số"]] },
+    {
+      id: "2",
+      ten: "Giao tiếp và hợp tác",
+      items: [["2.1", "Tương tác thông qua công nghệ số"], ["2.2", "Chia sẻ thông qua công nghệ số"], ["2.3", "Sử dụng công nghệ số để thực hiện trách nhiệm công dân"], ["2.4", "Hợp tác thông qua công nghệ số"], ["2.5", "Quy tắc ứng xử trên mạng"], ["2.6", "Quản lí danh tính số"]]
+    },
+    { id: "3", ten: "Sáng tạo nội dung số", items: [["3.1", "Phát triển nội dung số"], ["3.2", "Tích hợp và tinh chỉnh nội dung số"], ["3.3", "Thực thi bản quyền và giấy phép"], ["3.4", "Lập trình"]] },
+    { id: "4", ten: "An toàn", items: [["4.1", "Bảo vệ thiết bị"], ["4.2", "Bảo vệ dữ liệu cá nhân và quyền riêng tư"], ["4.3", "Bảo vệ sức khoẻ và an sinh số"], ["4.4", "Bảo vệ môi trường"]] },
+    { id: "5", ten: "Giải quyết vấn đề", items: [["5.1", "Giải quyết các vấn đề kĩ thuật"], ["5.2", "Xác định nhu cầu và giải pháp công nghệ"], ["5.3", "Sử dụng sáng tạo công nghệ số"], ["5.4", "Xác định các vấn đề cần cải thiện về năng lực số"]] },
+    { id: "6", ten: "Ứng dụng trí tuệ nhân tạo", items: [["6.1", "Hiểu biết về trí tuệ nhân tạo"], ["6.2", "Sử dụng trí tuệ nhân tạo"], ["6.3", "Đánh giá trí tuệ nhân tạo"]] }
+  ];
+  const NLS_LEVEL = (g) => {
+    g = Number(g) || 10;
+    return g <= 2 ? "CB1" : g <= 5 ? "CB2" : g <= 7 ? "TC1" : g <= 9 ? "TC2" : "NC1";
+  };
+  const LEVEL_NAME = { CB1: "Cơ bản 1", CB2: "Cơ bản 2", TC1: "Trung cấp 1", TC2: "Trung cấp 2", NC1: "Nâng cao 1" };
+  // Bốn miền năng lực AI (QĐ 2422/QĐ-BGDĐT).
+  const AI = [
+    { ma: "NLa", ten: "Tư duy lấy con người làm trung tâm" },
+    { ma: "NLb", ten: "Đạo đức AI" },
+    { ma: "NLc", ten: "Các kĩ thuật và ứng dụng AI" },
+    { ma: "NLd", ten: "Thiết kế hệ thống AI" }
+  ];
+  const CHUNG = ["Tự chủ và tự học", "Giao tiếp và hợp tác", "Giải quyết vấn đề và sáng tạo"];
+  const PHAM_CHAT = ["Yêu nước", "Nhân ái", "Chăm chỉ", "Trung thực", "Trách nhiệm"];
+  const DAC_THU = {
+    "lich-su": { ten: "Năng lực lịch sử", items: ["Tìm hiểu lịch sử", "Nhận thức và tư duy lịch sử", "Vận dụng kiến thức, kĩ năng đã học"] },
+    "dia-li": { ten: "Năng lực địa lí", items: ["Nhận thức khoa học địa lí", "Tìm hiểu địa lí", "Vận dụng kiến thức, kĩ năng đã học"] },
+    "ngu-van": { ten: "Năng lực đặc thù", items: ["Năng lực ngôn ngữ", "Năng lực văn học"] },
+    gdcd: { ten: "Năng lực đặc thù", items: ["Năng lực điều chỉnh hành vi", "Năng lực phát triển bản thân", "Năng lực tìm hiểu và tham gia hoạt động kinh tế – xã hội"] },
+    gdktpl: { ten: "Năng lực đặc thù", items: ["Năng lực điều chỉnh hành vi", "Năng lực phát triển bản thân", "Năng lực tìm hiểu và tham gia hoạt động kinh tế – xã hội"] },
+    gddp: { ten: "Năng lực đặc thù", items: [] }
+  };
+  const BUOC = ["Bước 1. Chuyển giao nhiệm vụ", "Bước 2. Thực hiện nhiệm vụ", "Bước 3. Báo cáo, thảo luận", "Bước 4. Kết luận, nhận định"];
+  const HD_NAME = {
+    "khoi-dong": "MỞ ĐẦU (KHỞI ĐỘNG)",
+    "hinh-thanh": "HÌNH THÀNH KIẾN THỨC MỚI",
+    "luyen-tap": "LUYỆN TẬP",
+    "van-dung": "VẬN DỤNG"
+  };
+  const FOOTER_CODE = "04.07-BM//ĐT/HDCV/FE-FSC";
+  const C = { nls: "C00000", ai: "00803C", head: "1F3864", headBg: "DCE6F1", tblHead: "D9E2F3", tblLine: "808080", sumHead: "FBE9D0", sumLine: "C8A15A", sumCol: "FDF6EA" };
+
+  /* ---------- Chuẩn hoá ---------- */
+  function normalize(raw) {
+    const k = u.clone(raw) || {};
+    k.schema = "l360-khbd/1";
+    const cfg = L360.cfg || {};
+    k.truong = str(k.truong || String(cfg.school || "").replace(/^Trường\s*/i, ""));
+    k.to = str(k.to || String(cfg.unit || "").replace(/^Tổ\s*/i, ""));
+    k.giaoVien = str(k.giaoVien || (L360.Auth && L360.Auth.teacher && L360.Auth.teacher.name) || "");
+    k.tenBai = str(k.tenBai);
+    k.mon = str(k.mon);
+    k.lop = str(k.lop);
+    k.thoiGian = str(k.thoiGian);
+    const m = (k.mucTieu = Object.assign({}, k.mucTieu));
+    m.kienThuc = arr(m.kienThuc).map(str);
+    m.nangLucChung = arr(m.nangLucChung).map(pair);
+    m.dacThu = Object.assign({ ten: "Năng lực đặc thù", items: [] }, m.dacThu || {});
+    m.dacThu.items = arr(m.dacThu.items).map(pair);
+    m.nls = Object.assign({ muc: "", items: [] }, m.nls || {});
+    m.nls.items = arr(m.nls.items).map((x) => (typeof x === "string" ? { ma: "", ten: "", nd: x } : { ma: str(x.ma), ten: str(x.ten), nd: str(x.nd) }));
+    m.ai = arr(m.ai).map((x) => (typeof x === "string" ? { ma: "", ten: "", code: "", nd: x } : { ma: str(x.ma), ten: str(x.ten), code: str(x.code), nd: str(x.nd) }));
+    m.phamChat = arr(m.phamChat).map(pair);
+    const t = (k.thietBi = Object.assign({}, k.thietBi));
+    t.giaoVien = arr(t.giaoVien).map(str);
+    t.hocSinh = arr(t.hocSinh).map(str);
+    t.hocLieuSo = arr(t.hocLieuSo).map((x) => ({ ten: str(x.ten), thoiLuong: str(x.thoiLuong), suDung: str(x.suDung) }));
+    t.moRong = arr(t.moRong).map((x) => ({ ten: str(x.ten), url: str(x.url) }));
+    k.tiet = arr(k.tiet).map((ti, i) => ({ ten: str(ti.ten || `TIẾT ${i + 1}`), hoatDong: arr(ti.hoatDong).map(hd) }));
+    k.phuLuc = arr(k.phuLuc).map((p) => ({ ten: str(p.ten), moTa: str(p.moTa), items: arr(p.items).map(str), bang: table(p.bang), dapAn: table(p.dapAn) }));
+    return k;
+  }
+  function pair(x) {
+    if (typeof x === "string") {
+      const i = x.indexOf(":");
+      return i > 0 && i < 60 ? { ten: x.slice(0, i).trim(), nd: x.slice(i + 1).trim() } : { ten: "", nd: x };
+    }
+    return { ten: str(x && x.ten), nd: str(x && x.nd) };
+  }
+  function table(b) {
+    if (!b || typeof b !== "object") return null;
+    const dong = arr(b.dong).map((r) => arr(r).map(str));
+    if (!dong.length && !b.tieuDe) return null;
+    return { tieuDe: str(b.tieuDe), cot: arr(b.cot).map(str), dong };
+  }
+  function buoc(b) {
+    const a = arr(b).slice(0, 4).map((x) => arr(x).map(str));
+    while (a.length && a.length < 4) a.push([]);
+    return a;
+  }
+  function expr(list) {
+    return arr(list).map((x) => (typeof x === "string" ? { ma: "", nd: x } : { ma: str(x.ma), nd: str(x.nd) }));
+  }
+  function chot(c) {
+    if (!c) return null;
+    return { slide: str(c.slide), phut: str(c.phut), items: arr(c.items).map(str), bang: table(c.bang) };
+  }
+  function nv(x) {
+    return { ten: str(x.ten), phut: str(x.phut), slide: str(x.slide), buoc: buoc(x.buoc), nls: expr(x.nls), ai: expr(x.ai), chot: chot(x.chot) };
+  }
+  function hd(x) {
+    return {
+      ten: str(x.ten),
+      phut: str(x.phut),
+      mucTieu: x.mucTieu,
+      noiDung: x.noiDung,
+      sanPham: x.sanPham,
+      slide: str(x.slide),
+      buoc: x.buoc ? buoc(x.buoc) : null,
+      nhiemVu: arr(x.nhiemVu).map(nv),
+      muc: arr(x.muc).map((m) => ({ ten: str(m.ten), nhiemVu: arr(m.nhiemVu).map(nv), chot: chot(m.chot) })),
+      nls: expr(x.nls),
+      ai: expr(x.ai),
+      chot: chot(x.chot)
+    };
+  }
+
+  /* ---------- Mô hình trang (dùng chung HTML/Word) ---------- */
+  // Chuỗi có thể chứa **đậm** và *nghiêng*; xuống dòng bằng \n.
+  function runs(s, base) {
+    base = base || {};
+    const out = [];
+    String(s == null ? "" : s)
+      .split(/(\*\*[^*]+\*\*|\*[^*\s][^*]*\*)/)
+      .forEach((part) => {
+        if (!part) return;
+        if (/^\*\*[^*]+\*\*$/.test(part)) out.push(Object.assign({}, base, { text: part.slice(2, -2), b: true }));
+        else if (/^\*[^*]+\*$/.test(part)) out.push(Object.assign({}, base, { text: part.slice(1, -1), i: true }));
+        else out.push(Object.assign({}, base, { text: part }));
+      });
+    return out;
+  }
+  const R = (text, o) => Object.assign({ text: str(text) }, o || {});
+
+  function build(raw) {
+    const k = normalize(raw);
+    const M = [];
+    const P = (rs, o) => M.push(Object.assign({ t: "p", runs: rs, align: "both", after: 60 }, o || {}));
+    const H1 = (t) => P([R(t, { b: true })], { align: "left", before: 160, after: 80, keep: true });
+    const H2 = (t) => P([R(t, { b: true })], { align: "left", before: 80, after: 60, keep: true });
+    // Mỗi dòng (\n) trong một ý thành một gạch đầu dòng riêng (tránh dãn chữ khi căn đều).
+    const LI = (rs, o) => {
+      let cur = [];
+      const flush = () => {
+        if (cur.length && cur.some((r) => r.text.trim())) M.push(Object.assign({ t: "li", runs: cur }, o || {}));
+        cur = [];
+      };
+      rs.forEach((r) =>
+        String(r.text)
+          .split("\n")
+          .forEach((part, i) => {
+            if (i) flush();
+            const t = i || !cur.length ? part.replace(/^\s*[-•]\s+/, "") : part;
+            if (t) cur.push(Object.assign({}, r, { text: t }));
+          })
+      );
+      flush();
+    };
+    const LBL = (label, text) => (text ? [R(label + ": ", { b: true })].concat(runs(text)) : [R(label, { b: true })]);
+    const field = (label, v) => {
+      if (v == null || v === "") return;
+      if (Array.isArray(v)) {
+        P([R(label + ":", { b: true })], { after: 40, keep: true });
+        v.forEach((x) => LI(runs(x)));
+      } else P([R(label + ": ", { b: true })].concat(runs(v)));
+    };
+    const steps = (b) => {
+      if (!b) return;
+      b.forEach((lines, i) => {
+        if (!lines.length) return;
+        P([R(BUOC[i], { b: true })], { align: "left", before: 80, after: 40, keep: true });
+        lines.forEach((x) => LI(runs(x)));
+      });
+    };
+    const exprs = (list, kind) =>
+      list.forEach((e) => {
+        const col = kind === "nls" ? C.nls : C.ai;
+        const lab = kind === "nls" ? "Biểu hiện năng lực số" : "Biểu hiện năng lực AI";
+        P([R(`${lab}${e.ma ? ` (${e.ma})` : ""}: `, { b: true, color: col })].concat(runs(e.nd, { color: col })), { indent: 284 });
+      });
+    const chotBlock = (c) => {
+      if (!c) return;
+      P([R("Chốt kiến thức – ghi bài", { b: true }), R(`${c.slide ? ` [${c.slide}]` : ""}${c.phut ? ` (${c.phut} phút)` : ""}:`)], { before: 80, keep: true });
+      c.items.forEach((x) => LI(runs(x)));
+      if (c.bang) {
+        const cols = c.bang.dong.reduce((m, r) => Math.max(m, r.length), c.bang.cot.length || 0) || 2;
+        M.push({ t: "table", style: "gold", title: c.bang.tieuDe, head: c.bang.cot.length ? c.bang.cot : null, rows: c.bang.dong, widths: cols === 2 ? [2300, 7054] : even(cols) });
+      }
+    };
+    const nvBlock = (x) => {
+      P([R(x.ten, { b: true }), R(`${x.phut ? ` (${x.phut} phút)` : ""}${x.slide ? ` [${x.slide}]` : ""}`)], { before: 100, keep: true });
+      steps(x.buoc);
+      exprs(x.nls, "nls");
+      exprs(x.ai, "ai");
+      chotBlock(x.chot);
+    };
+
+    M.push({ t: "hdr", truong: k.truong, to: k.to, gv: k.giaoVien });
+    P([R("")], { after: 0 });
+    P([R("TÊN BÀI DẠY: " + k.tenBai, { b: true, size: 28 })], { align: "center", after: 80 });
+    P([R("Môn học/Hoạt động giáo dục: "), R(k.mon, { b: true }), R("; lớp: "), R(k.lop, { b: true })], { align: "center", after: 40 });
+    if (k.thoiGian) P([R("Thời gian thực hiện: "), R(k.thoiGian, { b: true })], { align: "center", after: 120 });
+
+    const m = k.mucTieu;
+    H1("I. MỤC TIÊU");
+    H2("1. Về kiến thức");
+    m.kienThuc.forEach((x) => LI(runs(x)));
+    H2("2. Về năng lực");
+    H2("a) Năng lực chung");
+    m.nangLucChung.forEach((x) => LI(LBL(x.ten, x.nd)));
+    H2("b) " + (m.dacThu.ten || "Năng lực đặc thù"));
+    m.dacThu.items.forEach((x) => LI(LBL(x.ten, x.nd)));
+    H2(`c) Năng lực số (Thông tư 02/2025/TT-BGDĐT${m.nls.muc ? " – mức " + m.nls.muc : ""})`);
+    m.nls.items.forEach((x) => LI([R(x.ma || "[mã]", { b: true, color: C.nls }), R(x.ten ? ` – ${x.ten}: ` : ": ")].concat(runs(x.nd))));
+    if (m.ai.length) {
+      H2("d) Năng lực trí tuệ nhân tạo (Quyết định 2422/QĐ-BGDĐT)");
+      m.ai.forEach((x) => LI([R(`${x.ma}${x.ten ? " – " + x.ten : ""}${x.code ? ` (${x.code})` : ""}`, { b: true, color: C.ai }), R(": ")].concat(runs(x.nd))));
+    }
+    H2("3. Về phẩm chất");
+    m.phamChat.forEach((x) => LI(LBL(x.ten, x.nd)));
+
+    const t = k.thietBi;
+    H1("II. THIẾT BỊ DẠY HỌC VÀ HỌC LIỆU");
+    H2("1. Giáo viên");
+    t.giaoVien.forEach((x) => LI(runs(x)));
+    if (t.hocLieuSo.length) {
+      P([R("Học liệu số sử dụng trong bài:", { b: true })], { before: 60, keep: true });
+      M.push({ t: "table", style: "blue", head: ["Học liệu", "Thời lượng", "Sử dụng"], rows: t.hocLieuSo.map((x) => [x.ten, x.thoiLuong, x.suDung]), widths: [5800, 1500, 2054] });
+    }
+    if (t.moRong.length) {
+      P([R("Mở rộng không gian học tập (liên kết gắn trong bài giảng):", { b: true })], { before: 60, keep: true });
+      M.push({ t: "table", style: "blue", head: ["Trang web", "Địa chỉ"], rows: t.moRong.map((x) => [x.ten, x.url]), widths: [4200, 5154] });
+    }
+    H2("2. Học sinh");
+    t.hocSinh.forEach((x) => LI(runs(x)));
+
+    H1("III. TIẾN TRÌNH DẠY HỌC");
+    k.tiet.forEach((ti) => {
+      M.push({ t: "p", runs: [R(ti.ten.toUpperCase(), { b: true, color: C.head })], align: "center", before: 240, after: 120, keep: true, border: C.head });
+      ti.hoatDong.forEach((h) => {
+        M.push({ t: "p", runs: [R(`${h.ten}${h.phut ? ` – ${h.phut} phút` : ""}`, { b: true, color: C.head })], align: "left", before: 200, after: 80, keep: true, shade: C.headBg });
+        field("a) Mục tiêu", h.mucTieu);
+        field("b) Nội dung", h.noiDung);
+        field("c) Sản phẩm", h.sanPham);
+        P([R("d) Tổ chức thực hiện:", { b: true }), R(h.slide ? ` [${h.slide}]` : "")], { keep: true });
+        steps(h.buoc);
+        h.nhiemVu.forEach(nvBlock);
+        h.muc.forEach((mc) => {
+          P([R(mc.ten, { b: true, color: C.head })], { align: "left", before: 140, after: 60, keep: true });
+          mc.nhiemVu.forEach(nvBlock);
+          chotBlock(mc.chot);
+        });
+        exprs(h.nls, "nls");
+        exprs(h.ai, "ai");
+        chotBlock(h.chot);
+      });
+    });
+
+    if (k.phuLuc.length) {
+      H1("IV. PHỤ LỤC");
+      k.phuLuc.forEach((p) => {
+        P([R(p.ten, { b: true })], { before: 120, keep: true });
+        if (p.moTa) P(runs(p.moTa, { i: true }));
+        p.items.forEach((x) => LI(runs(x)));
+        [p.bang, p.dapAn].forEach((b, j) => {
+          if (!b) return;
+          if (j === 1) P([R("Đáp án / gợi ý:", { b: true, i: true })], { before: 60, keep: true });
+          const cols = b.dong.reduce((mx, r) => Math.max(mx, r.length), b.cot.length || 0) || 1;
+          if (b.tieuDe) P([R(b.tieuDe, { b: true })], { align: "center", keep: true });
+          M.push({ t: "table", style: "blue", head: b.cot.length ? b.cot : null, rows: b.dong, widths: even(cols) });
+        });
+      });
+    }
+    return { k, model: M };
+  }
+  const W = 9354;
+  const even = (n) => {
+    const w = Math.floor(W / n);
+    return Array.from({ length: n }, (_, i) => (i === n - 1 ? W - w * (n - 1) : w));
+  };
+
+  /* ---------- Xem trước HTML ---------- */
+  const esc = u.esc;
+  const runHtml = (r) => {
+    let s = esc(r.text).replace(/\n/g, "<br>");
+    const st = [];
+    if (r.color) st.push(`color:#${r.color}`);
+    if (r.size) st.push(`font-size:${r.size / 2}pt`);
+    if (st.length) s = `<span style="${st.join(";")}">${s}</span>`;
+    if (r.i) s = `<i>${s}</i>`;
+    if (r.b) s = `<b>${s}</b>`;
+    return s;
+  };
+  function cellHtml(c, tag) {
+    return `<${tag}>${runs(c).map(runHtml).join("")}</${tag}>`;
+  }
+  function html(raw) {
+    const { model } = build(raw);
+    let out = "";
+    let ul = false;
+    const close = () => {
+      if (ul) out += "</ul>";
+      ul = false;
+    };
+    model.forEach((e) => {
+      if (e.t !== "li") close();
+      if (e.t === "hdr")
+        out += `<table class="kh-hdr"><tr><td><b>Trường: ${esc(e.truong)}</b><br><b>Tổ: ${esc(e.to)}</b></td><td>Họ và tên giáo viên:<br><b>${esc(e.gv)}</b></td></tr></table>`;
+      else if (e.t === "p") {
+        const st = [`text-align:${e.align === "both" ? "justify" : e.align}`];
+        if (e.before) st.push(`margin-top:${e.before / 20}pt`);
+        if (e.after != null) st.push(`margin-bottom:${e.after / 20}pt`);
+        if (e.indent) st.push(`padding-left:${e.indent / 20}pt`);
+        if (e.shade) st.push(`background:#${e.shade};padding:3pt 5pt`);
+        if (e.border) st.push(`border-top:1px solid #${e.border};border-bottom:1px solid #${e.border};padding:3pt 0`);
+        out += `<p style="${st.join(";")}">${e.runs.map(runHtml).join("") || "&nbsp;"}</p>`;
+      } else if (e.t === "li") {
+        if (!ul) out += `<ul class="kh-ul">`;
+        ul = true;
+        out += `<li>${e.runs.map(runHtml).join("")}</li>`;
+      } else if (e.t === "table") {
+        const n = e.widths.length;
+        out += `<table class="kh-tbl ${e.style}">${e.title ? `<tr><th colspan="${n}" class="ttl">${esc(e.title)}</th></tr>` : ""}${
+          e.head ? `<tr>${e.head.map((h) => cellHtml(h, "th")).join("")}</tr>` : ""
+        }${e.rows.map((r) => `<tr>${Array.from({ length: n }, (_, i) => cellHtml(r[i] || "", e.style === "gold" && i === 0 && n > 1 ? "th" : "td")).join("")}</tr>`).join("")}</table>`;
+      }
+    });
+    close();
+    return `<div class="kh-page">${out}<div class="kh-foot"><span>${FOOTER_CODE}</span><span>Trang …/…</span></div></div>`;
+  }
+
+  /* ---------- Xuất Word (.docx) ---------- */
+  async function docxBlob(raw) {
+    await u.loadScript("js/vendor/docx.umd.js");
+    const D = window.docx;
+    const { k, model } = build(raw);
+    const run = (r, base) =>
+      new D.TextRun({
+        text: r.text,
+        bold: !!(r.b || (base && base.b)),
+        italics: !!r.i,
+        color: r.color || undefined,
+        size: r.size || (base && base.size) || undefined
+      });
+    const runsOf = (rs, base) => {
+      const out = [];
+      rs.forEach((r) =>
+        String(r.text)
+          .split("\n")
+          .forEach((line, i) => {
+            if (i) out.push(new D.TextRun({ text: "", break: 1 }));
+            out.push(run(Object.assign({}, r, { text: line }), base));
+          })
+      );
+      return out;
+    };
+    const AL = { center: D.AlignmentType.CENTER, left: D.AlignmentType.LEFT, both: D.AlignmentType.JUSTIFIED, right: D.AlignmentType.RIGHT };
+    const line = (color, size = 4) => ({ style: D.BorderStyle.SINGLE, size, color });
+    const none = { style: D.BorderStyle.NONE, size: 0, color: "FFFFFF" };
+    const para = (rs, o = {}) =>
+      new D.Paragraph({
+        children: runsOf(rs, o.base),
+        alignment: AL[o.align || "both"],
+        spacing: { before: o.before || 0, after: o.after != null ? o.after : 60, line: 276 },
+        keepNext: !!o.keep,
+        indent: o.indent ? { left: o.indent } : undefined,
+        shading: o.shade ? { type: D.ShadingType.CLEAR, color: "auto", fill: o.shade } : undefined,
+        border: o.border ? { top: Object.assign(line(o.border, 6), { space: 4 }), bottom: Object.assign(line(o.border, 6), { space: 4 }) } : undefined,
+        numbering: o.li ? { reference: "dash", level: 0 } : undefined
+      });
+    const cell = (text, w, o = {}) =>
+      new D.TableCell({
+        width: { size: w, type: D.WidthType.DXA },
+        columnSpan: o.span,
+        shading: o.fill ? { type: D.ShadingType.CLEAR, color: "auto", fill: o.fill } : undefined,
+        margins: { top: 50, bottom: 50, left: 90, right: 90 },
+        verticalAlign: D.VerticalAlign.CENTER,
+        children: String(text || "")
+          .split("\n")
+          .map((ln) => para(runs(ln), { align: o.align || "left", after: 20, base: o.b ? { b: true } : null }))
+      });
+    const children = [];
+    model.forEach((e) => {
+      if (e.t === "hdr") {
+        children.push(
+          new D.Table({
+            width: { size: W, type: D.WidthType.DXA },
+            columnWidths: [5554, 3800],
+            borders: { top: none, bottom: none, left: none, right: none, insideHorizontal: none, insideVertical: none },
+            rows: [
+              new D.TableRow({
+                children: [
+                  new D.TableCell({
+                    width: { size: 5554, type: D.WidthType.DXA },
+                    borders: { top: none, bottom: none, left: none, right: none },
+                    children: [para([R("Trường: " + e.truong, { b: true })], { align: "center", after: 20 }), para([R("Tổ: " + e.to, { b: true })], { align: "center", after: 0 })]
+                  }),
+                  new D.TableCell({
+                    width: { size: 3800, type: D.WidthType.DXA },
+                    borders: { top: none, bottom: none, left: none, right: none },
+                    children: [para([R("Họ và tên giáo viên:")], { align: "center", after: 20 }), para([R(e.gv, { b: true })], { align: "center", after: 0 })]
+                  })
+                ]
+              })
+            ]
+          })
+        );
+      } else if (e.t === "p") children.push(para(e.runs, e));
+      else if (e.t === "li") children.push(para(e.runs, { li: true, after: 60 }));
+      else if (e.t === "table") {
+        const gold = e.style === "gold";
+        const bc = gold ? C.sumLine : C.tblLine;
+        const n = e.widths.length;
+        const rows = [];
+        if (e.title)
+          rows.push(new D.TableRow({ tableHeader: true, children: [cell(e.title, W, { span: n, fill: gold ? C.sumHead : C.tblHead, b: true, align: "center" })] }));
+        if (e.head) rows.push(new D.TableRow({ tableHeader: true, children: e.head.map((h, i) => cell(h, e.widths[i], { fill: gold ? C.sumHead : C.tblHead, b: true, align: "center" })) }));
+        e.rows.forEach((r) =>
+          rows.push(
+            new D.TableRow({
+              cantSplit: true,
+              children: e.widths.map((w, i) => cell(r[i] || "", w, gold && i === 0 && n > 1 ? { fill: C.sumCol, b: true } : {}))
+            })
+          )
+        );
+        children.push(
+          new D.Table({
+            width: { size: W, type: D.WidthType.DXA },
+            columnWidths: e.widths,
+            borders: { top: line(bc), bottom: line(bc), left: line(bc), right: line(bc), insideHorizontal: line(bc), insideVertical: line(bc) },
+            rows
+          })
+        );
+        children.push(para([R("")], { after: 40 }));
+      }
+    });
+    const doc = new D.Document({
+      creator: k.giaoVien || "Lesson 360° Studio",
+      title: "KHBD – " + k.tenBai,
+      description: "Kế hoạch bài dạy tạo bằng Lesson 360° Studio",
+      styles: { default: { document: { run: { font: "Times New Roman", size: 26 } } } },
+      numbering: {
+        config: [
+          {
+            reference: "dash",
+            levels: [{ level: 0, format: D.LevelFormat.BULLET, text: "–", alignment: D.AlignmentType.LEFT, style: { paragraph: { indent: { left: 360, hanging: 240 } } } }]
+          }
+        ]
+      },
+      sections: [
+        {
+          properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1134, right: 1134, bottom: 1134, left: 1418, header: 708, footer: 567 } } },
+          footers: {
+            default: new D.Footer({
+              children: [
+                new D.Paragraph({
+                  border: { top: Object.assign(line("808080", 6), { space: 4 }) },
+                  tabStops: [{ type: D.TabStopType.RIGHT, position: W }],
+                  children: [
+                    new D.TextRun({ text: FOOTER_CODE, size: 20 }),
+                    new D.TextRun({ children: ["\tTrang ", D.PageNumber.CURRENT, "/", D.PageNumber.TOTAL_PAGES], size: 20 })
+                  ]
+                })
+              ]
+            })
+          },
+          children
+        }
+      ]
+    });
+    return D.Packer.toBlob(doc);
+  }
+  async function download(raw, name) {
+    const blob = await docxBlob(raw);
+    const k = normalize(raw);
+    const fn = name || `KHBD - ${(k.tenBai || "bai-day").replace(/[\\/:*?"<>|]+/g, " ").slice(0, 80)}.docx`;
+    u.downloadBlob(fn, blob);
+  }
+
+  /* ---------- Khung giáo án tự động từ các tiết học (không cần AI) ---------- */
+  // Mô tả ngắn một bước để đưa vào giáo án / PPT.
+  function describe(s) {
+    const B = L360.blocks;
+    const T = L360.types[s.type] || {};
+    const out = { task: s.instructions || "", lines: [], questions: [], notes: [], label: T.label || s.type };
+    if (s.ghiBai) out.notes.push(s.ghiBai);
+    switch (s.type) {
+      case "slide":
+        (s.pages || []).forEach((pg) => {
+          if (pg.title) out.lines.push(`**${pg.title}**`);
+          (pg.blocks || []).forEach((b) => {
+            if (b.kind === "note") out.notes.push(b.text || "");
+            else if (b.kind === "image" || b.kind === "gallery") return;
+            else if (b.kind === "conclusion") out.lines.push(`Kết luận: ${b.text || ""}`);
+            else {
+              const t = B ? B.plain(b) : "";
+              if (t) out.lines.push(t.replace(/\n- /g, "; ").replace(/^- /, "").replace(/\n/g, "; "));
+            }
+          });
+        });
+        break;
+      case "quiz":
+      case "video":
+        (s.questions || []).forEach((q) => out.questions.push(q));
+        break;
+      case "poll2":
+        out.questions.push({ kind: "mcq", q: s.question, options: s.options || [], answer: s.answer, explain: s.explain });
+        if (s.card) out.notes.push(s.card);
+        break;
+      case "crossword":
+        out.lines.push(`Ô chữ ${(s.rows || []).length} hàng ngang, từ khoá ${String(s.keyword || "").length} chữ cái: ${s.keyClue || ""}`);
+        (s.rows || []).forEach((r, i) => out.lines.push(`Hàng ${i + 1}: ${r.clue} → ${r.answer}`));
+        out.lines.push(`Từ khoá: ${s.keyword}`);
+        break;
+      case "cards":
+        out.lines.push(`${s.question} – thẻ: ${(s.cards || []).join("; ")}`);
+        if (s.conclusion) out.lines.push(`Kết luận: ${s.conclusion}`);
+        break;
+      case "match":
+        out.lines.push(s.question || "");
+        (s.pairs || []).forEach((p) => out.lines.push(`${p.left} – ${p.right}`));
+        break;
+      case "order":
+        out.lines.push(s.question || "");
+        out.lines.push("Thứ tự đúng: " + (s.items || []).map((x, i) => `${i + 1}) ${typeof x === "string" ? x : x.text}`).join("; "));
+        break;
+      case "text":
+        out.lines.push(s.question || "");
+        break;
+      case "groupwork":
+        out.lines.push(s.task || "");
+        out.lines.push("Hồ sơ nhóm: " + (s.fields || []).map((f) => `${f.key}. ${f.label}`).join("; "));
+        break;
+      case "expo":
+        out.lines.push("Các nhóm trưng bày hồ sơ, nhận xét chéo theo tiêu chí.");
+        break;
+      case "auction":
+        out.lines.push(`${s.question || ""} – các mục: ${(s.items || []).map((x) => x.title).join("; ")}`);
+        break;
+      case "explore":
+        out.lines.push(s.mission || "");
+        break;
+    }
+    return out;
+  }
+  const letter = (i) => "ABCDEFGH"[i] || String(i + 1);
+  function qLine(q, i) {
+    if (q.kind === "tf") return `Câu ${i + 1} (Đúng/Sai): ${q.q} ` + (q.statements || []).map((x, j) => `${"abcd"[j]}) ${x.text} [${x.answer ? "Đ" : "S"}]`).join("; ");
+    if (q.kind === "short") return `Câu ${i + 1} (trả lời ngắn): ${q.q} → ${q.answer}`;
+    return `Câu ${i + 1}: ${q.q} ` + (q.options || []).map((o, j) => `${letter(j)}. ${o}`).join("; ") + ` → ${letter(Number(q.answer) || 0)}`;
+  }
+  // Ghép nhiều tiết (gói) của cùng một bài thành một giáo án.
+  function fromPacks(packs, o = {}) {
+    packs = arr(packs)
+      .map((p) => L360.Pack.normalize(p))
+      .sort((a, b) => a.tiet.so - b.tiet.so);
+    const p0 = packs[0] || {};
+    const b = p0.bai || {};
+    const grade = Number(p0.grade) || 10;
+    const lv = NLS_LEVEL(grade);
+    const plan = L360.Pptx ? L360.Pptx.plan(packs) : null;
+    const sl = (id) => (plan && plan.range[id] ? (plan.range[id][0] === plan.range[id][1] ? `Slide ${plan.range[id][0]}` : `Slide ${plan.range[id][0]}–${plan.range[id][1]}`) : "");
+    const tong = Math.max(packs.length, (p0.tiet && p0.tiet.tong) || 1);
+    const dac = DAC_THU[p0.subjectId] || { ten: "Năng lực đặc thù", items: [] };
+    let hdNo = 0;
+    const tiet = packs.map((p, ti) => {
+      const groups = [];
+      p.steps.forEach((s) => {
+        let g = groups[groups.length - 1];
+        if (!g || g.phase !== s.phase) groups.push((g = { phase: s.phase, steps: [] }));
+        g.steps.push(s);
+      });
+      return {
+        ten: `TIẾT ${p.tiet.so} (TIẾT […] THEO PPCT)`,
+        hoatDong: groups.map((g) => {
+          hdNo++;
+          const mins = g.steps.reduce((m, s) => m + (s.minutes || 0), 0);
+          const ids = g.steps.map((s) => s.id);
+          const first = plan && plan.range[ids[0]];
+          const last = plan && plan.range[ids[ids.length - 1]];
+          const nvs = g.steps.map((s, i) => {
+            const d = describe(s);
+            const dev = !L360.types[s.type] || !L360.types[s.type].noSubmit;
+            const qs = d.questions.map(qLine);
+            return {
+              ten: `Nhiệm vụ ${i + 1}. ${s.title}`,
+              phut: String(s.minutes || ""),
+              slide: sl(s.id),
+              buoc: [
+                [s.script ? `GV dẫn dắt: ${s.script}` : "GV giới thiệu nhiệm vụ."].concat(d.task ? [`Nhiệm vụ của HS: ${d.task}`] : []).concat(dev ? ["GV mở hoạt động trên Lesson 360° Studio, HS vào phòng học bằng mã phòng/QR trên laptop hoặc iPad."] : []),
+                dev ? [`HS làm việc ${s.type === "groupwork" ? "theo nhóm" : "cá nhân"} trên thiết bị (${d.label.toLowerCase()}); GV quan sát tiến độ trên bảng điều khiển, hỗ trợ HS gặp khó khăn.`] : ["HS quan sát nội dung trên màn chiếu, theo dõi trên thiết bị và ghi chép."],
+                (dev ? ["Màn chiếu hiển thị kết quả của cả lớp; GV mời HS giải thích lựa chọn, các bạn nhận xét, bổ sung."] : ["GV đặt câu hỏi gợi mở; HS trả lời, nhận xét, bổ sung."]).concat(qs),
+                ["GV nhận xét, chốt kiến thức."].concat(d.lines.slice(0, 8)).concat(d.notes.length ? [`HS ghi vào vở: ${d.notes.join(" ")}`] : [])
+              ],
+              nls: [],
+              ai: []
+            };
+          });
+          return {
+            ten: `HOẠT ĐỘNG ${hdNo}. ${HD_NAME[g.phase]}`,
+            phut: String(mins || ""),
+            mucTieu: g.phase === "hinh-thanh" ? (p.objectives.length ? p.objectives : ["[…]"]) : "[…]",
+            noiDung: g.steps.map((s) => s.title).join("; "),
+            sanPham: "[…]",
+            slide: first ? `Slide ${first[0]}–${(last || first)[1]}` : "",
+            nhiemVu: nvs
+          };
+        })
+      };
+    });
+    return normalize({
+      tenBai: `${b.so ? (/^(CĐ|Chủ đề)/i.test(b.so) ? b.so : "BÀI " + b.so) + ". " : ""}${String(b.ten || p0.title || "").toUpperCase()}`,
+      mon: (L360.Curr && L360.Curr.subjectName(p0.subjectId, grade)) || p0.subject || "",
+      lop: String(grade),
+      thoiGian: `${tong} tiết (Tiết […] theo PPCT – Tuần […])`,
+      mucTieu: {
+        kienThuc: packs.flatMap((p) => p.objectives).filter((v, i, a) => v && a.indexOf(v) === i),
+        nangLucChung: CHUNG.map((t) => ({ ten: t, nd: "[…]" })),
+        dacThu: { ten: dac.ten, items: dac.items.map((t) => ({ ten: t, nd: "[…]" })) },
+        nls: { muc: LEVEL_NAME[lv], items: [{ ma: `[…].${lv}[…]`, ten: "", nd: "[GV chọn năng lực thành phần phù hợp]" }] },
+        ai: [],
+        phamChat: ["Chăm chỉ", "Trách nhiệm"].map((t) => ({ ten: t, nd: "[…]" }))
+      },
+      thietBi: {
+        giaoVien: ["Máy tính, máy chiếu/TV; phòng học Lesson 360° Studio.", "Bài giảng PowerPoint (bản xuất từ Lesson 360° Studio)."].concat(
+          L360.Curr && b.key && L360.Curr.lesson(b.key) ? [L360.Curr.lesson(b.key).bookTitle + "."] : ["SGK, tư liệu tham khảo."]
+        ),
+        hocLieuSo: [],
+        moRong: [],
+        hocSinh: ["SGK, vở ghi; laptop hoặc iPad có kết nối Internet (không dùng điện thoại)."]
+      },
+      tiet,
+      phuLuc: []
+    });
+  }
+
+  /* ---------- Lời nhắc cho trợ lý AI ---------- */
+  function nlsCatalog() {
+    return NLS.map((d) => `${d.id}. ${d.ten}: ` + d.items.map(([a, b]) => `${a} ${b}`).join("; ")).join("\n");
+  }
+  function prompt(o = {}) {
+    const packs = arr(o.packs).map((p) => L360.Pack.normalize(p)).sort((a, b) => a.tiet.so - b.tiet.so);
+    const p0 = packs[0] || {};
+    const b = o.bai || p0.bai || {};
+    const grade = Number(o.grade || p0.grade) || 10;
+    const lv = NLS_LEVEL(grade);
+    const subjId = o.subjectId || p0.subjectId || "";
+    const dac = DAC_THU[subjId] || { ten: "Năng lực đặc thù", items: [] };
+    const plan = L360.Pptx && packs.length ? L360.Pptx.plan(packs) : null;
+    const acts = packs
+      .map(
+        (p) =>
+          `TIẾT ${p.tiet.so}/${Math.max(packs.length, p.tiet.tong)}:\n` +
+          p.steps
+            .map((s) => {
+              const d = describe(s);
+              const r = plan && plan.range[s.id];
+              return `  - [${L360.phase(s.phase).name}] ${s.title} (${d.label}, ${s.minutes || "?"} phút${r ? `, Slide ${r[0]}${r[1] !== r[0] ? "–" + r[1] : ""}` : ""})${d.task ? ` – nhiệm vụ: ${d.task}` : ""}${
+                d.lines.length ? `\n      Nội dung: ${d.lines.slice(0, 6).join(" | ").slice(0, 600)}` : ""
+              }${d.questions.length ? `\n      Câu hỏi: ${d.questions.map(qLine).join(" | ").slice(0, 900)}` : ""}${d.notes.length ? `\n      Ghi vở: ${d.notes.join(" ").slice(0, 300)}` : ""}`;
+            })
+            .join("\n")
+      )
+      .join("\n");
+    const cfg = L360.cfg || {};
+    const ex = {
+      schema: "l360-khbd/1",
+      truong: String(cfg.school || "").replace(/^Trường\s*/i, ""),
+      to: String(cfg.unit || "").replace(/^Tổ\s*/i, ""),
+      giaoVien: o.giaoVien || "",
+      tenBai: "BÀI … . TÊN BÀI VIẾT HOA",
+      mon: o.subject || "",
+      lop: String(grade),
+      thoiGian: "… tiết (Tiết …, … theo PPCT – Tuần …)",
+      mucTieu: {
+        kienThuc: ["Nêu được …", "Trình bày được …"],
+        nangLucChung: CHUNG.map((t) => ({ ten: t, nd: "biểu hiện cụ thể trong bài" })),
+        dacThu: { ten: dac.ten, items: (dac.items.length ? dac.items : ["…"]).map((t) => ({ ten: t, nd: "…" })) },
+        nls: { muc: LEVEL_NAME[lv], items: [{ ma: `1.1.${lv}a`, ten: "Duyệt, tìm kiếm và lọc dữ liệu, thông tin và nội dung số", nd: "việc HS làm cụ thể trong bài" }] },
+        ai: [{ ma: "NLa", ten: "Tư duy lấy con người làm trung tâm", code: "mã YCCĐ theo QĐ 2422", nd: "…" }],
+        phamChat: [{ ten: "Trách nhiệm", nd: "…" }]
+      },
+      thietBi: { giaoVien: ["…"], hocLieuSo: [{ ten: "…", thoiLuong: "…", suDung: "Khởi động – Tiết 1" }], moRong: [{ ten: "…", url: "https://…" }], hocSinh: ["…"] },
+      tiet: [
+        {
+          ten: "TIẾT 1 (TIẾT … THEO PPCT)",
+          hoatDong: [
+            {
+              ten: "HOẠT ĐỘNG 1. MỞ ĐẦU (KHỞI ĐỘNG)",
+              phut: "7",
+              mucTieu: "…",
+              noiDung: "…",
+              sanPham: "…",
+              slide: "Slide 2–3",
+              buoc: [["GV …"], ["HS …"], ["GV mời …"], ["GV nhận xét, dẫn vào bài: …"]]
+            },
+            {
+              ten: "HOẠT ĐỘNG 2. HÌNH THÀNH KIẾN THỨC MỚI",
+              phut: "30",
+              mucTieu: ["…"],
+              noiDung: "…",
+              sanPham: "…",
+              muc: [
+                {
+                  ten: "2.1. …",
+                  nhiemVu: [{ ten: "Nhiệm vụ 1. …", phut: "8", slide: "Slide 4–6", buoc: [["…"], ["…"], ["…"], ["…"]], nls: [{ ma: `1.1.${lv}a`, nd: "HS …" }], ai: [] }],
+                  chot: { slide: "Slide 7", phut: "3", bang: { tieuDe: "1. …", cot: [], dong: [["Ý", "Nội dung ghi vở"]] } }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      phuLuc: [{ ten: "Phụ lục 1. Phiếu học tập số 1", moTa: "…", bang: { cot: ["…", "…"], dong: [["…", ""]] }, dapAn: { cot: ["…", "…"], dong: [["…", "…"]] } }]
+    };
+    return `Bạn là chuyên gia soạn Kế hoạch bài dạy (KHBD) cho giáo viên THCS/THPT Việt Nam.
+
+NHIỆM VỤ
+Soạn KHBD hoàn chỉnh theo Phụ lục IV – Công văn 5512/BGDĐT-GDTrH cho bài dưới đây, tích hợp Năng lực số theo Thông tư 02/2025/TT-BGDĐT (hướng dẫn tại CV 3456/BGDĐT-GDPT) và Năng lực trí tuệ nhân tạo theo Quyết định 2422/QĐ-BGDĐT. Kết quả là MỘT khối JSON "l360-khbd/1"; ứng dụng Lesson 360° Studio sẽ dựng thành tệp Word đúng mẫu của trường.
+
+THÔNG TIN BÀI
+- Môn: ${o.subject || p0.subject || "(theo SGK)"}; lớp ${grade}; ${o.book ? "sách: " + o.book + "; " : ""}bài: ${b.so ? (/^(CĐ|Chủ đề)/.test(b.so) ? b.so : "Bài " + b.so) + ". " : ""}${b.ten || p0.title || ""}${b.trang ? ` (SGK trang ${b.trang})` : ""}.
+- Số tiết: ${o.tong || Math.max(packs.length, (p0.tiet || {}).tong || 1)}${o.ppct ? `; tiết theo PPCT: ${o.ppct}` : ""}${o.tuan ? `; tuần: ${o.tuan}` : ""}.
+- Giáo viên: ${o.giaoVien || "(để trống)"}; ${cfg.school || ""}, ${cfg.unit || ""}.
+- Học sinh học trên laptop/iPad với Lesson 360° Studio (không dùng điện thoại); GV điều khiển, màn chiếu hiện kết quả cả lớp.
+
+${
+  acts
+    ? `TIẾN TRÌNH ĐÃ THIẾT KẾ TRÊN LESSON 360° (giữ đúng thứ tự, tên, thời lượng và số slide; mỗi hoạt động dưới đây là một "Nhiệm vụ")\n${acts}\n`
+    : "TIẾN TRÌNH: tự thiết kế theo đúng quy tắc dưới đây.\n"
+}
+QUY TẮC
+1. Cấu trúc đúng CV 5512: I. Mục tiêu (kiến thức; năng lực chung; ${dac.ten.toLowerCase()}${dac.items.length ? " (" + dac.items.join(", ") + ")" : ""}; năng lực số; năng lực AI; phẩm chất) – II. Thiết bị dạy học và học liệu – III. Tiến trình dạy học – IV. Phụ lục.
+2. Mỗi bài CHỈ có 1 hoạt động Mở đầu (khởi động, ở tiết đầu), 1 hoạt động Luyện tập và 1 hoạt động Vận dụng (ở tiết cuối; vận dụng có thể giao về nhà). Hình thành kiến thức chia mục 2.1, 2.2… Tối đa 1 nhiệm vụ nhóm cho cả bài.
+3. Mỗi hoạt động có a) Mục tiêu, b) Nội dung, c) Sản phẩm, d) Tổ chức thực hiện; mỗi nhiệm vụ đủ 4 bước: Chuyển giao – Thực hiện – Báo cáo, thảo luận – Kết luận, nhận định. Ghi rõ [Slide n] khớp với bài giảng.
+4. Cuối mỗi mục hình thành kiến thức có "chot" (Chốt kiến thức – ghi bài) dạng bảng 2 cột: cột trái là ý, cột phải là nội dung HS ghi vở; "tieuDe" là tên mục.
+5. Năng lực số: chọn 3–5 năng lực thành phần thật sự có trong bài, mức ${LEVEL_NAME[lv]} (mã dạng "1.1.${lv}a" = năng lực thành phần + mức + chữ cái yêu cầu cần đạt). Mỗi mã khai báo ở mục tiêu phải có ít nhất một "Biểu hiện năng lực số" (trường "nls") ở nhiệm vụ cụ thể. Danh mục năng lực thành phần:
+${nlsCatalog()}
+6. Năng lực AI (QĐ 2422/QĐ-BGDĐT) – bốn miền: NLa Tư duy lấy con người làm trung tâm; NLb Đạo đức AI; NLc Các kĩ thuật và ứng dụng AI; NLd Thiết kế hệ thống AI. Chỉ đưa vào khi bài có hoạt động liên quan AI (ví dụ HS kiểm chứng thông tin do AI tạo ra, khai báo khi dùng AI, nhận diện nội dung giả mạo). "code" là mã yêu cầu cần đạt theo QĐ 2422; nếu không chắc chắn mã, ghi "[GV điền mã]" – KHÔNG bịa mã. Khi không có hoạt động AI, để "ai": [].
+7. Nội dung chính xác theo SGK; KHÔNG bịa số liệu, năm tháng, tên riêng, trích dẫn, đường link – chỗ chưa chắc ghi "[GV kiểm tra]". Nội dung khách quan, đúng chủ trương của Đảng, pháp luật Nhà nước và Chương trình GDPT 2018.
+8. Văn phong giáo án: câu ngắn, bắt đầu bằng chủ thể "GV …", "HS …"; có thể dùng **đậm** cho từ khoá. Phụ lục gồm phiếu học tập (bảng trống) kèm đáp án, tiêu chí đánh giá sản phẩm, câu hỏi trò chơi.
+9. Tiếng Việt chuẩn, chính tả theo SGK hiện hành.
+
+ĐỊNH DẠNG TRẢ LỜI
+Trả về DUY NHẤT một khối \`\`\`json … \`\`\` hợp lệ theo khung sau (giữ đúng tên trường; "buoc" là mảng 4 phần tử, mỗi phần tử là mảng các ý; nhiệm vụ đặt trong "nhiemVu" hoặc trong "muc"[i]."nhiemVu"):
+\`\`\`json
+${JSON.stringify(ex, null, 1)}
+\`\`\`
+${o.extra ? "\nYÊU CẦU THÊM CỦA GIÁO VIÊN: " + o.extra + "\n" : ""}
+TÀI LIỆU: (tôi đính kèm giáo án cũ/SGK nếu có, hoặc dán nội dung ngay bên dưới)
+`;
+  }
+
+  function validate(raw) {
+    const errors = [];
+    const warnings = [];
+    if (!raw || typeof raw !== "object") return { errors: ["Không đọc được nội dung giáo án."], warnings };
+    const k = normalize(raw);
+    if (!k.tenBai) errors.push("Thiếu tên bài dạy (tenBai).");
+    if (!k.tiet.length) errors.push("Chưa có tiến trình dạy học (tiet).");
+    const all = k.tiet.flatMap((t) => t.hoatDong);
+    const cnt = (re) => all.filter((h) => re.test(u.slug(h.ten))).length;
+    if (cnt(/mo-dau|khoi-dong/) > 1) errors.push("Có hơn 1 hoạt động Mở đầu – mỗi bài chỉ 1 hoạt động khởi động.");
+    if (cnt(/luyen-tap/) > 1) errors.push("Có hơn 1 hoạt động Luyện tập.");
+    if (cnt(/van-dung/) > 1) errors.push("Có hơn 1 hoạt động Vận dụng.");
+    if (!k.mucTieu.kienThuc.length) warnings.push("Chưa có mục tiêu kiến thức.");
+    if (!k.mucTieu.nls.items.length) warnings.push("Chưa khai báo năng lực số.");
+    const declared = k.mucTieu.nls.items.map((x) => x.ma).filter(Boolean);
+    const shown = JSON.stringify(k.tiet);
+    declared.forEach((ma) => {
+      if (!/\[/.test(ma) && !shown.includes(ma)) warnings.push(`Năng lực số ${ma} chưa có biểu hiện ở hoạt động nào.`);
+    });
+    if (/\[GV (kiểm tra|điền)/.test(JSON.stringify(k))) warnings.push("Còn chỗ đánh dấu [GV kiểm tra]/[GV điền mã] – thầy cô rà lại trước khi in.");
+    return { errors, warnings, khbd: k };
+  }
+
+  L360.Khbd = { NLS, AI, NLS_LEVEL, LEVEL_NAME, DAC_THU, CHUNG, PHAM_CHAT, BUOC, normalize, build, html, docxBlob, download, fromPacks, describe, qLine, prompt, validate, parse: (t) => L360.Pack.parse(t) };
+  L360.describeStep = describe;
+})();

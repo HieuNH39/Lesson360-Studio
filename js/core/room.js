@@ -18,8 +18,11 @@
       const meta = {
         title: p.title,
         subject: p.subject || "",
+        subjectId: p.subjectId || "",
         grade: p.grade || "",
         lessonRef: p.lessonRef || "",
+        label: Pack.label(p),
+        baiKey: (p.bai && p.bai.key) || "",
         className: className || "",
         classSize: Math.max(1, Math.min(L360.cfg.maxClassSize || 45, Number(classSize) || L360.cfg.defaultClassSize || 30)),
         groups,
@@ -110,13 +113,14 @@
     async goto(i) {
       const n = this.pack.steps.length;
       i = Math.max(-1, Math.min(n, i));
-      const st = { step: i, phase: "observe", q: 0, round: 1, screen: "content", openedAt: null, dur: 0 };
+      const st = { step: i, phase: "observe", q: 0, round: 1, page: 0, screen: "content", openedAt: null, dur: 0, vcmd: null };
       if (i >= 0 && !this.state.startedAt) st.startedAt = S().TS;
       await this.patchState(st);
       const step = this.pack.steps[i];
       if (step) {
         const t = L360.types[step.type] || {};
         if (t.releaseOnEnter) await S().set(R(this.room, `pub/items/${L360.subKey(step, st)}`), Pack.publicItem(step, st));
+        if (t.noSubmit && step.ghiBai) await S().set(R(this.room, `pub/notes/${step.id}`), { t: step.title, x: step.ghiBai });
         if (t.onEnter) await t.onEnter(this, step);
       }
     }
@@ -149,6 +153,8 @@
       if (!step) return;
       const ans = Pack.answerItem(step, this.state);
       if (ans != null) await S().set(R(this.room, `pub/answers/${this.key()}`), ans);
+      const note = (ans && ans.ghiBai) || (step.ghiBai && !step.questions ? step.ghiBai : "");
+      if (note) await S().set(R(this.room, `pub/notes/${this.key()}`), { t: step.title, x: note });
       // Với hoạt động hai vòng: công bố cho cả vòng 1.
       if (step.type === "poll2" && ans != null) await S().set(R(this.room, `pub/answers/${L360.subKey(step, { round: 1 })}`), ans);
       await this.patchState({ phase: "revealed", screen: "content" });
@@ -178,6 +184,51 @@
     }
     setScreen(mode) {
       return this.patchState({ screen: mode });
+    }
+    // Bài giảng nhiều trang.
+    setPage(p) {
+      const n = this.step && this.step.pages ? this.step.pages.length : 1;
+      return this.patchState({ page: Math.max(0, Math.min(n - 1, p)) });
+    }
+    // Điều khiển video trên màn chiếu.
+    videoCmd(c, t) {
+      return this.patchState({ vcmd: { c, t: t == null ? null : Number(t), n: Date.now() } });
+    }
+    async askAt(i, t) {
+      const st = Object.assign({}, this.state, { q: i });
+      await S().set(R(this.room, `pub/items/${L360.subKey(this.step, st)}`), Pack.publicItem(this.step, st));
+      const dur = this.type && this.type.timerFor ? this.type.timerFor(this.step, st) : 25;
+      await this.patchState({ q: i, phase: "open", openedAt: S().TS, dur, screen: "content", vcmd: { c: "pause", t: Number(t) || 0, n: Date.now() } });
+    }
+    async videoResume(nextQ) {
+      const st = Object.assign({}, this.state, { q: nextQ });
+      await S().set(R(this.room, `pub/items/${L360.subKey(this.step, st)}`), Object.assign(Pack.publicItem(this.step, st), { text: "" }));
+      await this.patchState({ q: nextQ, phase: "observe", openedAt: null, dur: 0, vcmd: { c: "play", t: null, n: Date.now() } });
+    }
+    // Gọi tên ngẫu nhiên (ưu tiên bạn chưa được gọi).
+    async pick() {
+      const roster = this.data.roster || {};
+      const online = this.joinedCodes().filter((c) => Room.online(this.data, c));
+      const pool = online.length ? online : this.joinedCodes();
+      if (!pool.length) return null;
+      this._picked = this._picked || [];
+      let cand = pool.filter((c) => !this._picked.includes(c));
+      if (!cand.length) {
+        this._picked = [];
+        cand = pool;
+      }
+      const code = cand[Math.floor(Math.random() * cand.length)];
+      this._picked.push(code);
+      const r = roster[code] || {};
+      const g = (this.meta.groups || []).find((x) => x.id === r.group);
+      await S().set(R(this.room, "pub/overlay"), { kind: "pick", code, name: r.name || "", group: g ? g.name : "", color: g ? g.color : "", pool: pool.slice(0, 40), n: Date.now() });
+      return code;
+    }
+    closeOverlay() {
+      return S().set(R(this.room, "pub/overlay"), null);
+    }
+    setSound(on) {
+      return this.patchState({ sound: !!on });
     }
     async feature(key, code, text) {
       const path = R(this.room, `pub/featured/${key}/${code}`);
@@ -323,7 +374,9 @@
         if (!k.type.points) return;
         const ans = data.pub && data.pub.answers && data.pub.answers[k.key];
         const sub = data.subs && data.subs[k.key] && data.subs[k.key][code];
-        if (ans != null && sub && k.type.isCorrect(k.step, k.key, sub.v)) pts += k.type.points(k.step);
+        if (ans == null || !sub) return;
+        if (k.type.points && k.type.points.length >= 3) pts += Number(k.type.points(k.step, k.key, sub.v)) || 0;
+        else if (k.type.isCorrect(k.step, k.key, sub.v)) pts += k.type.points(k.step);
       });
       return pts;
     },
@@ -371,7 +424,13 @@
         teacherUid: meta.teacherUid || "",
         teacherName: meta.teacherName || "",
         subject: pack.subject || meta.subject || "",
+        subjectId: pack.subjectId || meta.subjectId || "",
         grade: pack.grade || meta.grade || "",
+        label: Pack.label(pack),
+        baiKey: (pack.bai && pack.bai.key) || "",
+        tiet: pack.tiet || null,
+        design: pack.design || null,
+        phases: Pack.phaseCount(pack),
         className: meta.className || "",
         title: pack.title,
         packId: pack.id,

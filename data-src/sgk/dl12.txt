@@ -1,0 +1,41 @@
+BOOK|dl-12|12|dia-li|Địa lí 12|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-dia-li-12.4847747175|0
+C|Phần 1. Địa lí tự nhiên|5
+B|1|Vị trí địa lí và phạm vi lãnh thổ|5
+B|2|Thiên nhiên nhiệt đới ẩm gió mùa|10
+B|3|Sự phân hoá đa dạng của thiên nhiên|17
+B|4|Thực hành: Viết báo cáo về sự phân hoá tự nhiên Việt Nam|27
+B|5|Vấn đề sử dụng hợp lí tài nguyên thiên nhiên và bảo vệ môi trường|28
+B|6|Thực hành: Tuyên truyền sử dụng hợp lí tài nguyên thiên nhiên hoặc bảo vệ môi trường ở địa phương|33
+C|Phần 2. Địa lí dân cư|34
+B|7|Dân số Việt Nam|34
+B|8|Lao động và việc làm|39
+B|9|Đô thị hoá|43
+B|10|Thực hành: Viết báo cáo về một chủ đề dân cư ở Việt Nam|46
+C|Phần 3. Địa lí các ngành kinh tế|47
+B|11|Chuyển dịch cơ cấu kinh tế|47
+B|12|Vấn đề phát triển ngành nông nghiệp|51
+B|13|Vấn đề phát triển ngành lâm nghiệp và thuỷ sản|59
+B|14|Tổ chức lãnh thổ nông nghiệp|66
+B|15|Thực hành: Tìm hiểu vai trò, tình hình phát triển và chuyển dịch cơ cấu ngành nông nghiệp, lâm nghiệp và thuỷ sản|69
+B|16|Chuyển dịch cơ cấu ngành công nghiệp|70
+B|17|Một số ngành công nghiệp|74
+B|18|Một số hình thức tổ chức lãnh thổ công nghiệp|83
+B|19|Thực hành: Vẽ biểu đồ, nhận xét và giải thích tình hình phát triển ngành công nghiệp|86
+B|20|Vai trò, các nhân tố ảnh hưởng đến sự phát triển và phân bố các ngành dịch vụ|87
+B|21|Giao thông vận tải và bưu chính viễn thông|90
+B|22|Thương mại và du lịch|96
+B|23|Thực hành: Tìm hiểu sự phát triển một số ngành dịch vụ|102
+C|Phần 4. Địa lí các vùng kinh tế – xã hội|103
+B|24|Khai thác thế mạnh ở Trung du và miền núi phía Bắc|103
+B|25|Phát triển kinh tế – xã hội ở Đồng bằng sông Hồng|110
+B|26|Thực hành: Tìm hiểu vấn đề phát triển kinh tế biển ở Đồng bằng sông Hồng|118
+B|27|Phát triển kinh tế – xã hội ở Bắc Trung Bộ|119
+B|28|Phát triển kinh tế – xã hội ở Duyên hải Nam Trung Bộ và Tây Nguyên (Nam Trung Bộ)|129
+B|29|Thực hành: Phân tích ý nghĩa của phát triển kinh tế – xã hội đối với quốc phòng, an ninh ở Duyên hải Nam Trung Bộ và Tây Nguyên (Nam Trung Bộ)|141
+B|30|Phát triển kinh tế – xã hội ở Đông Nam Bộ|142
+B|31|Sử dụng hợp lí tự nhiên để phát triển kinh tế ở Đồng bằng sông Cửu Long|153
+B|32|Thực hành: Viết báo cáo về biến đổi khí hậu ở Đồng bằng sông Cửu Long|162
+B|33|Phát triển kinh tế và đảm bảo quốc phòng, an ninh ở Biển Đông và các đảo, quần đảo|163
+B|34|Thực hành: Viết báo cáo tuyên truyền về bảo vệ chủ quyền biển, đảo của Việt Nam|171
+C|Phần 5. Địa lí địa phương|172
+B|35|Thực hành: Tìm hiểu Địa lí địa phương|172

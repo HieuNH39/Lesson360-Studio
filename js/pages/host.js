@@ -38,21 +38,19 @@
       host = null;
     }
     const want = u.qs("pack");
-    let packs = L360.Library.all();
-    if (!L360.isLocal) {
-      const lib = await S.get("library").catch(() => null);
-      u.vals(lib).forEach((x) => {
-        if (x && x.pack && !packs.find((p) => p.id === x.pack.id)) packs.push(Object.assign(Pack.normalize(x.pack), { _school: x.ownerName || "Thư viện trường" }));
-      });
+    let packs = L360.Local.all();
+    const libId = u.qs("lib");
+    if (libId && L360.Lib) {
+      const lp = await L360.Lib.getPack(libId).catch(() => null);
+      if (lp && !packs.find((p) => p.id === lp.id)) packs.unshift(Object.assign(lp, { _school: lp.meta && lp.meta.authorName ? "GV " + lp.meta.authorName : "Thư viện trường" }));
     }
     let sel = (packs.find((p) => p.id === want) || packs[0] || {}).id;
     const rooms = recent.list();
     app.innerHTML =
-      L360.shell.topbar(`${L360.shell.modeBadge()}<a class="btn sm" href="studio.html">Soạn bài</a><a class="btn sm" href="insight.html">Dữ liệu</a><button class="btn sm ghost" id="out">${u.esc(teacher.name)} · Thoát</button>`, {
-        sub: "Bảng điều khiển giáo viên"
-      }) +
+      L360.shell.topbar(`${L360.shell.modeBadge()}${L360.shell.userMenu(teacher)}`, { sub: "Dạy học trực tiếp", nav: "day" }) +
       `<main class="wrap"><h1>Mở tiết học</h1><div class="grid" style="grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:20px">
-      <section class="card"><div class="row"><h2 class="grow">1. Chọn bài học</h2><input id="q" type="text" placeholder="Tìm bài…" style="max-width:220px;min-height:38px"></div>
+      <section class="card"><div class="row"><h2 class="grow">1. Chọn tiết học</h2><input id="q" type="search" placeholder="Tìm bài…" style="max-width:220px;min-height:38px"></div>
+        <p class="small muted" style="margin:0">Bài của tôi, bài mẫu và bài vừa chọn từ <a href="thuvien.html">Thư viện trường</a>.</p>
         <div id="plist" class="col" style="gap:8px;max-height:60vh;overflow:auto;margin-top:8px"></div></section>
       <section class="card"><h2>2. Thông tin lớp</h2>
         <label class="field">Lớp<input id="cls" type="text" placeholder="VD: 10A2" value="${u.esc(localStorage.getItem("l360:lastClass") || "")}"></label>
@@ -76,7 +74,7 @@
               .join("")}</table></section>`
           : ""
       }
-      ${teacher.isAdmin && !L360.isLocal ? `<section class="card" style="margin-top:20px"><h2>Quản trị trường</h2><div class="row"><label class="field grow">Mã mời giáo viên<input id="inv" type="text"></label><button class="btn" id="setInv" style="align-self:flex-end">Lưu mã mời</button></div><p class="small muted">Gửi mã này cho giáo viên khác để họ tự tạo tài khoản.</p></section>` : ""}
+
       </main>` +
       L360.shell.footer();
     const drawList = () => {
@@ -87,7 +85,7 @@
           .map((p) => {
             const sm = Pack.summary(p);
             return `<label class="opt ${p.id === sel ? "sel" : ""}" style="cursor:pointer"><input type="radio" name="pk" value="${u.esc(p.id)}" ${p.id === sel ? "checked" : ""} style="margin-top:6px">
-            <span class="grow"><b>${u.esc(p.title)}</b><br><span class="small muted">${u.esc([p.subject, p.grade && "lớp " + p.grade, p.lessonRef].filter(Boolean).join(" · "))}</span><br>
+            <span class="grow" style="min-width:0"><b class="clamp2">${u.esc(p.title)}</b><span class="small muted ellipsis" style="display:block">${u.esc([p.subject, p.grade && "lớp " + p.grade, Pack.label(p)].filter(Boolean).join(" · "))}</span>
             <span class="small">${sm.steps} hoạt động · ${sm.minutes} phút</span> ${p._sample ? `<span class="pill">Bài mẫu</span>` : p._school ? `<span class="pill accent">${u.esc(p._school)}</span>` : `<span class="pill ok">Của tôi</span>`}</span></label>`;
           })
           .join("") || `<p class="muted">Chưa có bài học. <a href="studio.html">Soạn bài mới với trợ lý AI</a>.</p>`;
@@ -95,16 +93,10 @@
     };
     drawList();
     u.$("#q").oninput = drawList;
-    u.$("#out").onclick = () => L360.Auth.signOut();
+    L360.shell.bindUserMenu(teacher);
     u.$$("[data-drop]").forEach((b) => (b.onclick = () => (recent.drop(b.dataset.drop), setupView())));
     u.$$("[data-resume]").forEach((b) => (b.onclick = () => resume(b.dataset.resume)));
-    if (u.$("#setInv")) {
-      S.get("secret/invite").then((v) => (u.$("#inv").value = v || ""));
-      u.$("#setInv").onclick = async () => {
-        await S.set("secret/invite", u.$("#inv").value.trim());
-        u.toast("Đã lưu mã mời.", "ok");
-      };
-    }
+
     u.$("#open").onclick = async () => {
       const pack = packs.find((p) => p.id === sel);
       if (!pack) return u.toast("Chọn một bài học.", "bad");
@@ -151,13 +143,16 @@
   /* ---------------- Điều khiển tiết học ---------------- */
   function liveView(room, pack) {
     host = new Room.Host(room, pack, () => draw());
-    L360.shell.theme(host.pack.theme);
+    const pal = L360.Design.resolve(host.pack).palette;
+    ["--accent", "--accent-2"].forEach((k, i) => document.documentElement.style.setProperty(k, i ? pal.accent2 : pal.accent));
+    document.documentElement.style.setProperty("--accent-a12", L360.Design.rgba(pal.accent, 0.12));
+    document.documentElement.style.setProperty("--accent-a25", L360.Design.rgba(pal.accent, 0.25));
     app.innerHTML =
       L360.shell.topbar(
         `<span class="pill accent" style="font-size:.95rem">Phòng <b>${u.esc(room)}</b></span>${L360.shell.modeBadge()}
-        <a class="btn sm primary" href="${screenUrl(room)}" target="l360screen" id="scr">Mở màn chiếu</a>
+        <a class="btn sm primary" href="${screenUrl(room)}" target="l360screen" id="scr">${L360.icon("layers")} Mở màn chiếu</a>
         <button class="btn sm" id="menu">Minh chứng & kết thúc ▾</button>`,
-        { sub: host.pack.title }
+        { sub: [Pack.label(host.pack), host.pack.title].filter(Boolean).join(" · ") }
       ) +
       `<main class="host-grid">
         <nav class="card flat host-steps" id="steps"></nav>
@@ -282,14 +277,18 @@
     const joined = Room.joined(d);
     const key = step ? host.key() : null;
     // Danh sách bước
-    u.$("#steps").innerHTML = `<div class="small muted" style="margin-bottom:6px">Tiến trình · <span data-clock>0:00</span> / ${host.pack.duration} phút</div>
+    let lastPh = "";
+    u.$("#steps").innerHTML = `<div class="small muted" style="margin-bottom:6px">${u.esc(Pack.label(host.pack))} · <span data-clock>0:00</span> / ${host.pack.duration} phút</div>
       <button class="hstep ${st.step < 0 ? "cur" : ""}" data-go="-1"><span class="n">0</span><span>Phòng chờ</span></button>
       ${steps
         .map((s, i) => {
           const T = L360.types[s.type] || {};
-          return `<button class="hstep ${i === st.step ? "cur" : i < st.step ? "done" : ""}" data-go="${i}"><span class="n">${i + 1}</span><span class="grow">${u.esc(s.title)}<br><span class="tiny muted">${u.esc(
-            T.label || s.type
-          )}${s.minutes ? ` · ${s.minutes}′` : ""}</span></span></button>`;
+          const hd = s.phase !== lastPh ? `<div class="hph phc-${s.phase}">${u.esc(L360.phase(s.phase).name)}</div>` : "";
+          lastPh = s.phase;
+          const note = s.ghiBai || (s.pages || []).some((pg) => L360.blocks.hasNote(pg));
+          return `${hd}<button class="hstep phc-${s.phase} ${i === st.step ? "cur" : i < st.step ? "done" : ""}" data-go="${i}"><span class="n">${i + 1}</span><span class="grow">${u.esc(s.title)}<br><span class="tiny muted">${u.esc(T.label || s.type)}${
+            s.minutes ? ` · ${s.minutes}′` : ""
+          }${note ? " · ✎ ghi vở" : ""}</span></span></button>`;
         })
         .join("")}
       <button class="hstep ${st.step >= steps.length ? "cur" : ""}" data-go="${steps.length}"><span class="n">✓</span><span>Tổng kết</span></button>`;
@@ -323,21 +322,29 @@
         ["board", "Bảng xếp hạng"],
         ["featured", "Bài nổi bật"]
       ];
-      ctrl.innerHTML = `<div class="row"><span class="pill">${st.step + 1}/${steps.length} · ${u.esc(T.label || step.type)}</span><span class="pill ${st.phase === "open" ? "ok" : st.phase === "revealed" ? "accent" : ""}">${ui.phaseLabel(
-        st,
-        T
-      )}</span>${step.type === "quiz" ? `<span class="pill">Câu ${(st.q || 0) + 1}/${step.questions.length}</span>` : ""}${step.type === "poll2" ? `<span class="pill">Vòng ${st.round === 2 ? 2 : 1}</span>` : ""}<span class="spacer"></span><span style="font-size:1.8rem">${ui.timer()}</span></div>
+      const pg = step.type === "slide" ? (step.pages || [])[st.page || 0] : null;
+      const noteNow = (pg && L360.blocks.hasNote(pg)) || step.ghiBai;
+      ctrl.innerHTML = `<div class="row"><span class="ph ph-${step.phase}">${u.esc(L360.phase(step.phase).name)}</span><span class="pill">${st.step + 1}/${steps.length} · ${u.esc(T.label || step.type)}</span><span class="pill ${
+        st.phase === "open" ? "ok" : st.phase === "revealed" ? "accent" : ""
+      }">${ui.phaseLabel(st, T)}</span>${step.type === "quiz" ? `<span class="pill">Câu ${(st.q || 0) + 1}/${step.questions.length}</span>` : ""}${step.type === "poll2" ? `<span class="pill">Vòng ${st.round === 2 ? 2 : 1}</span>` : ""}${
+        step.type === "slide" && (step.pages || []).length > 1 ? `<span class="pill">Trang ${(st.page || 0) + 1}/${step.pages.length}</span>` : ""
+      }${noteNow ? `<span class="ghi-badge">${L360.icon("ghiBai")} Nhắc học sinh ghi vở</span>` : ""}<span class="spacer"></span><span style="font-size:1.8rem">${ui.timer()}</span></div>
         <h2 style="margin-top:8px">${u.esc(step.title)}</h2>
         ${step.script ? `<div class="script"><b>Lời dẫn gợi ý.</b> ${u.rich(step.script)}</div>` : ""}
         ${step.instructions ? `<p class="small"><b>Nhiệm vụ cho học sinh:</b> ${u.rich(step.instructions)}</p>` : ""}
         <div class="row" style="margin-top:12px">${btns.map((b, i) => `<button class="btn ${b.cls || ""}" data-b="${i}">${u.esc(b.label)}</button>`).join("")}</div>
         <div class="row" style="margin-top:12px;border-top:1px solid var(--line);padding-top:12px"><button class="btn sm" id="prev">‹ Bước trước</button><button class="btn sm dark" id="next">Bước tiếp theo ›</button>
+        <button class="btn sm" id="pick" title="Gọi một học sinh ngẫu nhiên lên màn chiếu">${L360.icon("dice")} Gọi ngẫu nhiên</button>${d.pub && d.pub.overlay ? `<button class="btn sm" id="ovx">Tắt lớp phủ</button>` : ""}
+        <button class="btn sm ghost" id="snd" title="Âm thanh trên màn chiếu">${L360.icon(st.sound === false ? "soundOff" : "soundOn")}</button>
         <span class="spacer"></span><span class="small muted">Màn chiếu:</span>${modes
           .map(([m, l]) => `<button class="btn sm ${(st.screen || "content") === m ? "primary" : ""}" data-sm="${m}">${l}</button>`)
           .join("")}</div>`;
       u.$$("[data-b]", ctrl).forEach((b) => (b.onclick = () => btns[Number(b.dataset.b)].fn()));
       u.$$("[data-sm]", ctrl).forEach((b) => (b.onclick = () => host.setScreen(b.dataset.sm)));
       u.$("#prev").onclick = () => host.prev();
+      u.$("#pick").onclick = async () => ((await host.pick()) ? null : u.toast("Chưa có học sinh trong lớp.", "bad"));
+      if (u.$("#ovx")) u.$("#ovx").onclick = () => host.closeOverlay();
+      u.$("#snd").onclick = () => host.setSound(st.sound === false);
       u.$("#next").onclick = async () => {
         if (st.phase === "open" && !(await u.confirm("Bước hiện tại đang nhận bài. Khoá và chuyển bước?", "Chuyển"))) return;
         host.next();
@@ -361,8 +368,9 @@
         item: d.pub && d.pub.items && d.pub.items[key],
         nameOf: (c) => (d.roster && d.roster[c] && d.roster[c].name) || c
       };
-      lp.innerHTML = `<h3>Theo dõi trực tiếp</h3><div id="lpb"></div>`;
+      lp.innerHTML = `<h3>${step.type === "slide" ? "Trang đang chiếu" : step.type === "crossword" ? "Ô chữ" : "Theo dõi trực tiếp"}</h3><div id="lpb"></div>`;
       L360.types[step.type].host(u.$("#lpb"), ctx);
+      u.$$(".host-prev", lp).forEach((x) => L360.Design.apply(host.pack, x));
     } else lp.classList.add("hidden");
     // Lưới lớp học
     const gm = !!(host.type && host.type.groupMode);

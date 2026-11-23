@@ -1,0 +1,11 @@
+BOOK|cdktpl-10|10|gdktpl|Chuyên đề học tập Giáo dục Kinh tế và Pháp luật 10|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-chuyen-de-hoc-tap-giao-duc-kinh-te-va-phap-luat-10.4715360345|-1
+C|Chuyên đề 1: Tình yêu, hôn nhân và gia đình|5
+B|1|Tình yêu|5
+B|2|Hôn nhân|10
+B|3|Gia đình|15
+C|Chuyên đề 2: Mô hình sản xuất kinh doanh của doanh nghiệp nhỏ|23
+B|4|Những vấn đề chung về doanh nghiệp nhỏ|23
+B|5|Tổ chức, hoạt động của doanh nghiệp nhỏ|33
+C|Chuyên đề 3: Một số vấn đề về pháp luật hình sự|41
+B|6|Khái niệm và nguyên tắc cơ bản của pháp luật hình sự Việt Nam|41
+B|7|Pháp luật hình sự liên quan đến người chưa thành niên|53

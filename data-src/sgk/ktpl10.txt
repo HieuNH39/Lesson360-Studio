@@ -1,0 +1,31 @@
+BOOK|ktpl-10|10|gdktpl|Giáo dục Kinh tế và Pháp luật 10|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-giao-duc-kinh-te-va-phap-luat-10.4756644900|-1
+C|Phần một: Giáo dục kinh tế – Chủ đề 1: Nền kinh tế và các chủ thể của nền kinh tế|6
+B|1|Các hoạt động kinh tế cơ bản trong đời sống xã hội|6
+B|2|Các chủ thể của nền kinh tế|12
+C|Chủ đề 2: Thị trường và cơ chế thị trường|18
+B|3|Thị trường|18
+B|4|Cơ chế thị trường|23
+C|Chủ đề 3: Ngân sách nhà nước và thuế|28
+B|5|Ngân sách nhà nước|28
+B|6|Thuế|34
+C|Chủ đề 4: Sản xuất kinh doanh và các mô hình sản xuất kinh doanh|43
+B|7|Sản xuất kinh doanh và các mô hình sản xuất kinh doanh|43
+C|Chủ đề 5: Tín dụng và cách sử dụng các dịch vụ tín dụng trong đời sống|53
+B|8|Tín dụng và vai trò của tín dụng trong đời sống|53
+B|9|Dịch vụ tín dụng|57
+C|Chủ đề 6: Lập kế hoạch tài chính cá nhân|67
+B|10|Lập kế hoạch tài chính cá nhân|67
+C|Phần hai: Giáo dục pháp luật – Chủ đề 7: Pháp luật nước Cộng hoà xã hội chủ nghĩa Việt Nam|78
+B|11|Khái niệm, đặc điểm và vai trò của pháp luật|78
+B|12|Hệ thống pháp luật và văn bản pháp luật Việt Nam|84
+B|13|Thực hiện pháp luật|91
+C|Chủ đề 8: Hiến pháp nước Cộng hoà xã hội chủ nghĩa Việt Nam|97
+B|14|Khái niệm, đặc điểm, vị trí của Hiến pháp nước Cộng hoà xã hội chủ nghĩa Việt Nam|97
+B|15|Nội dung cơ bản của Hiến pháp về chế độ chính trị|102
+B|16|Nội dung cơ bản của Hiến pháp về quyền con người, quyền và nghĩa vụ cơ bản của công dân|109
+B|17|Nội dung cơ bản của Hiến pháp về kinh tế, văn hoá, xã hội, giáo dục, khoa học, công nghệ, môi trường|114
+C|Chủ đề 9: Hệ thống chính trị nước Cộng hoà xã hội chủ nghĩa Việt Nam|120
+B|18|Đặc điểm, cấu trúc và nguyên tắc hoạt động của hệ thống chính trị nước Cộng hoà xã hội chủ nghĩa Việt Nam|120
+B|19|Quốc hội, Chủ tịch nước và Chính phủ nước Cộng hoà xã hội chủ nghĩa Việt Nam|130
+B|20|Toà án nhân dân và Viện kiểm sát nhân dân|137
+B|21|Hội đồng nhân dân và Uỷ ban nhân dân|144

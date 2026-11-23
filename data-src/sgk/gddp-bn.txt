@@ -1,0 +1,118 @@
+BOOK|gddp-bn-6|6|gddp|Tài liệu GDĐP tỉnh Bắc Ninh – Lớp 6||
+C|Chủ đề 1: Lịch sử, truyền thống và văn hoá|6
+B|1|Bắc Ninh từ thời nguyên thuỷ đến đầu thế kỉ X|6
+B|2|Chùa Bút Tháp|16
+B|3|Nhân vật lịch sử tiêu biểu của tỉnh Bắc Ninh (từ thời dựng nước đến đầu thế kỉ X)|22
+B|4|Lễ hội Thập Đình|27
+B|5|Giai thoại về Thuỷ tổ Quan họ|31
+B|6|Trang phục liền chị Quan họ|35
+B|7|Vùng và các làng Quan họ|39
+B|8|Giao tiếp, ứng xử có văn hoá|44
+C|Chủ đề 2: Địa lí, kinh tế, hướng nghiệp|49
+B|9|Vị trí địa lí và phạm vi lãnh thổ tỉnh Bắc Ninh|49
+B|10|Điều kiện tự nhiên và tài nguyên thiên nhiên tỉnh Bắc Ninh|53
+C|Chủ đề 3: Chính trị – xã hội, môi trường|60
+B|11|Xây dựng nếp sống văn hoá trong cộng đồng dân cư ở tỉnh Bắc Ninh|60
+B|12|Một số vấn đề môi trường nơi em sống|66
+BOOK|gddp-bn-7|7|gddp|Tài liệu GDĐP tỉnh Bắc Ninh – Lớp 7||
+C|Chủ đề 1: Lịch sử, truyền thống và văn hoá|7
+B|1|Bắc Ninh từ đầu thế kỉ X đến đầu thế kỉ XVI|7
+B|2|Văn Miếu Bắc Ninh|32
+B|3|Danh nhân, nhân vật lịch sử tiêu biểu tỉnh Bắc Ninh (từ đầu thế kỉ X đến đầu thế kỉ XVI)|43
+B|4|Lễ hội làng Diềm|54
+B|5|Tục kết chạ giữa các làng Quan họ|60
+B|6|Trang phục của liền anh Quan họ|64
+B|7|Đặc trưng lối hát của dân ca Quan họ Bắc Ninh|67
+C|Chủ đề 2: Địa lí, kinh tế, hướng nghiệp|71
+B|8|Dân số và sự gia tăng dân số của tỉnh Bắc Ninh|71
+B|9|Phân bố dân cư và quần cư tỉnh Bắc Ninh|76
+B|10|Một số đô thị ở tỉnh Bắc Ninh|82
+C|Chủ đề 3: Chính trị – xã hội, môi trường|91
+B|11|Chính sách an sinh xã hội của tỉnh Bắc Ninh|91
+B|12|Bình đẳng giới|97
+BOOK|gddp-bn-8|8|gddp|Tài liệu GDĐP tỉnh Bắc Ninh – Lớp 8||
+C|Chủ đề 1: Lịch sử, truyền thống và văn hoá|6
+B|1|Bắc Ninh từ đầu thế kỉ XVI đến đầu thế kỉ XX|6
+B|2|Đình Đình Bảng|23
+B|3|Danh nhân, nhân vật lịch sử tiêu biểu tỉnh Bắc Ninh từ đầu thế kỉ XVI đến đầu thế kỉ XX|31
+B|4|Lễ hội Đồng Kỵ|38
+B|5|Quan họ thết đãi bạn trong ngày hội|42
+B|6|Quan họ mong đợi bạn trong lễ hội mùa xuân|46
+B|7|Quan họ trẩy hội Lim tìm bạn kết nghĩa|49
+C|Chủ đề 2: Địa lí, kinh tế, hướng nghiệp|52
+B|8|Du lịch tỉnh Bắc Ninh|52
+B|9|Nghề thủ công mĩ nghệ truyền thống|67
+B|10|Làng nghề, nghề truyền thống về sản xuất, chế biến thực phẩm|73
+C|Chủ đề 3: Chính trị – xã hội, môi trường|78
+B|11|Chính sách phát triển giáo dục và đào tạo tỉnh Bắc Ninh|78
+B|12|Giáo dục kĩ năng sử dụng mạng xã hội an toàn|83
+BOOK|gddp-bn-9|9|gddp|Tài liệu GDĐP tỉnh Bắc Ninh – Lớp 9||
+C|Chủ đề 1: Lịch sử, truyền thống và văn hoá|6
+B|1|Bắc Ninh từ năm 1918 đến nay|6
+B|2|Các bảo vật quốc gia ở Bắc Ninh|16
+B|3|Danh nhân, nhân vật lịch sử tiêu biểu của tỉnh Bắc Ninh từ năm 1918 đến nay|24
+B|4|Khái quát về các lễ hội ở Bắc Ninh|30
+B|5|Hình thức diễn xướng trong Dân ca Quan họ Bắc Ninh|37
+B|6|Nghề chơi Quan họ ở Bắc Ninh|41
+B|7|Truyền thống tôn trọng phụ nữ của người Quan họ|45
+B|8|Tỉnh Bắc Ninh xây dựng văn hoá giao thông|49
+C|Chủ đề 2: Địa lí, kinh tế, hướng nghiệp|53
+B|9|Khái quát tình hình phát triển kinh tế của tỉnh Bắc Ninh|53
+B|10|Một số ngành kinh tế quan trọng của tỉnh Bắc Ninh|60
+B|11|Thị trường lao động và việc làm ở Bắc Ninh|71
+C|Chủ đề 3: Chính trị – xã hội, môi trường|75
+B|12|Công tác phòng, chống bạo lực học đường trên địa bàn tỉnh Bắc Ninh|75
+B|13|Công tác bảo vệ môi trường tỉnh Bắc Ninh|79
+BOOK|gddp-bn-10|10|gddp|Tài liệu GDĐP tỉnh Bắc Ninh – Lớp 10||
+C|Chủ đề 1: Lịch sử, truyền thống và văn hoá|5
+B|1|Di sản văn hoá tỉnh Bắc Ninh|5
+B|2|Truyền thống hiếu học và khoa bảng của tỉnh Bắc Ninh|17
+B|3|Danh nhân khoa bảng tiêu biểu của tỉnh Bắc Ninh|24
+B|4|Hội Lim – quá khứ và hiện tại|31
+B|5|“Cây đàn thanh đới” trong Dân ca Quan họ Bắc Ninh|36
+B|6|Hệ thống các giọng trong Dân ca Quan họ|39
+B|7|Đặc điểm lời ca trong Dân ca Quan họ Bắc Ninh|43
+B|8|Toàn dân đoàn kết xây dựng đời sống văn hoá ở khu dân cư|47
+C|Chủ đề 2: Địa lí, kinh tế, hướng nghiệp|52
+B|9|Điều kiện tự nhiên của tỉnh Bắc Ninh|52
+B|10|Các làng nghề truyền thống|61
+B|11|Các ngành kinh tế chủ lực của Bắc Ninh|67
+B|12|Thị trường lao động|78
+C|Chủ đề 3: Chính trị – xã hội, môi trường|85
+B|13|Phòng, chống tệ nạn xã hội trên địa bàn tỉnh Bắc Ninh|85
+B|14|Bảo vệ môi trường làng nghề tỉnh Bắc Ninh|91
+BOOK|gddp-bn-11|11|gddp|Tài liệu GDĐP tỉnh Bắc Ninh – Lớp 11||
+C|Chủ đề 1: Lịch sử, truyền thống và văn hoá|6
+B|1|Làng cổ ở Bắc Ninh|6
+B|2|Các di tích, công trình kiến trúc – nghệ thuật ở Bắc Ninh|15
+B|3|Danh nhân, nhân vật tiêu biểu trong lĩnh vực tư tưởng, văn học, nghệ thuật ở Bắc Ninh|23
+B|4|Lễ hội đền Bà Chúa Kho ở Bắc Ninh|33
+B|5|Bọn Quan họ trong Quan họ Bắc Ninh|37
+B|6|Nhà chứa Quan họ|40
+B|7|Nghệ thuật hát đối đáp trong dân ca Quan họ|44
+C|Chủ đề 2: Địa lí, kinh tế, hướng nghiệp|48
+B|8|Du lịch tỉnh Bắc Ninh|48
+B|9|Các nghề truyền thống tiêu biểu ở Bắc Ninh|64
+B|10|Giáo dục nghề nghiệp trên địa bàn tỉnh Bắc Ninh|72
+C|Chủ đề 3: Chính trị – xã hội, môi trường|78
+B|11|Tỉnh Bắc Ninh thực hiện sống và làm việc theo Hiến pháp và pháp luật|78
+B|12|Xây dựng Bắc Ninh trở thành thành phố trực thuộc trung ương|84
+B|13|Kĩ năng định hướng nghề nghiệp|88
+B|14|Bảo vệ môi trường các khu công nghiệp, cụm công nghiệp tỉnh Bắc Ninh|94
+BOOK|gddp-bn-12|12|gddp|Tài liệu GDĐP tỉnh Bắc Ninh – Lớp 12||
+C|Chủ đề 1: Lịch sử, truyền thống và văn hoá|6
+B|1|Bắc Ninh – Hội nhập và phát triển từ năm 1997 đến nay|6
+B|2|Các di tích lịch sử cách mạng ở Bắc Ninh|13
+B|3|Các chiến sĩ cách mạng tiêu biểu ở Bắc Ninh|21
+B|4|Bảo tồn, phát huy giá trị văn hoá của lễ hội truyền thống ở Bắc Ninh|30
+B|5|Ngôn ngữ giao tiếp trong hát Quan họ|36
+B|6|Khái quát về các loại hình diễn xướng dân gian ở Bắc Ninh|41
+B|7|Bảo tồn và phát huy giá trị của Dân ca Quan họ Bắc Ninh|45
+C|Chủ đề 2: Địa lí, kinh tế, hướng nghiệp|49
+B|8|Dân số và nguồn nhân lực đối với sự phát triển bền vững của tỉnh Bắc Ninh|49
+B|9|Một số vấn đề kinh tế Bắc Ninh|64
+B|10|Thị trường lao động tỉnh Bắc Ninh|73
+C|Chủ đề 3: Chính trị – xã hội, môi trường|80
+B|11|Bắc Ninh hành động vì cộng đồng|80
+B|12|Kĩ năng ra quyết định|87
+B|13|Bảo vệ môi trường ở Bắc Ninh trong thời kì công nghiệp hoá, hiện đại hoá|90

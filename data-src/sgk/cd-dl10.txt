@@ -1,0 +1,4 @@
+BOOK|cddl-10|10|dia-li|Chuyên đề học tập Địa lí 10|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-chuyen-de-hoc-tap-dia-li-10.4700990179|-1
+B|CĐ 10.1|Biến đổi khí hậu|5
+B|CĐ 10.2|Đô thị hoá|16
+B|CĐ 10.3|Phương pháp viết báo cáo địa lí|28

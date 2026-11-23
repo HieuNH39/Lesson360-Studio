@@ -1,0 +1,4 @@
+BOOK|cdls-12|12|lich-su|Chuyên đề học tập Lịch sử 12|https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-chuyen-de-hoc-tap-lich-su-12.4701661756|-1
+B|CĐ1|Lịch sử tín ngưỡng và tôn giáo ở Việt Nam|6
+B|CĐ2|Nhật Bản: Hành trình lịch sử từ năm 1945 đến nay|23
+B|CĐ3|Quá trình hội nhập quốc tế của Việt Nam|37

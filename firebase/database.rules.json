@@ -6,30 +6,74 @@
       "admins": {
         ".read": "auth != null",
         "$uid": {
-          ".write": "auth != null && auth.provider === 'password' && ((!root.child('l360/admins').exists() && $uid === auth.uid) || root.child('l360/admins/' + auth.uid).val() === true)"
+          ".write": "(auth != null && auth.provider !== 'anonymous') && ((!root.child('l360/admins').exists() && $uid === auth.uid && root.child('l360/teachers/' + auth.uid).exists()) || root.child('l360/admins/' + auth.uid).val() === true)",
+          ".validate": "newData.isBoolean()"
+        }
+      },
+      "leaders": {
+        ".read": "auth != null",
+        "$uid": {
+          ".write": "auth != null && root.child('l360/admins/' + auth.uid).val() === true",
+          ".validate": "newData.isBoolean()"
         }
       },
       "secret": {
-        ".read": "auth != null && root.child('l360/admins/' + auth.uid).val() === true",
-        ".write": "auth != null && root.child('l360/admins/' + auth.uid).val() === true"
+        ".read": "auth != null && (root.child('l360/admins/' + auth.uid).val() === true || root.child('l360/leaders/' + auth.uid).val() === true)",
+        ".write": "auth != null && (root.child('l360/admins/' + auth.uid).val() === true || root.child('l360/leaders/' + auth.uid).val() === true)"
       },
       "teachers": {
-        ".read": "auth != null && root.child('l360/teachers/' + auth.uid).exists()",
+        ".read": "(auth != null && auth.provider !== 'anonymous' && root.child('l360/teachers/' + auth.uid).exists())",
         "$uid": {
           ".read": "auth != null && auth.uid === $uid",
-          ".write": "auth != null && auth.provider === 'password' && (root.child('l360/admins/' + auth.uid).val() === true || ($uid === auth.uid && (data.exists() || (root.child('l360/secret/invite').exists() && newData.child('invite').val() === root.child('l360/secret/invite').val()))))"
+          ".write": "(auth != null && auth.provider !== 'anonymous') && (root.child('l360/admins/' + auth.uid).val() === true || ($uid === auth.uid && (data.exists() || !root.child('l360/admins').exists() || (root.child('l360/secret/invite').exists() && newData.child('invite').val() === root.child('l360/secret/invite').val()))))",
+          "name": {
+            ".validate": "newData.isString() && newData.val().length <= 80"
+          }
         }
       },
-      "library": {
-        ".read": "auth != null && root.child('l360/teachers/' + auth.uid).exists()",
-        "$id": {
-          ".write": "auth != null && root.child('l360/teachers/' + auth.uid).exists() && (!data.exists() || data.child('owner').val() === auth.uid || root.child('l360/admins/' + auth.uid).val() === true)"
+      "lib": {
+        "meta": {
+          ".read": "(auth != null && auth.provider !== 'anonymous' && root.child('l360/teachers/' + auth.uid).exists())",
+          "$id": {
+            ".write": "(auth != null && auth.provider !== 'anonymous' && root.child('l360/teachers/' + auth.uid).exists()) && (!data.exists() || data.child('by').val() === auth.uid || root.child('l360/admins/' + auth.uid).val() === true) && (!newData.exists() || newData.child('by').val() === auth.uid || root.child('l360/admins/' + auth.uid).val() === true)"
+          }
+        },
+        "pack": {
+          ".read": "(auth != null && auth.provider !== 'anonymous' && root.child('l360/teachers/' + auth.uid).exists())",
+          "$id": {
+            ".write": "(auth != null && auth.provider !== 'anonymous' && root.child('l360/teachers/' + auth.uid).exists()) && (!data.exists() || data.child('meta/authorUid').val() === auth.uid || root.child('l360/admins/' + auth.uid).val() === true)"
+          }
+        },
+        "uses": {
+          ".read": "(auth != null && auth.provider !== 'anonymous' && root.child('l360/teachers/' + auth.uid).exists())",
+          "$id": {
+            "$uid": {
+              ".write": "(auth != null && auth.provider !== 'anonymous' && root.child('l360/teachers/' + auth.uid).exists()) && $uid === auth.uid"
+            }
+          }
+        }
+      },
+      "drafts": {
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid && auth.provider !== 'anonymous'"
         }
       },
       "sessions": {
-        ".read": "auth != null && root.child('l360/teachers/' + auth.uid).exists()",
+        ".read": "(auth != null && auth.provider !== 'anonymous' && root.child('l360/teachers/' + auth.uid).exists()) && ((root.child('l360/admins/' + auth.uid).val() === true || root.child('l360/leaders/' + auth.uid).val() === true) || (query.orderByChild === 'teacherUid' && query.equalTo === auth.uid))",
+        ".indexOn": [
+          "teacherUid"
+        ],
         "$sid": {
-          ".write": "auth != null && root.child('l360/teachers/' + auth.uid).exists() && (!data.exists() || data.child('teacherUid').val() === auth.uid) && (!newData.exists() || newData.child('teacherUid').val() === auth.uid)"
+          ".read": "(auth != null && auth.provider !== 'anonymous' && root.child('l360/teachers/' + auth.uid).exists()) && (data.child('teacherUid').val() === auth.uid || (root.child('l360/admins/' + auth.uid).val() === true || root.child('l360/leaders/' + auth.uid).val() === true))",
+          ".write": "(auth != null && auth.provider !== 'anonymous' && root.child('l360/teachers/' + auth.uid).exists()) && (!data.exists() || data.child('teacherUid').val() === auth.uid) && (!newData.exists() || newData.child('teacherUid').val() === auth.uid)"
+        }
+      },
+      "reviews": {
+        ".read": "(auth != null && auth.provider !== 'anonymous' && root.child('l360/teachers/' + auth.uid).exists()) && (root.child('l360/admins/' + auth.uid).val() === true || root.child('l360/leaders/' + auth.uid).val() === true)",
+        "$sid": {
+          ".read": "(auth != null && auth.provider !== 'anonymous' && root.child('l360/teachers/' + auth.uid).exists()) && ((root.child('l360/admins/' + auth.uid).val() === true || root.child('l360/leaders/' + auth.uid).val() === true) || root.child('l360/sessions/' + $sid + '/teacherUid').val() === auth.uid)",
+          ".write": "(auth != null && auth.provider !== 'anonymous' && root.child('l360/teachers/' + auth.uid).exists()) && (root.child('l360/admins/' + auth.uid).val() === true || root.child('l360/leaders/' + auth.uid).val() === true) && (!newData.exists() || newData.child('by').val() === auth.uid)"
         }
       },
       "priv": {
@@ -58,7 +102,9 @@
             ".read": "auth != null",
             "$code": {
               ".write": "auth != null && (root.child('l360/rooms/' + $room + '/meta/teacherUid').val() === auth.uid || ((!data.child('uid').exists() || data.child('uid').val() === auth.uid) && newData.child('uid').val() === auth.uid && root.child('l360/rooms/' + $room + '/meta/status').val() !== 'ended'))",
-              "name": { ".validate": "newData.isString() && newData.val().length <= 20" }
+              "name": {
+                ".validate": "newData.isString() && newData.val().length <= 20"
+              }
             }
           },
           "uids": {

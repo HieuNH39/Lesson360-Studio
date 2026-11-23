@@ -1,11 +1,14 @@
-/* Trang học sinh: vào lớp bằng mã phòng + mã học sinh, làm nhiệm vụ theo bước giáo viên điều khiển. */
+/* Trang học sinh (laptop / iPad): vào lớp bằng mã phòng + mã học sinh – không cần tài khoản;
+   làm nhiệm vụ theo bước giáo viên điều khiển; tự có "Vở ghi" gom các nội dung cần ghi bài. */
 (function () {
   const L360 = window.L360;
   const u = L360.u;
   const ui = L360.ui;
   const S = L360.store;
   const Room = L360.Room;
+  const B = L360.blocks;
   const app = u.$("#app");
+  document.body.classList.add("lesson");
 
   let R = (u.qs("phong") || u.qs("room") || "").toUpperCase().trim();
   let code = null;
@@ -17,6 +20,7 @@
   const watches = {};
   let mine = {};
   let pts = {};
+  let nb = []; // vở ghi: [{k, t, x}]
   let lastKey = "";
   let connected = true;
 
@@ -24,12 +28,20 @@
     try {
       mine = JSON.parse(localStorage.getItem("l360:mine:" + R) || "{}");
       pts = JSON.parse(localStorage.getItem("l360:pts:" + R) || "{}");
+      nb = JSON.parse(localStorage.getItem("l360:nb:" + R) || "[]");
     } catch (e) {}
   };
   const saveLocal = () => {
     localStorage.setItem("l360:mine:" + R, JSON.stringify(mine));
     localStorage.setItem("l360:pts:" + R, JSON.stringify(pts));
+    localStorage.setItem("l360:nb:" + R, JSON.stringify(nb));
   };
+  function addNote(k, t, x) {
+    if (!x || nb.some((n) => n.k === k)) return;
+    nb.push({ k, t, x });
+    saveLocal();
+    nbButton(true);
+  }
 
   function watch(name, path, fn) {
     if (watches[name] && watches[name].path === path) return;
@@ -43,15 +55,15 @@
     }
   }
 
-  /* ---------- Màn hình vào lớp ---------- */
+  /* ---------- Vào lớp ---------- */
   function joinView(msg) {
     const groups = (meta && meta.groups) || [];
     const codes = meta ? Room.codes(meta.classSize) : [];
     const saved = (R && Room.Student.saved(R)) || {};
-    app.innerHTML = `<div class="wrap" style="max-width:560px">
-      <div class="center" style="margin:8px 0 18px"><img src="assets/img/logo-hsh-muc.png" alt="Học Sử Hữu Hiệu" style="height:44px"></div>
+    app.innerHTML = `<div class="ds-pat"></div><div class="wrap" style="max-width:620px;position:relative;z-index:1">
+      <div class="row" style="justify-content:center;margin:8px 0 18px;gap:14px"><img src="assets/img/logo-l360.svg" alt="Lesson 360°" style="height:46px"><img src="assets/img/logo-hsh-muc.png" alt="Học Sử Hữu Hiệu" style="height:40px"></div>
       <div class="card"><h1 style="font-size:1.6rem">Vào lớp học</h1>
-      ${meta ? `<p class="muted">${u.esc(meta.title)}${meta.className ? ` · Lớp ${u.esc(meta.className)}` : ""}</p>` : `<p class="muted">Nhập mã phòng trên màn chiếu.</p>`}
+      ${meta ? `<p class="muted">${u.esc(meta.title)}${meta.label ? ` · ${u.esc(meta.label)}` : ""}${meta.className ? ` · Lớp ${u.esc(meta.className)}` : ""}</p>` : `<p class="muted">Nhập mã phòng trên màn chiếu.</p>`}
       ${msg ? `<p class="pill bad" style="white-space:normal">${u.esc(msg)}</p>` : ""}
       <label class="field">Mã phòng<input id="room" type="text" autocomplete="off" autocapitalize="characters" value="${u.esc(R)}" placeholder="VD: K7Q2M" style="text-transform:uppercase;font-weight:700;letter-spacing:.08em"></label>
       ${
@@ -65,17 +77,11 @@
           })
           .join("")}</div>
         <label class="field" style="margin-top:14px">Tên gọi <span class="hint">không bắt buộc, tối đa 20 kí tự</span><input id="nm" type="text" maxlength="20" value="${u.esc(saved.name || "")}"></label>
-        ${
-          groups.length
-            ? `<p style="margin:14px 0 6px;font-weight:650">Nhóm</p><div class="chips" id="grp">${groups
-                .map((g) => `<button class="chip ${saved.group === g.id ? "sel" : ""}" data-g="${g.id}" style="border-color:${g.color}">${u.esc(g.name)}</button>`)
-                .join("")}</div>`
-            : ""
-        }
+        ${groups.length ? `<p style="margin:14px 0 6px;font-weight:650">Nhóm</p><div class="chips" id="grp">${groups.map((g) => `<button class="chip ${saved.group === g.id ? "sel" : ""}" data-g="${g.id}" style="border-color:${g.color}">${u.esc(g.name)}</button>`).join("")}</div>` : ""}
         <button class="btn primary lg block" style="margin-top:18px" id="go">Vào lớp</button>`
           : `<button class="btn primary lg block" style="margin-top:14px" id="find">Tiếp tục</button>`
       }</div>
-      <p class="center small muted" style="margin-top:14px">${u.esc(L360.cfg.school)} · Lesson 360° Studio · ${u.esc(L360.modeLabel)}</p></div>`;
+      <p class="center small muted" style="margin-top:14px">${u.esc(L360.cfg.school)} · Lesson 360° Studio · Không cần tài khoản – em chỉ dùng mã số.</p></div>`;
     let pick = saved.code || null;
     let grp = saved.group || null;
     const roomInput = u.$("#room");
@@ -144,21 +150,63 @@
     });
   }
 
+  /* ---------- Vở ghi ---------- */
+  function nbButton(bump) {
+    let b = u.$("#nbb");
+    if (!b) {
+      b = document.createElement("button");
+      b.id = "nbb";
+      b.className = "nb-btn";
+      b.onclick = openNotebook;
+      document.body.appendChild(b);
+    }
+    b.innerHTML = `${L360.icon("ghiBai")} Vở ghi <b>${nb.length}</b>`;
+    if (bump) {
+      b.animate([{ transform: "scale(1)" }, { transform: "scale(1.15)" }, { transform: "scale(1)" }], { duration: 450 });
+      u.toast("Đã thêm vào Vở ghi ✎", "ok", 1600);
+    }
+  }
+  function openNotebook() {
+    const d = document.createElement("div");
+    d.className = "modal-bg";
+    d.innerHTML = `<div class="nb-drawer"><div class="nb-head">${L360.icon("ghiBai")}<b class="grow">Vở ghi – ${u.esc((pubMeta && pubMeta.title) || "")}</b><button class="btn sm" id="nbp">${L360.icon("print")} In</button><button class="btn sm" id="nbx">Đóng</button></div>
+      <div class="nb-body">${nb.length ? nb.map((n) => `<div class="nb-item"><div class="t">${u.esc(n.t)}</div><div class="md">${ui.md(n.x)}</div></div>`).join("") : `<p class="muted">Chưa có nội dung. Khi thấy biểu tượng ✎ “Ghi vào vở”, nội dung sẽ tự vào đây.</p>`}</div></div>`;
+    document.body.appendChild(d);
+    const close = () => d.remove();
+    d.onclick = (e) => e.target === d && close();
+    u.$("#nbx", d).onclick = close;
+    u.$("#nbp", d).onclick = () => {
+      const w = window.open("", "_blank");
+      w.document.write(`<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>Vở ghi</title><link rel="stylesheet" href="${location.href.replace(/hocsinh\.html.*$/, "")}assets/css/l360.css"></head><body style="background:#fff"><main class="wrap" style="max-width:760px"><h1>Vở ghi</h1><p class="muted">${u.esc(
+        [(pubMeta || {}).subject, (pubMeta || {}).label, (pubMeta || {}).title].filter(Boolean).join(" · ")
+      )} · ${u.esc(code || "")}</p>${nb.map((n) => `<h3>${u.esc(n.t)}</h3><div class="md">${ui.md(n.x)}</div>`).join("")}<p class="no-print"><button class="btn primary" onclick="print()">In / Lưu PDF</button></p></main></body></html>`);
+      w.document.close();
+    };
+  }
+
   /* ---------- Trong giờ học ---------- */
   function startClass() {
     S.presence(`rooms/${R}/presence/${code}`, { on: true });
     if (S.onConnection) S.onConnection((c) => ((connected = c), setConn()));
-    watch("pubmeta", `rooms/${R}/pub/meta`, (v) => ((pubMeta = v), L360.shell.theme(v && v.theme), render()));
+    watch("pubmeta", `rooms/${R}/pub/meta`, (v) => {
+      pubMeta = v;
+      if (v) L360.Design.apply(v);
+      render();
+    });
     watch("meta", `rooms/${R}/meta`, (v) => ((meta = v || meta), render()));
     watch("awards", `rooms/${R}/pub/awards`, (v) => ((live.awards = v || {}), render()));
+    watch("notes", `rooms/${R}/pub/notes`, (v) => {
+      u.entries(v).forEach(([k, n]) => n && addNote("n:" + k, n.t || "Ghi nhớ", n.x || ""));
+    });
     watch("state", `rooms/${R}/state`, (v) => {
       state = v || { step: -1 };
       ui.timerState = state;
       rewire();
       render();
     });
-    app.innerHTML = `<div class="topbar" style="gap:10px"><div class="grow" style="min-width:0"><div style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="ttl"></div>
-      <div class="small muted" id="who"></div></div><span id="conn"></span></div><main class="wrap" style="max-width:720px;padding-top:16px"><div id="stepHead"></div><div id="main"></div></main>`;
+    app.innerHTML = `<div class="ds-pat"></div><div class="topbar" style="gap:10px"><img src="assets/img/logo-l360.svg" alt="" style="height:32px"><div class="grow" style="min-width:0"><div style="font-weight:800" class="ellipsis" id="ttl"></div>
+      <div class="small muted" id="who"></div></div><span id="conn"></span></div><main class="wrap" style="max-width:1040px;padding-top:16px;position:relative;z-index:1"><div id="stepHead"></div><div id="main"></div></main>`;
+    nbButton(false);
   }
   function setConn() {
     const el = u.$("#conn");
@@ -171,17 +219,17 @@
   };
   function rewire() {
     const step = curStep();
-    ["item", "answer", "sub", "feat", "gsub", "gwork", "expo"].forEach((n) => {
-      if (!step) unwatch(n);
-    });
-    if (!step) return;
+    if (!step) {
+      ["item", "answer", "sub", "feat", "gsub", "gwork", "expo"].forEach(unwatch);
+      return;
+    }
     const key = L360.subKey(step, state);
     const g = myGroup();
     watch("item", `rooms/${R}/pub/items/${key}`, (v) => ((live.item = v), render()));
     watch("answer", `rooms/${R}/pub/answers/${key}`, (v) => {
       live.answer = v;
-      if (v && step.type === "quiz" && mine[key] != null) {
-        pts[key] = v.answer === mine[key] ? 100 : 0;
+      if (v && mine[key] != null && L360.pointsFromAnswer) {
+        pts[key] = L360.pointsFromAnswer(step.type, v, mine[key]);
         saveLocal();
       }
       render();
@@ -218,7 +266,7 @@
   const render = u.throttleRaf(() => {
     if (!code || !u.$("#main")) return;
     const g = myGroup();
-    u.$("#ttl").textContent = (meta && meta.title) || "";
+    u.$("#ttl").textContent = [(pubMeta && pubMeta.label) || "", (meta && meta.title) || ""].filter(Boolean).join(" · ");
     u.$("#who").innerHTML = `${code}${roster[code] && roster[code].name ? " · " + u.esc(roster[code].name) : ""} ${g ? ui.gbadge(g) : ""}`;
     setConn();
     const main = u.$("#main");
@@ -239,15 +287,23 @@
     }
     if (state.step >= pubMeta.steps.length) {
       head.innerHTML = "";
-      main.innerHTML = `<div class="card center" style="padding:30px"><h1>Cảm ơn em!</h1><p class="muted">Tiết học đã kết thúc.</p>${
-        Object.keys(pts).length ? `<p style="font-size:1.3rem">Điểm trắc nghiệm của em: <b>${myScore()}</b></p>` : ""
+      main.innerHTML = `<div class="card center" style="padding:30px"><h1>Cảm ơn em!</h1><p class="muted">Tiết học đã kết thúc.</p>${Object.keys(pts).length ? `<p style="font-size:1.3rem">Điểm của em: <b>${myScore()}</b></p>` : ""}${
+        nb.length ? `<button class="btn primary" id="onb">${L360.icon("ghiBai")} Xem lại Vở ghi (${nb.length})</button>` : ""
       }</div>`;
+      if (u.$("#onb")) u.$("#onb").onclick = openNotebook;
       lastRender = "end";
       return;
     }
     const step = curStep();
     const T = L360.types[step.type] || {};
     const key = L360.subKey(step, state);
+    // Bài giảng: nội dung ghi vở của trang đang chiếu tự vào Vở ghi.
+    if (step.type === "slide" && live.item && live.item.pages) {
+      const pg = live.item.pages[state.page || 0];
+      B.notes(pg)
+        .filter((n) => n.kind === "note")
+        .forEach((n, i) => addNote(`${step.id}#${state.page || 0}#${i}`, `${step.title}${pg.title ? " – " + pg.title : ""}`, n.text));
+    }
     const ctx = {
       code,
       me: roster[code],
@@ -284,24 +340,23 @@
       gworkSet: (p, v) => S.set(`rooms/${R}/gwork/${step.id}/${g.id}/${p}`, v).catch(() => u.toast("Nhiệm vụ đã khoá.", "bad")),
       gworkPush: (p, v) => S.push(`rooms/${R}/gwork/${step.id}/${g.id}/${p}`, v).catch(() => u.toast("Nhiệm vụ đã khoá.", "bad"))
     };
-    head.innerHTML = `<div class="row" style="margin-bottom:12px"><span class="pill">${state.step + 1}/${pubMeta.steps.length}</span><b class="grow">${u.esc(step.title)}</b><span class="pill ${
-      state.phase === "open" ? "ok" : ""
-    }">${ui.phaseLabel(state, step)}</span></div>`;
-    const rk = JSON.stringify([state.step, state.phase, state.q, state.round, !!ctx.sub, !!live.answer, !!live.item, !!live.featured, g && g.id, step.type === "expo" ? !!live.expo : 0]);
+    head.innerHTML = `<div class="row" style="margin-bottom:12px"><span class="ph ph-${step.phase}">${u.esc(L360.phase(step.phase).name)}</span><span class="pill">${state.step + 1}/${pubMeta.steps.length}</span><b class="grow ellipsis">${u.esc(step.title)}</b>${
+      step.ghiBai ? `<span class="ghi-badge">${L360.icon("ghiBai")} Ghi vở</span>` : ""
+    }<span class="pill ${state.phase === "open" ? "ok" : ""}">${ui.phaseLabel(state, step)}</span></div>`;
+    const rk = JSON.stringify([state.step, state.phase, state.q, state.round, state.page, !!ctx.sub, !!live.answer, !!live.item, !!live.featured, g && g.id, step.type === "expo" ? !!live.expo : 0, live.item && live.item.text]);
     if (rk === lastRender && T.student && T.student.update) return ctx.item ? T.student.update(main, ctx) : undefined;
     if (rk === lastRender) return;
     lastRender = rk;
     main._editing = false;
     if (step.groupMode && !g) return (main.innerHTML = ui.wait("Em chưa có nhóm", "Hãy báo giáo viên xếp nhóm cho em."));
     if (T.student && T.student.render) {
-      if (!ctx.item && !T.releaseOnEnter && step.type !== "expo")
-        return (main.innerHTML = ui.wait("Quan sát và lắng nghe", step.instructions || "Giáo viên sắp giao nhiệm vụ."));
+      if (!ctx.item && !T.releaseOnEnter && step.type !== "expo") return (main.innerHTML = ui.wait("Quan sát và lắng nghe", step.instructions || "Giáo viên sắp giao nhiệm vụ."));
       return T.student.render(main, ctx);
     }
     if (!ctx.item || state.phase === "observe") return (main.innerHTML = ui.wait("Quan sát và lắng nghe", step.instructions || "Giáo viên sắp mở câu hỏi."));
     if (state.phase === "open" && !ctx.sub) return T.student.input(main, ctx);
     if (state.phase === "open" && ctx.sub) {
-      const editable = !["quiz", "poll2"].includes(step.type);
+      const editable = !["quiz", "poll2", "crossword"].includes(step.type);
       main.innerHTML = ui.done(ctx.sub.pending ? "Đã nộp – đang gửi…" : "Đã nộp ✓", "Chờ giáo viên mở câu tiếp theo.") + (editable ? `<p class="center"><button class="btn" id="edit">Sửa câu trả lời</button></p>` : "");
       if (editable) u.$("#edit").onclick = () => T.student.input(main, ctx);
       return;
@@ -309,7 +364,6 @@
     T.student.result(main, ctx);
   });
 
-  /* ---------- Khởi động ---------- */
   (async function init() {
     await S.ready;
     if (R) openRoom(R);
