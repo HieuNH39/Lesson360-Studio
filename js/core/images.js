@@ -19,10 +19,10 @@
     return r.json();
   }
   // Thông tin ảnh (đường dẫn cỡ 1280, tác giả, giấy phép) cho danh sách tên tệp.
-  async function fileInfo(titles) {
+  async function fileInfo(titles, width) {
     if (!titles.length) return [];
     // Hỏi qua Wikipedia tiếng Việt (dùng chung kho ảnh Commons), lỗi thì hỏi thẳng Commons.
-    const qs = `?action=query&format=json&origin=*&prop=imageinfo&iiprop=url|extmetadata|size|mime&iiurlwidth=1280&titles=${enc(titles.slice(0, 50).join("|"))}`;
+    const qs = `?action=query&format=json&origin=*&prop=imageinfo&iiprop=url|extmetadata|size|mime&iiurlwidth=${width || 1600}&titles=${enc(titles.slice(0, 50).join("|"))}`;
     const j = await getJson(VIWIKI + qs).catch(() => getJson(COMMONS + qs));
     const pages = Object.values((j.query && j.query.pages) || {});
     return pages
@@ -39,6 +39,8 @@
           thumb: String(ii.thumburl || ii.url).replace(/\?utm_[^#]*$/, "").replace(/\/(\d+)px-/, "/360px-"),
           w: ii.thumbwidth || ii.width,
           h: ii.thumbheight || ii.height,
+          ow: ii.width,
+          oh: ii.height,
           mime: ii.mime,
           page: ii.descriptionurl,
           desc,
@@ -139,7 +141,8 @@
         if (!q) return;
         box.innerHTML = `<div class="empty">Đang tìm “${u.esc(q)}”…</div>`;
         try {
-          const list = await search(q);
+          const raw = await search(q);
+          const list = rank(raw, { query: q, alt: opts.alt || "", kind: opts.kind || "" }).concat(raw.filter((x) => (x.ow || x.w) < 900 && !BAD.test(x.title)));
           if (!list.length) {
             box.innerHTML = `<div class="empty">Không thấy ảnh phù hợp. Thử từ khoá ngắn hơn, tên riêng, hoặc tiếng Anh.</div>`;
             return;
@@ -192,28 +195,104 @@
     );
     return out;
   }
-  // Tự điền ảnh đầu tiên phù hợp cho mọi khối có "query" mà chưa có "src".
+  /* ---------- Xác minh ảnh do trợ lý AI đưa vào ---------- */
+  // Kích thước thật của một ảnh trên mạng (không tải được → null).
+  function probe(src, ms = 9000) {
+    return new Promise((res) => {
+      const im = new Image();
+      const to = setTimeout(() => res(null), ms);
+      im.onload = () => (clearTimeout(to), res({ w: im.naturalWidth, h: im.naturalHeight }));
+      im.onerror = () => (clearTimeout(to), res(null));
+      im.referrerPolicy = "no-referrer";
+      im.src = src;
+    });
+  }
+  // Tên tệp Commons từ đường dẫn upload.wikimedia.org hoặc trang commons.wikimedia.org/wiki/File:…
+  function commonsTitle(b) {
+    let t = String(b.commons || "").trim();
+    const src = String(b.src || "");
+    if (!t) {
+      const m = src.match(/upload\.wikimedia\.org\/wikipedia\/[\w-]+\/(?:thumb\/)?[0-9a-f]\/[0-9a-f]{2}\/([^/?#]+)/i);
+      const w = src.match(/wikimedia\.org\/wiki\/((?:File|Tập_tin|Tập tin):[^?#]+)/i) || src.match(/wikipedia\.org\/wiki\/((?:File|Tập_tin|Tập tin|Tập tin):[^?#]+)/i);
+      if (m) t = decodeURIComponent(m[1]);
+      else if (w) t = decodeURIComponent(w[1]);
+    }
+    if (!t) return "";
+    t = t.replace(/^(Tập[ _]tin|Image|Hình|File)\s*:\s*/i, "").replace(/_/g, " ");
+    return "File:" + t;
+  }
+  // Ảnh có thật, đủ nét (≥ 800 px), có nguồn → trả về ảnh đã chuẩn hoá (cỡ 1600 px của Commons).
+  async function verify(b) {
+    const title = commonsTitle(b);
+    if (title) {
+      const info = (await fileInfo([title], 1600).catch(() => []))[0];
+      if (info && (info.ow || info.w) >= 800 && !/svg/.test(info.mime || "")) return { src: info.src, credit: info.credit, page: info.page, w: info.ow, h: info.oh };
+      if (info && /svg/.test(info.mime || "") && b.kind === "map") return { src: info.src, credit: info.credit, page: info.page, w: info.ow, h: info.oh };
+      return null;
+    }
+    if (/^https:\/\//.test(b.src || "")) {
+      const d = await probe(b.src);
+      if (d && d.w >= 800) return { src: b.src, credit: b.credit || "Nguồn: " + new URL(b.src).hostname, w: d.w, h: d.h };
+    }
+    return null;
+  }
+  const BAD = /\b(logo|icon|flag|coat of arms|emblem|seal|signature|stamp|banner|button|diagram|chart|graph|screenshot|qr)\b/i;
+  const words = (s) => (L360.Ppct ? L360.Ppct.norm(s) : String(s || "").toLowerCase()).split(" ").filter((w) => w.length > 2);
+  // Xếp hạng kết quả tìm: khớp từ khoá + mô tả, ảnh nét, tránh logo/biểu tượng.
+  function rank(list, b) {
+    const want = new Set(words(`${b.query || ""} ${b.alt || ""} ${b.caption || ""}`));
+    const isMap = b.kind === "map" || /map|bản đồ|lược đồ/i.test(`${b.query} ${b.alt}`);
+    return list
+      .filter((x) => (x.ow || x.w) >= (isMap ? 600 : 900) && (isMap || !/svg/.test(x.mime || "")))
+      .map((x) => {
+        const hay = words(`${x.title} ${x.desc} ${x.article || ""}`);
+        const hit = hay.filter((w) => want.has(w)).length;
+        const sc = hit * 2 + ((x.ow || 0) >= 1600 ? 1 : (x.ow || 0) >= 1200 ? 0.6 : 0) + (x.article ? 0.8 : 0) - (!isMap && BAD.test(x.title) ? 4 : 0) - (!isMap && /\bmap\b/i.test(x.title) ? 2 : 0);
+        return Object.assign({ score: sc }, x);
+      })
+      .sort((a, c) => c.score - a.score);
+  }
+  async function bestFor(b, used) {
+    const qs = [b.query, b.alt, b.caption].map((x) => String(x || "").trim()).filter(Boolean);
+    let all = [];
+    for (const q of qs.slice(0, 2)) all = all.concat(await search(q).catch(() => []));
+    const seen = new Set();
+    all = all.filter((x) => (seen.has(x.src) ? false : seen.add(x.src)));
+    const r = rank(all, b).filter((x) => !used.has(x.src));
+    return r[0] || null;
+  }
+  // Với mọi khối ảnh: ảnh AI ghi sẵn → kiểm tra có thật, đủ nét; sai/thiếu → tìm ảnh thay theo từ khoá + mô tả.
   async function autoFill(pack, onProgress) {
-    const todo = slots(pack).filter((x) => !x.block.src && (x.block.query || x.block.caption));
-    let ok = 0;
+    const all = slots(pack);
+    const todo = all.filter((x) => (!x.block.src && (x.block.query || x.block.caption || x.block.alt)) || (x.block.src && !x.block.verified && !/^data:|^assets\//.test(x.block.src)));
+    let verified = 0, found = 0, replaced = 0;
     for (let i = 0; i < todo.length; i++) {
       const b = todo[i].block;
       onProgress && onProgress(i + 1, todo.length, b.query || b.caption);
       try {
-        const list = await search(b.query || b.caption);
+        if (b.src || b.commons) {
+          const v = await verify(b);
+          if (v) {
+            Object.assign(b, { src: v.src, credit: b.credit || v.credit, page: v.page || b.page || "", verified: true, auto: false });
+            verified++;
+            continue;
+          }
+          b.srcAi = b.src || b.commons;
+          b.src = "";
+          replaced++;
+        }
         const used = new Set(slots(pack).map((x) => x.block.src).filter(Boolean));
-        const x = list.find((r) => !used.has(r.src)) || list[0];
+        const x = await bestFor(b, used);
         if (x) {
-          b.src = x.src;
-          if (!b.credit) b.credit = x.credit;
-          ok++;
+          Object.assign(b, { src: x.src, credit: x.credit, page: x.page, verified: false, auto: true });
+          found++;
         }
       } catch (e) {
         /* bỏ qua ảnh lỗi */
       }
     }
-    return { filled: ok, total: todo.length, missing: slots(pack).filter((x) => !x.block.src).length };
+    return { verified, found, replaced, total: todo.length, filled: verified + found, missing: slots(pack).filter((x) => !x.block.src).length };
   }
 
-  L360.Images = { search, pick, shrink, slots, autoFill };
+  L360.Images = { search, pick, shrink, slots, autoFill, verify, probe, rank };
 })();

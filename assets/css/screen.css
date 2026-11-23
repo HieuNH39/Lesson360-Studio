@@ -106,3 +106,33 @@ html,body{height:100%;overflow:hidden;background:#0B1220}
 .cw-clue{margin-top:18px;background:#fff;border-radius:18px;padding:16px 22px;font-size:28px;font-weight:700;color:var(--ink);box-shadow:var(--shadow);text-align:center}
 .cw-key{margin-top:14px;text-align:center;font-size:24px}
 .cw-key b{letter-spacing:.3em;font-size:34px;color:var(--accent-2)}
+/* ---------- Đồng hồ cát & dải tiến trình tiết học ---------- */
+.side-rest{display:flex;flex-direction:column;gap:18px;flex:1;min-height:0}
+.rb-legend{display:flex;gap:6px;flex:none}
+.rb-lg{font-size:13px;font-weight:700;padding:4px 10px;border-radius:999px;background:rgba(15,39,66,.06);color:var(--muted);white-space:nowrap}
+.rb-lg.on{color:#fff}.rb-lg.on.ph-khoi-dong{background:var(--ph-kd)}.rb-lg.on.ph-hinh-thanh{background:var(--ph-ht)}.rb-lg.on.ph-luyen-tap{background:var(--ph-lt)}.rb-lg.on.ph-van-dung{background:var(--ph-vd)}
+.rb{flex:1;display:flex;align-items:center;gap:16px;min-width:0}
+.rb-track{position:relative;flex:1;display:flex;gap:3px;height:14px;align-items:stretch}
+.rb-seg{border-radius:7px;opacity:.28;transition:opacity .3s}
+.rb-seg.ph-khoi-dong{background:var(--ph-kd)}.rb-seg.ph-hinh-thanh{background:var(--ph-ht)}.rb-seg.ph-luyen-tap{background:var(--ph-lt)}.rb-seg.ph-van-dung{background:var(--ph-vd)}
+.rb-seg.done{opacity:.75}.rb-seg.cur{opacity:1;box-shadow:0 0 0 3px rgba(255,255,255,.9),0 0 0 5px currentColor}
+.rb-head{position:absolute;top:-7px;width:4px;height:28px;margin-left:-2px;border-radius:2px;background:var(--ink);transition:left .25s linear;box-shadow:0 0 0 2px #fff}
+.rb-head::after{content:"";position:absolute;top:-6px;left:-4px;border:6px solid transparent;border-top-color:var(--ink)}
+.rb-info{display:flex;align-items:baseline;gap:6px;font-variant-numeric:tabular-nums;white-space:nowrap;font-size:16px;color:var(--muted)}
+.rb-info b{font-size:20px;color:var(--ink)}
+.rb-pace{margin-left:6px;font-size:14px;font-weight:700;padding:3px 10px;border-radius:999px}
+.rb-pace.ok{background:#E3F4EB;color:#16704A}.rb-pace.late{background:#FBE7E5;color:#B1352C}.rb-pace.early{background:#E6EEFC;color:#2458B8}
+.ds-dark .rb-head{background:#fff}.ds-dark .rb-info b{color:#fff}
+.web-scr{display:grid;grid-template-columns:1fr 300px;gap:24px;height:100%;align-items:stretch}
+.web-scr .web-frame.big{aspect-ratio:auto;height:100%;margin:0}
+.web-scr.noembed{grid-template-columns:1fr 380px;align-items:center}
+.web-hero{text-align:center}
+.web-side{display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;text-align:center}
+.web-qr svg,.web-qr img{width:260px;height:260px}
+.web-code{display:flex;flex-direction:column;background:var(--accent);color:#fff;border-radius:18px;padding:10px 22px}.web-code span{font-size:16px;opacity:.85}.web-code b{font-size:44px;letter-spacing:.08em}
+/* Ghi vở: chữ đủ lớn trên màn chiếu */
+.s-main .blk-note .md,.s-main .blk-concl .md{font-size:28px;line-height:1.45}
+.s-main .blk-note .md li,.s-main .blk-concl .md li{margin:6px 0}
+.ov-note{background:#FFF8E1;border:3px dashed #E0A100;border-radius:28px;padding:34px 48px;max-width:1380px;width:92%;max-height:760px;overflow:hidden;color:#2B2410;box-shadow:0 30px 80px rgba(0,0,0,.25)}
+.ov-note-h{font-size:30px;font-weight:800;color:#8A5A00;letter-spacing:.04em;text-transform:uppercase;margin-bottom:16px;display:flex;gap:10px;align-items:center}
+.ov-note .md{line-height:1.5}.ov-note .md li{margin:8px 0}

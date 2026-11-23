@@ -187,6 +187,8 @@
   /* ---------- Trong giờ học ---------- */
   function startClass() {
     S.presence(`rooms/${R}/presence/${code}`, { on: true });
+    // Chế độ tự học (giáo viên có thể tắt khi mở phòng).
+    if (L360.Lock && !(meta && meta.lock === false)) L360.Lock.enable({ report: (v) => S.set(`rooms/${R}/focus/${code}`, v).catch(() => {}) });
     if (S.onConnection) S.onConnection((c) => ((connected = c), setConn()));
     watch("pubmeta", `rooms/${R}/pub/meta`, (v) => {
       pubMeta = v;

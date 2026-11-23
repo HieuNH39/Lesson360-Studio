@@ -214,7 +214,8 @@
     fields: [
       { key: "source", label: "Nguồn video", kind: "video", hint: "Mã EduHistory (VD L6-B12-02), đường dẫn YouTube hoặc tệp .mp4" },
       { key: "questions", label: "Câu hỏi tại các mốc (t = giây)", kind: "questions" },
-      { key: "timer", label: "Giây cho mỗi câu", kind: "number" }
+      { key: "timer", label: "Giây cho mỗi câu", kind: "number" },
+      { key: "studentWatch", label: "Học sinh xem video trên máy của mình (tự xem, đeo tai nghe)", kind: "bool" }
     ],
     template: () => ({ type: "video", phase: "khoi-dong", title: "Xem và trả lời", minutes: 5, source: { url: "" }, timer: 25, questions: [{ t: 30, kind: "mcq", q: "Câu hỏi?", options: ["A", "B", "C", "D"], answer: 0, explain: "" }] }),
     normalize(s) {
@@ -227,6 +228,7 @@
     validate(s, err, warn) {
       if (!s.source || !(s.source.edu || s.source.url)) err("Chưa có nguồn video (mã EduHistory hoặc đường dẫn).");
       if (s.source && s.source.edu && L360.Edu && !L360.Edu.tap(s.source.edu)) warn(`Không tìm thấy video EduHistory "${s.source.edu}" trong danh mục.`);
+      if (s.source && s.source.broken) warn(`“${s.title}”: video không mở được (có thể không tồn tại) – thay video khác.`);
       if (cpOf(s).length) Q().validate(s, err, warn);
     },
     count: (s) => cpOf(s).length,
@@ -235,7 +237,7 @@
     timerFor: (s, st) => Q().timerFor(s, st),
     publicPayload(s, st) {
       const v = L360.videoSource(s.source || {});
-      const base = { video: { kind: v.kind, url: v.url, page: v.page, poster: v.poster || "", vertical: !!v.vertical, title: v.title || s.title, src: s.source }, cps: cpOf(s).map((q) => q.t) };
+      const base = { video: { kind: v.kind, url: v.url, page: v.page, poster: v.poster || "", vertical: !!v.vertical, title: v.title || s.title, src: s.source }, cps: cpOf(s).map((q) => q.t), watch: !!s.studentWatch };
       return cpOf(s).length ? Object.assign(base, Q().publicPayload(s, st)) : base;
     },
     answerPayload: (s, st) => (cpOf(s).length ? Q().answerPayload(s, st) : null),
@@ -259,6 +261,14 @@
           return Q().student.result(el, ctx);
         }
         const v = it.video || {};
+        if (it.watch && v.src) {
+          const emb = L360.videoSource(v.src || {});
+          if (el.dataset.vw !== JSON.stringify(v.src)) {
+            el.dataset.vw = JSON.stringify(v.src);
+            el.innerHTML = `<div class="card"><h2 style="margin-top:0">${u.esc(v.title || ctx.step.title)}</h2><div class="blk-vid ${v.vertical ? "vert" : ""}">${emb.embed || ""}</div><p class="small muted">Em tự xem video trên máy (đeo tai nghe). Câu hỏi sẽ hiện khi giáo viên mở.</p></div>`;
+          }
+          return;
+        }
         el.innerHTML = `<div class="card center"><div style="font-size:2.2rem;color:var(--accent)">${L360.icon("video")}</div><h2>${u.esc(v.title || ctx.step.title)}</h2>
           <p class="muted">Xem video trên màn chiếu. Khi video dừng, câu hỏi sẽ hiện trên máy của em.</p>${v.poster ? `<img src="${u.esc(v.poster)}" alt="" style="max-height:240px;border-radius:14px">` : ""}
           ${v.page ? `<p class="small" style="margin-top:10px"><a href="${u.esc(v.page)}" target="_blank" rel="noopener">Xem lại sau giờ học ↗</a></p>` : ""}</div>`;

@@ -231,6 +231,7 @@
   L360.videoSource = (b) => {
     const src = (b && (b.edu || b.src || b.url || b.youtube)) || "";
     const t = Number(b && b.start) || 0;
+    const t2 = Number(b && b.end) || 0;
     const edm = String(src).match(/^L\d-[A-Z0-9]+-\d{2}$/i) || (b && b.edu);
     if (edm) {
       const ma = b.edu || src;
@@ -253,7 +254,7 @@
         url: `https://www.youtube.com/watch?v=${yt[1]}`,
         page: `https://www.youtube.com/watch?v=${yt[1]}${t ? "&t=" + t : ""}`,
         poster: `https://i.ytimg.com/vi/${yt[1]}/hqdefault.jpg`,
-        embed: `<iframe src="https://www.youtube-nocookie.com/embed/${yt[1]}?rel=0&enablejsapi=1${t ? "&start=" + t : ""}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`
+        embed: `<iframe src="https://www.youtube-nocookie.com/embed/${yt[1]}?rel=0&enablejsapi=1${t ? "&start=" + t : ""}${t2 > t ? "&end=" + t2 : ""}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`
       };
     if (/\.(mp4|webm)(\?|$)/i.test(src)) return { kind: "mp4", url: src, page: src, embed: `<video src="${u.esc(src)}" playsinline controls preload="metadata"></video>` };
     return { kind: "link", url: src, page: src };

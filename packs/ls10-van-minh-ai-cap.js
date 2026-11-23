@@ -260,7 +260,7 @@ window.L360.packs.push({
       id: "pharaoh",
       phase: "luyen-tap",
       type: "quiz",
-      title: "Pharaoh's Challenge",
+      title: "Thử thách của Pha-ra-ông",
       minutes: 6,
       script: "6 câu, mỗi câu 20 giây. Đây là cơ hội kiểm tra điều mình hiểu, không phải chạy đua tốc độ.",
       instructions: "Trả lời 6 câu, mỗi câu 20 giây.",

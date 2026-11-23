@@ -34,21 +34,38 @@
   function frame() {
     app.innerHTML =
       L360.shell.topbar(`${L360.shell.modeBadge()}${L360.shell.userMenu(teacher)}`, { sub: "Studio soạn bài", nav: "studio" }) +
-      `<main class="wrap"><div class="tabs no-print st-tabs">${TABS.map(([k, l, ic]) => `<button class="tab ${tab === k ? "on" : ""}" data-tab="${k}">${icon(ic)}${l}</button>`).join("")}
+      `<main class="wrap"><div class="tabs no-print st-tabs"><button class="btn sm ghost st-back" id="stBack" title="Quay lại thao tác trước (hoặc phím ← của trình duyệt)">‹ Quay lại</button>${TABS.map(([k, l, ic]) => `<button class="tab ${tab === k ? "on" : ""}" data-tab="${k}">${icon(ic)}${l}</button>`).join("")}
         <span class="spacer"></span><span id="curLbl" class="small muted ellipsis" style="max-width:380px"></span></div><div id="pane"></div></main>` +
       L360.shell.footer();
     L360.shell.bindUserMenu(teacher);
     u.$$("[data-tab]").forEach((b) => (b.onclick = () => go(b.dataset.tab)));
+    u.$("#stBack").onclick = () => (navDepth > 0 ? history.back() : (location.href = "index.html" + (dt ? "?che-do=dien-tap" : "")));
     render();
   }
-  async function go(t) {
+  // Lịch sử điều hướng trong Studio: mỗi lần đổi thẻ/bước là một mục, nút Quay lại (và nút ← trình duyệt) trở về mục trước.
+  let navDepth = 0;
+  window.addEventListener("popstate", (e) => {
+    const st0 = e.state || {};
+    navDepth = Math.max(0, st0.d || 0);
+    if (st0.tab) go(st0.tab, { pop: true, wiz: st0.wiz });
+  });
+  async function go(t, o = {}) {
     if (tab === "soan" && t !== "soan" && dirty) await saveDraft(true);
+    const changedTab = t !== tab;
     tab = t;
     const q = new URLSearchParams();
     q.set("tab", t);
     if (cur) q.set("sua", cur.id);
     if (dt) q.set("che-do", "dien-tap");
-    history.replaceState(null, "", "?" + q.toString());
+    if (o.wiz) {
+      try {
+        const w = JSON.parse(localStorage.getItem(WKEY) || "{}");
+        w.step = o.wiz;
+        localStorage.setItem(WKEY, JSON.stringify(w));
+      } catch (e) {}
+    }
+    if (!o.pop && changedTab) history.pushState({ tab: t, d: ++navDepth }, "", "?" + q.toString());
+    else if (!o.pop) history.replaceState({ tab: t, d: navDepth }, "", "?" + q.toString());
     u.$$("[data-tab]").forEach((b) => b.classList.toggle("on", b.dataset.tab === t));
     render();
   }
@@ -139,30 +156,57 @@
     } catch (e) {}
     w = Object.assign({ level: "thpt", subject: (teacher.subjects || [])[0] || "lich-su", grade: 10, book: "", bai: "", so: 1, tong: 1, duration: 45, groups: 4, size: 30, acts: ["bai-giang", "o-chu", "trac-nghiem", "phieu-thoat"], qkinds: ["mcq", "tf"], style: "", palette: "", content: "", step: 1 }, w);
     const qb = u.qs("bai");
-    if (qb && C.lesson(qb)) {
+    const pm = qb && qb.match(/^ppct:((cd-)?([a-z-]+?)-(\d+)):(.+)$/);
+    if (pm) Object.assign(w, { bai: qb, subject: pm[3], grade: Number(pm[4]), book: "", level: Number(pm[4]) <= 9 ? "thcs" : "thpt", src: "ppct", step: 1, so: 1 });
+    else if (qb && C.lesson(qb)) {
       const l = C.lesson(qb);
-      Object.assign(w, { bai: qb, subject: l.subject, grade: Number(l.grade), book: l.bookId + (l.part || ""), level: Number(l.grade) <= 9 ? "thcs" : "thpt", step: 1 });
+      Object.assign(w, { bai: qb, subject: l.subject, grade: Number(l.grade), book: l.bookId + (l.part || ""), level: Number(l.grade) <= 9 ? "thcs" : "thpt", src: "ppct", step: 1, so: 1 });
     } else if (u.qs("mon")) Object.assign(w, { subject: u.qs("mon"), grade: Number(u.qs("lop")) || w.grade, bai: "", step: 1 });
+    if (u.qs("tiet")) w.so = Math.max(1, Number(u.qs("tiet")) || 1);
     return w;
   }
   function wizard(pane) {
     const w = wizState();
     const save = () => localStorage.setItem(WKEY, JSON.stringify(w));
+    const PP = L360.Ppct;
+    let pdoc = null, pkey = "";
+    // Bài trong PPCT đang chọn (theo khoá SGK hoặc khoá riêng của PPCT).
+    const ppBai = () => (pdoc && w.bai ? pdoc.bai.find((b) => PP.baiKey(pdoc, b) === w.bai || (b.key && b.key === w.bai)) : null);
+    const loadPpct = () => {
+      const k = `${w.subject}|${w.grade}|${w.book && /^cd/.test(w.book) ? "cd" : ""}`;
+      if (k === pkey) return;
+      pkey = k;
+      PP.forSubject(w.subject, w.grade, { cd: /^cd/.test(w.book || "") }).then((d) => {
+        if (pkey !== k) return;
+        pdoc = d;
+        const b = ppBai();
+        if (b) w.tong = b.tiet.length;
+        draw();
+      });
+    };
     const draw = () => {
       save();
       const subj = C.subject(w.subject) || C.subjects[0];
       const grades = C.gradesFor(subj.id);
       if (!grades.includes(Number(w.grade))) w.grade = grades[0];
       w.level = Number(w.grade) <= 9 ? "thcs" : "thpt";
+      loadPpct();
+      if (!w.src) w.src = "ppct";
       const books = C.lessons(subj.id, w.grade);
       if (!books.find((x) => x.book.id + (x.book.part || "") === w.book)) w.book = books.length ? books[0].book.id + (books[0].book.part || "") : "";
       const bk = books.find((x) => x.book.id + (x.book.part || "") === w.book);
       const les = bk ? bk.lessons : [];
-      if (w.bai && !les.find((l) => l.key === w.bai)) {
+      const usePp = !!(pdoc && w.src === "ppct");
+      if (w.bai && !usePp && !les.find((l) => l.key === w.bai)) {
         const other = books.find((x) => x.lessons.some((l) => l.key === w.bai));
-        if (!other) w.bai = "";
+        if (!other && !/^ppct:/.test(w.bai)) w.bai = "";
       }
-      const lesson = w.bai ? C.lesson(w.bai) : null;
+      const pb = ppBai();
+      if (pb) {
+        w.tong = pb.tiet.length;
+        if (w.so > w.tong) w.so = 1;
+      }
+      const lesson = w.bai && !/^ppct:/.test(w.bai) ? C.lesson(w.bai) : null;
       const allowed = A.allowedPhases({ so: w.so, tong: w.tong });
       if (!w.style) Object.assign(w, L360.Design.suggest(subj.id === "lich-su" && Number(w.grade) <= 9 ? "lsdl-ls" : subj.id));
       const stepper = [
@@ -176,6 +220,17 @@
       let body = "";
       if (w.step === 1) {
         let ch = "";
+        const ppOpts = usePp
+          ? pdoc.bai
+              .map((b) => {
+                const g = (b.chuong || "") !== ch ? `${ch !== "" ? "</optgroup>" : ""}<optgroup label="${u.esc(b.chuong || "Bài học")}">` : "";
+                ch = b.chuong || "";
+                const v = PP.baiKey(pdoc, b);
+                return `${g}<option value="${u.esc(v)}" ${v === w.bai || (b.key && b.key === w.bai) ? "selected" : ""}>${u.esc(b.ten)} · ${b.tiet.length} tiết</option>`;
+              })
+              .join("") + (ch !== "" ? "</optgroup>" : "")
+          : "";
+        ch = "";
         const opts = les
           .map((l) => {
             const g = l.chuong !== ch ? `${ch ? "</optgroup>" : ""}<optgroup label="${u.esc(l.chuong || "Bài học")}">` : "";
@@ -184,7 +239,7 @@
           })
           .join("");
         body = `<div class="grid" style="grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:18px">
-          <section class="card"><h2>Chọn bài trong SGK</h2>
+          <section class="card"><h2>${pdoc && w.src === "ppct" ? "Chọn bài theo PPCT" : "Chọn bài trong SGK"}</h2>
             <div class="row" style="margin:6px 0 12px"><div class="seg">${C.levels.map((lv) => `<button class="${w.level === lv.id ? "on" : ""}" data-lv="${lv.id}">${u.esc(lv.name)}</button>`).join("")}</div></div>
             <div class="chips">${C.subjects
               .filter((s) => s.levels.includes(w.level))
@@ -192,16 +247,42 @@
               .join("")}${(C.future[w.level] || []).map((f) => `<span class="chip chip-off" title="Hướng mở rộng sau">${u.esc(f)}</span>`).join("")}</div>
             <div class="row" style="margin:12px 0"><div class="seg">${grades.map((g) => `<button class="${Number(w.grade) === g ? "on" : ""}" data-g="${g}">Lớp ${g}</button>`).join("")}</div>
               ${books.length > 1 ? `<div class="seg">${books.map((b) => `<button class="${b.book.id + (b.book.part || "") === w.book ? "on" : ""}" data-bk="${b.book.id + (b.book.part || "")}">${u.esc(b.book.local ? "Tỉnh " + ((b.book.title.match(/tỉnh (.+?) –/) || [])[1] || "") : b.book.title.replace(/^.*?(tập một|tập hai|Chuyên đề.*)$/i, (m, x) => x[0].toUpperCase() + x.slice(1)))}</button>`).join("")}</div>` : ""}</div>
-            ${les.length ? `<label class="field">Bài<select id="bai"><option value="">– Chọn bài –</option>${opts}${ch ? "</optgroup>" : ""}</select></label>` : `<p class="muted">Sách này chưa có mục lục trong dữ liệu – thầy cô vẫn có thể soạn bằng cách nhập tên bài.</p><label class="field">Tên bài<input id="baiTen" value="${u.esc(w.baiTen || "")}"></label>`}
+            ${
+              pdoc
+                ? `<div class="row small" style="margin:-2px 0 8px;gap:8px"><span class="muted">Danh sách bài theo:</span><div class="seg sm"><button class="${usePp ? "on" : ""}" data-src="ppct">PPCT ${u.esc(PP.yearLabel(pdoc.nam))}</button><button class="${usePp ? "" : "on"}" data-src="sgk">Mục lục SGK</button></div><a class="small" href="ppct.html?nam=${u.esc(pdoc.nam)}&bang=${u.esc(pdoc.id)}${dt ? "&che-do=dien-tap" : ""}" target="_blank">Xem PPCT ↗</a></div>`
+                : `<p class="small muted" style="margin:-2px 0 8px">Môn – lớp này chưa có PPCT của tổ: chọn theo mục lục SGK. <a href="ppct.html${dt ? "?che-do=dien-tap" : ""}" target="_blank">Trang PPCT ↗</a></p>`
+            }
+            ${
+              usePp
+                ? `<label class="field">Bài (theo PPCT)<select id="bai"><option value="">– Chọn bài –</option>${ppOpts}</select></label>`
+                : les.length
+                ? `<label class="field">Bài<select id="bai"><option value="">– Chọn bài –</option>${opts}${ch ? "</optgroup>" : ""}</select></label>`
+                : `<p class="muted">Sách này chưa có mục lục trong dữ liệu – thầy cô vẫn có thể soạn bằng cách nhập tên bài.</p><label class="field">Tên bài<input id="baiTen" value="${u.esc(w.baiTen || "")}"></label>`
+            }
+            ${pb && !lesson ? `<div class="card flat st-lesson"><div class="small muted">Bài riêng trong PPCT của tổ${pb.chuong ? " · " + u.esc(pb.chuong) : ""}</div><b>${u.esc(pb.ten)}</b></div>` : ""}
             ${lesson ? `<div class="card flat st-lesson"><div class="small muted">${u.esc(lesson.bookTitle || "")}${lesson.chuong ? " · " + u.esc(lesson.chuong) : ""}</div><b>${u.esc(lesson.label)}</b>
               <div class="row small" style="margin-top:6px">${lesson.trang ? `<span>Trang ${lesson.trang}</span>` : ""}${C.lessonUrl(lesson) ? `<a href="${u.esc(C.lessonUrl(lesson))}" target="_blank" rel="noopener">${icon("sgk")} Mở SGK đúng trang ↗</a>` : ""}${
                 C.eduVideos(lesson).length ? `<span class="pill accent">${C.eduVideos(lesson).length} video EduHistory</span>` : ""
               }</div></div>` : ""}</section>
           <section class="card"><h2>Tiết học</h2>
-            <div class="grid g2"><label class="field">Tiết thứ<input type="number" min="1" id="so" value="${w.so}"></label><label class="field">Bài có tổng số tiết<input type="number" min="1" id="tong" value="${w.tong}"></label>
-              <label class="field">Thời lượng (phút)<input type="number" id="dur" value="${w.duration}"></label><label class="field">Số nhóm<input type="number" min="2" max="6" id="grp" value="${w.groups}"></label></div>
+            ${
+              pb
+                ? `<p class="small muted" style="margin:0 0 8px">Theo PPCT ${u.esc(PP.yearLabel(pdoc.nam))}: bài dạy <b>${PP.tietText(pb)}</b>. Chọn tiết cần soạn:</p>
+              <div class="st-tiets">${pb.tiet
+                .map((t, i) => `<button class="st-tiet ${w.so === i + 1 ? "on" : ""}" data-thu="${i + 1}"><b>Tiết ${i + 1}/${pb.tiet.length}</b><span>PPCT tiết ${t.so}${t.tuan ? ` · tuần ${t.tuan}` : ""}</span></button>`)
+                .join("")}</div>
+              ${(() => {
+                const t = pb.tiet[w.so - 1] || pb.tiet[0];
+                return `<div class="card flat st-ppct">${t.ten ? `<b>${u.esc(t.ten)}</b><br>` : ""}${t.noiDung ? `<span class="small"><b>Nội dung:</b> ${u.esc(t.noiDung)}</span>` : `<span class="small muted">PPCT không ghi nội dung riêng cho tiết này.</span>`}${
+                  t.thietBi ? `<div class="tiny muted" style="margin-top:4px"><b>Thiết bị:</b> ${u.esc(t.thietBi.slice(0, 220))}</div>` : ""
+                }${t.nls && t.nls.length ? `<div class="tiny" style="margin-top:4px;color:#C00000"><b>Năng lực số:</b> ${t.nls.map(u.esc).join(", ")}</div>` : ""}${t.ai && t.ai.length ? `<div class="tiny" style="margin-top:2px;color:#00803C"><b>Năng lực AI:</b> ${t.ai.join(", ")}</div>` : ""}</div>`;
+              })()}
+              <div class="grid g2" style="margin-top:10px"><label class="field">Thời lượng (phút)<input type="number" id="dur" value="${w.duration}"></label><label class="field">Số nhóm<input type="number" min="2" max="6" id="grp" value="${w.groups}"></label></div>`
+                : `<div class="grid g2"><label class="field">Tiết thứ<input type="number" min="1" id="so" value="${w.so}"></label><label class="field">Bài có tổng số tiết<input type="number" min="1" id="tong" value="${w.tong}"></label>
+              <label class="field">Thời lượng (phút)<input type="number" id="dur" value="${w.duration}"></label><label class="field">Số nhóm<input type="number" min="2" max="6" id="grp" value="${w.groups}"></label></div>`
+            }
             <p class="small st-rule">Mỗi bài chỉ có <b>1 khởi động</b> (ở tiết đầu), <b>1 luyện tập</b> và <b>1 vận dụng</b> (ở tiết cuối). Tiết ${w.so}/${w.tong} dùng các pha: <b>${allowed.map((x) => L360.phase(x).name).join(" · ")}</b>.</p>
-            <label class="field">Nội dung tiết này (không bắt buộc)<textarea id="ct" rows="3" placeholder="Ví dụ: mục 1 và 2 của bài; trọng tâm…">${u.esc(w.content || "")}</textarea></label></section></div>`;
+            <label class="field">${pb ? "Ghi chú thêm cho tiết này (không bắt buộc)" : "Nội dung tiết này (không bắt buộc)"}<textarea id="ct" rows="3" placeholder="${pb ? "Nội dung tiết đã lấy theo PPCT; ghi thêm trọng tâm, tư liệu muốn dùng…" : "Ví dụ: mục 1 và 2 của bài; trọng tâm…"}">${u.esc(w.content || "")}</textarea></label></section></div>`;
       } else if (w.step === 2) {
         body = `<section class="card"><div class="row"><h2 class="grow" style="margin:0">Tích chọn hoạt động cho tiết ${w.so}/${w.tong}</h2><span class="small muted">Đã chọn ${w.acts.filter((id) => (A.ACTS.find((a) => a.id === id) || {}).phase && allowed.includes(A.ACTS.find((a) => a.id === id).phase)).length + (w.acts.includes("bai-giang") ? 0 : 1)} hoạt động</span></div>
           <p class="small muted">Trợ lý AI dựng đúng các hoạt động được chọn. Khởi động, luyện tập, vận dụng: chọn <b>1</b> hoạt động mỗi pha (nhiều câu hỏi gộp trong một hoạt động).</p>
@@ -245,14 +326,21 @@
     };
     const opts = () => {
       const subj = C.subject(w.subject);
-      const lesson = w.bai ? C.lesson(w.bai) : null;
+      const lesson = w.bai && !/^ppct:/.test(w.bai) ? C.lesson(w.bai) : null;
+      const pb = ppBai();
+      const pinfo = pb ? PP.infoFor(pdoc, pb, Number(w.so) || 1) : null;
       return {
         subjectId: w.subject,
         subject: C.subjectName(w.subject, w.grade),
         grade: String(w.grade),
         book: lesson ? lesson.bookTitle : "",
-        bai: lesson ? { key: lesson.key, so: lesson.so, ten: lesson.ten, trang: lesson.trang, chuong: lesson.chuong } : { key: "", so: "", ten: w.baiTen || "" },
-        tiet: { so: Number(w.so) || 1, tong: Math.max(Number(w.so) || 1, Number(w.tong) || 1) },
+        bai: lesson
+          ? { key: lesson.key, so: lesson.so, ten: lesson.ten, trang: lesson.trang, chuong: lesson.chuong }
+          : pb
+          ? { key: PP.baiKey(pdoc, pb), so: ((pb.ten.match(/^Bài\s*(\d+)/i) || [])[1] || ""), ten: pb.ten.replace(/^Bài\s*\d+\s*[.:]\s*/i, ""), chuong: pb.chuong }
+          : { key: "", so: "", ten: w.baiTen || "" },
+        tiet: { so: Number(w.so) || 1, tong: pb ? pb.tiet.length : Math.max(Number(w.so) || 1, Number(w.tong) || 1) },
+        ppct: pinfo,
         duration: Number(w.duration) || 45,
         groups: Number(w.groups) || 4,
         size: Number(w.size) || 30,
@@ -260,27 +348,30 @@
         qkinds: w.qkinds,
         design: { style: w.style, palette: w.palette },
         videos: lesson ? C.eduVideos(lesson) : [],
-        content: w.content,
+        content: [pinfo && pinfo.noiDung ? pinfo.noiDung : "", w.content || ""].filter(Boolean).join(" – "),
         _subj: subj
       };
     };
     const bind = () => {
-      u.$$("[data-step]").forEach((b) => (b.onclick = () => ((w.step = Number(b.dataset.step)), draw())));
+      u.$$("[data-step]").forEach((b) => (b.onclick = () => ((w.step = Number(b.dataset.step)), history.pushState({ tab: "tao", wiz: w.step, d: ++navDepth }, "", location.search), draw())));
       const nx = u.$("#next");
       if (nx)
         nx.onclick = () => {
-          if (w.step === 1 && !w.bai && !w.baiTen) return u.toast("Hãy chọn bài trong SGK.", "bad");
+          if (w.step === 1 && !w.bai && !w.baiTen) return u.toast("Hãy chọn bài.", "bad");
           w.step++;
+          history.pushState({ tab: "tao", wiz: w.step, d: ++navDepth }, "", location.search);
           draw();
         };
       const pv = u.$("#prev");
-      if (pv) pv.onclick = () => (w.step--, draw());
+      if (pv) pv.onclick = () => (navDepth > 0 && history.state && history.state.wiz ? history.back() : (w.step--, draw()));
       u.$$("[data-lv]").forEach((b) => (b.onclick = () => ((w.level = b.dataset.lv), (w.grade = b.dataset.lv === "thcs" ? 6 : 10), (w.bai = ""), (w.style = ""), draw())));
       u.$$("[data-sj]").forEach((b) => (b.onclick = () => ((w.subject = b.dataset.sj), (w.bai = ""), (w.book = ""), (w.style = ""), draw())));
       u.$$("[data-g]").forEach((b) => (b.onclick = () => ((w.grade = Number(b.dataset.g)), (w.bai = ""), (w.book = ""), draw())));
       u.$$("[data-bk]").forEach((b) => (b.onclick = () => ((w.book = b.dataset.bk), (w.bai = ""), draw())));
       const sel = u.$("#bai");
-      if (sel) sel.onchange = () => ((w.bai = sel.value), draw());
+      if (sel) sel.onchange = () => ((w.bai = sel.value), (w.so = 1), draw());
+      u.$$("[data-src]").forEach((b) => (b.onclick = () => ((w.src = b.dataset.src), draw())));
+      u.$$("[data-thu]").forEach((b) => (b.onclick = () => ((w.so = Number(b.dataset.thu)), draw())));
       const bt = u.$("#baiTen");
       if (bt) bt.oninput = () => ((w.baiTen = bt.value), save());
       [
@@ -382,6 +473,10 @@
     delete p.bai.trang;
     delete p.bai.chuong;
     p.tiet = o.tiet;
+    if (o.ppct) {
+      p.ppct = Object.assign({}, o.ppct);
+      delete p.ppct.khac;
+    }
     p.duration = o.duration;
     p.design = Object.assign({}, o.design, raw.design && raw.design.style ? {} : {});
     p.meta = Object.assign({}, p.meta, { madeWithAI: !!ai, authorUid: teacher.uid, authorName: teacher.name || "" });
@@ -406,7 +501,7 @@
     const subjOpts = C.subjects.map((s) => `<option value="${s.id}" ${s.id === p.subjectId ? "selected" : ""}>${u.esc(s.name)}</option>`).join("");
     pane.innerHTML = `<div class="st-ed">
       <div class="col" style="min-width:0">
-        <section class="card"><div class="row"><h2 class="grow" style="margin:0">Thông tin tiết học</h2>${p.bai.key ? `<span class="pill accent">${u.esc(Pack.label(p))}</span>` : ""}</div>
+        <section class="card"><div class="row"><h2 class="grow" style="margin:0">Thông tin tiết học</h2>${p.bai.key ? `<span class="pill accent">${u.esc(Pack.label(p))}</span>` : ""}<button class="btn sm" id="undo" title="Hoàn tác (Ctrl/⌘ + Z)">↶ Hoàn tác</button><button class="btn sm" id="redo" title="Làm lại (Ctrl/⌘ + Shift + Z)">↷ Làm lại</button></div>
           <div class="grid g2" style="margin-top:10px">
             <label class="field" style="grid-column:1/-1">Tên tiết học<input data-pk="title" value="${u.esc(p.title)}"></label>
             <label class="field">Môn<select data-pk="subjectId">${subjOpts}</select></label><label class="field">Lớp<input data-pk="grade" value="${u.esc(p.grade)}"></label>
@@ -435,6 +530,10 @@
           <button class="btn primary" id="saveB">${icon("save")} Lưu nháp</button><button class="btn" id="pub">${icon("upload")} Đăng lên thư viện trường</button>
           <a class="btn" id="teach" href="#">${icon("play")} Dạy thử</a><div class="row" style="gap:6px"><button class="btn sm grow" data-goto="giaoan">Giáo án Word</button><button class="btn sm grow" data-goto="ppt">PowerPoint</button></div>
           <button class="btn sm ghost" id="dl">Tải tệp .json</button></div></section></aside></div>`;
+    if (!hist.stack.length || JSON.parse(hist.stack[hist.i] || "{}").id !== cur.id) histReset();
+    u.$("#undo", pane).onclick = () => histGo(-1);
+    u.$("#redo", pane).onclick = () => histGo(1);
+    undoBtns();
     drawSteps();
     validate();
     u.$$("[data-pk]", pane).forEach((el) =>
@@ -525,6 +624,7 @@
       ${s.type === "quiz" || s.type === "video" ? questionsEd(s, i) : ""}
       ${s.type === "crossword" ? cwEd(s, i) : ""}
       ${s.type === "video" ? videoEd(s, i) : ""}
+      ${s.type === "web" ? webEd(s, i) : ""}
       ${(T.fields || [])
         .filter((f) => !["pages", "questions", "cwrows", "video"].includes(f.kind) && !["keyword", "keyClue", "rows", "source"].includes(f.key) && !(s.type === "slide" && f.key.startsWith("media.")))
         .map((f) => fieldHtml(s, f, i))
@@ -545,6 +645,21 @@
     }, "Dòng đầu là tiêu đề cột: Tiêu chí | A | B"],
     flow: [(b) => (b.steps || []).map((x) => (typeof x === "string" ? x : [x.label, x.desc || ""].filter(Boolean).join(" | "))).join("\n"), (t, b) => (b.steps = rows(t).map((r) => ({ label: r[0], desc: r[1] || "" }))), "Bước | Mô tả ngắn"],
     cycle: [(b) => (b.items || []).map((x) => (typeof x === "string" ? x : x.label)).join("\n"), (t, b) => (b.items = lines(t)), "Mỗi dòng một khâu"],
+    venn: [
+      (b) => [`${b.left || "A"} | ${(b.leftItems || []).join("; ")}`, `${b.right || "B"} | ${(b.rightItems || []).join("; ")}`, `${b.bothLabel || "Giống nhau"} | ${(b.both || []).join("; ")}`].join("\n"),
+      (t, b) => {
+        const r = rows(t);
+        const sp = (x) => String(x || "").split(";").map((y) => y.trim()).filter(Boolean);
+        b.left = (r[0] || [])[0] || "A";
+        b.leftItems = sp((r[0] || [])[1]);
+        b.right = (r[1] || [])[0] || "B";
+        b.rightItems = sp((r[1] || [])[1]);
+        b.bothLabel = (r[2] || [])[0] || "Giống nhau";
+        b.both = sp((r[2] || [])[1]);
+      },
+      "3 dòng: Tên A | ý; ý — Tên B | ý; ý — Giống nhau | ý; ý"
+    ],
+    pyramid: [(b) => (b.items || []).map((x) => (typeof x === "string" ? x : [x.label, x.desc || ""].filter(Boolean).join(" | "))).join("\n"), (t, b) => (b.items = rows(t).map((r) => ({ label: r[0], desc: r[1] || "" }))), "Từ tầng trên cùng xuống: Tầng | mô tả"],
     stats: [(b) => (b.items || []).map((x) => [x.value, x.label].join(" | ")).join("\n"), (t, b) => (b.items = rows(t).map((r) => ({ value: r[0], label: r[1] || "" }))), "Số liệu | Ý nghĩa (chỉ số liệu có trong SGK)"],
     keyterms: [(b) => (b.items || []).map((x) => [x.term, x.def].join(" | ")).join("\n"), (t, b) => (b.items = rows(t).map((r) => ({ term: r[0], def: r[1] || "" }))), "Thuật ngữ | Giải thích"],
     list: [(b) => (b.items || []).map((x) => (typeof x === "string" ? x : x.text)).join("\n"), (t, b) => (b.items = lines(t)), "Mỗi dòng một ý"],
@@ -554,7 +669,15 @@
   const rows = (t) => lines(t).map((l) => l.split("|").map((x) => x.trim()));
   const KIND_NAME = Object.fromEntries(L360.blocks.kinds);
   function imgEd(im, path, i) {
+    const badge = !im.src
+      ? `<span class="pill bad tiny">Chưa có ảnh</span>`
+      : im.verified
+      ? `<span class="pill ok tiny" title="Ảnh có thật trên Wikimedia/nguồn mở, đủ nét">✓ Đã xác minh</span>`
+      : im.auto
+      ? `<span class="pill warn tiny" title="Ảnh tìm tự động theo mô tả – thầy cô xem lại có đúng nội dung không">Cần kiểm tra</span>`
+      : "";
     return `<div class="st-img"><div class="st-thumb">${im.src ? `<img src="${u.esc(im.src)}" alt="">` : `<span>${icon("image")}</span>`}</div><div class="col grow" style="gap:6px;min-width:0">
+      ${im.alt || badge ? `<div class="row tiny" style="gap:6px">${badge}${im.alt ? `<span class="muted ellipsis" title="${u.esc(im.alt)}">Yêu cầu ảnh: ${u.esc(im.alt)}</span>` : ""}${im.page ? `<a href="${u.esc(im.page)}" target="_blank" rel="noopener">Trang ảnh ↗</a>` : ""}</div>` : ""}
       <div class="row nowrap"><input data-si="${i}" data-bp="${path}.query" value="${u.esc(im.query || "")}" placeholder="Từ khoá tìm ảnh"><button class="btn sm primary" data-pick="${path}" data-si="${i}">Chọn ảnh</button>${im.src ? `<button class="btn sm ghost" data-unimg="${path}" data-si="${i}" title="Bỏ ảnh">✕</button>` : ""}</div>
       <input data-si="${i}" data-bp="${path}.caption" value="${u.esc(im.caption || "")}" placeholder="Chú thích"><input data-si="${i}" data-bp="${path}.credit" value="${u.esc(im.credit || "")}" placeholder="Nguồn ảnh (tác giả, giấy phép)"></div></div>`;
   }
@@ -651,6 +774,16 @@
       <label class="field">Hoặc đường dẫn YouTube / mp4<input data-si="${i}" data-k="source.url" value="${u.esc(src.url || "")}"></label></div>`;
   }
 
+  // Trò chơi web: mở trang tạo trò chơi của công cụ, sao chép nội dung AI đã soạn, kiểm tra đường dẫn nhúng.
+  function webEd(s, i) {
+    const t = (L360.WEB_TOOLS || []).find((x) => x[0] === s.tool) || [];
+    const e = L360.webEmbed ? L360.webEmbed(s.url) : { url: "", embed: "" };
+    return `<div class="card flat st-web"><div class="row" style="gap:8px">${t[2] ? `<a class="btn sm primary" href="${u.esc(t[2])}" target="_blank" rel="noopener">1. Mở ${u.esc(t[1])} để tạo ↗</a>` : ""}<button class="btn sm" data-webcopy="${i}">${icon("copy")} 2. Sao chép nội dung trò chơi</button><span class="small muted">3. Dán đường dẫn / mã nhúng vào ô bên dưới.</span></div>
+      <p class="tiny muted" style="margin:6px 0 0">${u.esc(t[3] || "")}. ${
+        e.url ? (e.embed ? "✓ Trò chơi sẽ hiện ngay trên màn chiếu và máy học sinh." : "Đường dẫn này mở bằng mã QR/nút bấm; muốn hiện ngay trong màn chiếu hãy dán mã nhúng (Chia sẻ → Nhúng/Embed).") : "Chưa có đường dẫn."
+      }</p></div>`;
+  }
+
   /* ----- Trường chung của các loại hoạt động khác ----- */
   function fieldHtml(s, f, si) {
     const val = getP(s, f.key);
@@ -703,6 +836,14 @@
   function bindSteps(box) {
     const p = cur;
     const S0 = (el) => p.steps[Number(el.dataset.si)];
+    u.$$("[data-webcopy]", box).forEach(
+      (b) =>
+        (b.onclick = async () => {
+          const st = p.steps[Number(b.dataset.webcopy)];
+          const ok = await u.copy(st.content || "");
+          u.toast(ok ? "Đã sao chép nội dung – dán vào ô nhập của công cụ (mỗi dòng một mục)." : "Không sao chép được.", ok ? "ok" : "bad");
+        })
+    );
     const redraw = () => drawSteps();
     const on = (sel, ev, fn) => u.$$(sel, box).forEach((el) => el.addEventListener(ev, () => fn(el)));
     u.$$("[data-toggle]", box).forEach((b) => (b.onclick = () => drawSteps(openStep === Number(b.dataset.toggle) ? -1 : Number(b.dataset.toggle))));
@@ -845,10 +986,13 @@
       (b) =>
         (b.onclick = async () => {
           const target = getP(S0(b), b.dataset.pick);
-          const r = await L360.Images.pick({ query: target.query || target.caption || "" });
+          const r = await L360.Images.pick({ query: target.query || target.caption || "", alt: target.alt || "", kind: target.kind || "" });
           if (!r) return;
           target.src = r.src;
           target.credit = r.credit || target.credit || "";
+          target.verified = true;
+          target.auto = false;
+          target.page = r.page || "";
           if (!target.caption && r.caption) target.caption = r.caption;
           changed();
           redraw();
@@ -983,10 +1127,50 @@
       ${v.warnings.length ? `<details><summary class="small">${v.warnings.length} gợi ý</summary><ul class="small" style="color:var(--warn)">${v.warnings.map((e) => `<li>${u.esc(e)}</li>`).join("")}</ul></details>` : ""}${dirty ? `<p class="small muted">Có thay đổi chưa lưu.</p>` : ""}`;
   }, 250);
   const autosave = u.debounce(() => dirty && saveDraft(true), 4000);
+  // Hoàn tác / làm lại trong trình soạn (tối đa 40 bước).
+  const hist = { stack: [], i: -1, lock: false };
+  const snap = u.debounce(() => {
+    if (!cur || hist.lock) return;
+    const j = JSON.stringify(cur);
+    if (hist.stack[hist.i] === j) return;
+    hist.stack = hist.stack.slice(0, hist.i + 1).concat(j).slice(-40);
+    hist.i = hist.stack.length - 1;
+    undoBtns();
+  }, 500);
+  function histReset() {
+    hist.stack = cur ? [JSON.stringify(cur)] : [];
+    hist.i = hist.stack.length - 1;
+    undoBtns();
+  }
+  function undoBtns() {
+    const a = u.$("#undo"), b = u.$("#redo");
+    if (a) a.disabled = hist.i <= 0;
+    if (b) b.disabled = hist.i >= hist.stack.length - 1;
+  }
+  function histGo(d) {
+    const k = hist.i + d;
+    if (k < 0 || k >= hist.stack.length) return;
+    hist.i = k;
+    hist.lock = true;
+    cur = JSON.parse(hist.stack[k]);
+    dirty = true;
+    autosave();
+    if (tab === "soan") render();
+    hist.lock = false;
+    undoBtns();
+    u.toast(d < 0 ? "Đã hoàn tác." : "Đã làm lại.", "", 1200);
+  }
+  document.addEventListener("keydown", (e) => {
+    if (tab !== "soan" || !(e.ctrlKey || e.metaKey) || (e.key || "").toLowerCase() !== "z") return;
+    if (e.target && e.target.closest && e.target.closest("input,textarea")) return; // để ô nhập tự hoàn tác chữ
+    e.preventDefault();
+    histGo(e.shiftKey ? 1 : -1);
+  });
   function changed() {
     dirty = true;
     validate();
     autosave();
+    snap();
   }
   async function saveDraft(quiet) {
     if (!cur) return;
@@ -1011,8 +1195,9 @@
   async function autoImages(fromAi) {
     if (!cur) return;
     const n = Pack.normalize(cur);
-    const need = L360.Images.slots(n).filter((x) => !x.block.src && (x.block.query || x.block.caption)).length;
-    if (!need) return fromAi ? null : u.toast("Không có khối ảnh nào cần tìm.", "ok");
+    const hasYt = n.steps.some((s) => (s.type === "video" && s.source && s.source.url) || (s.pages || []).some((pg) => (pg.blocks || []).some((b) => b.kind === "video" && (b.url || b.src))));
+    const need = L360.Images.slots(n).filter((x) => (!x.block.src && (x.block.query || x.block.caption || x.block.alt)) || (x.block.src && !x.block.verified && !/^data:|^assets\//.test(x.block.src))).length;
+    if (!need && !hasYt) return fromAi ? null : u.toast("Không có khối ảnh nào cần tìm.", "ok");
     u.toast(`Đang tìm ${need} ảnh từ Wikipedia/Wikimedia Commons…`, "", 3000);
     const r = await L360.Images.autoFill(cur, (i, t) => {
       const el = u.$("#imgs");
@@ -1020,9 +1205,28 @@
     });
     const el = u.$("#imgs");
     if (el) el.innerHTML = `${icon("image")} Tìm ảnh cho khối còn thiếu`;
+    // Video YouTube do AI đưa: kiểm tra có thật (ảnh xem trước của video phải tồn tại).
+    const vids = [];
+    cur.steps.forEach((s) => {
+      if (s.type === "video" && s.source) vids.push(s.source);
+      (s.pages || []).forEach((pg) => (pg.blocks || []).forEach((b) => b.kind === "video" && vids.push(b)));
+    });
+    let bad = 0;
+    for (const v of vids) {
+      const m = String(v.url || v.src || "").match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([A-Za-z0-9_-]{11})/);
+      if (!m) continue;
+      const d = await L360.Images.probe(`https://i.ytimg.com/vi/${m[1]}/mqdefault.jpg`);
+      v.broken = !(d && d.w > 120);
+      if (v.broken) bad++;
+    }
+    if (bad) u.toast(`${bad} video YouTube không mở được – xem cảnh báo trong trình soạn và thay video khác.`, "bad", 7000);
     changed();
     if (tab === "soan") drawSteps();
-    u.toast(`Đã thêm ${r.filled}/${r.total} ảnh.${r.missing ? ` Còn ${r.missing} khối cần chọn tay.` : ""} Kiểm tra lại ảnh trước khi dạy.`, "ok", 5000);
+    u.toast(
+      `Ảnh: ${r.verified} ảnh AI chọn đã xác minh có thật và đủ nét; ${r.found} ảnh tìm tự động theo mô tả${r.replaced ? ` (thay ${r.replaced} ảnh AI ghi sai)` : ""}.${r.missing ? ` Còn ${r.missing} khối cần chọn tay.` : ""} Ảnh tìm tự động có nhãn “Cần kiểm tra”.`,
+      "ok",
+      7000
+    );
   }
 
   /* ================= Các tiết cùng bài (cho giáo án & PPT) ================= */
@@ -1044,7 +1248,7 @@
     if (!cur) return needPack(pane, "Giáo án được dựng từ tiết học (hoặc các tiết của cùng một bài).");
     if (dirty) await saveDraft(true);
     const list = await siblings();
-    const st = { sel: list.map((p) => p.id), k: cur.khbd ? L360.Khbd.normalize(cur.khbd) : null, ppct: (cur.meta && cur.meta.ppct) || "", tuan: (cur.meta && cur.meta.tuan) || "", extra: "" };
+    const st = { sel: list.map((p) => p.id), k: cur.khbd ? L360.Khbd.normalize(cur.khbd) : null, ppct: (cur.meta && cur.meta.ppct) || (cur.ppct && cur.ppct.cacTiet ? cur.ppct.cacTiet.join(", ") : ""), tuan: (cur.meta && cur.meta.tuan) || (cur.ppct && cur.ppct.tuanBai ? cur.ppct.tuanBai.join(", ") : ""), extra: "" };
     const chosen = () => list.filter((p) => st.sel.includes(p.id));
     const draw = () => {
       const v = st.k ? L360.Khbd.validate(st.k) : null;
@@ -1121,7 +1325,7 @@
       const nums = String(st.ppct || "").split(/[,;\s]+/).filter(Boolean);
       if (nums.length) {
         k.tiet.forEach((t, i) => nums[i] && (t.ten = t.ten.replace("[…]", nums[i])));
-        k.thoiGian = `${k.tiet.length} tiết (Tiết ${nums.join(", ")} theo PPCT${st.tuan ? " – Tuần " + st.tuan : ""})`;
+        k.thoiGian = `${(cur.ppct && cur.ppct.tong) || Math.max(k.tiet.length, nums.length)} tiết (Tiết ${nums.join(", ")} theo PPCT${st.tuan ? " – Tuần " + st.tuan : ""})`;
       } else if (st.tuan) k.thoiGian = k.thoiGian.replace("Tuần […]", "Tuần " + st.tuan);
       if (!k.giaoVien) k.giaoVien = teacher.name || "";
       return k;
@@ -1141,7 +1345,8 @@
       const NAMES = { title: "Trang bìa", goals: "Mục tiêu", phase: "Chuyển pha", page: "Bài giảng", video: "Video", q: "Câu hỏi", qans: "Đáp án", cw: "Ô chữ", match: "Ghép nối", order: "Sắp xếp", group: "Nhiệm vụ nhóm", sheet: "Phiếu học tập", cards: "Chọn thẻ", auction: "Đấu giá", task: "Nhiệm vụ", recap: "Ghi nhớ", end: "Kết thúc" };
       const per = chosen.length ? Math.round(pl.slides.length / chosen.length) : 0;
       pane.innerHTML = `<div class="st-kh"><aside class="col" style="gap:14px"><section class="card"><h3>Các tiết</h3>${packPicker(list, st.sel)}
-          <label class="field" style="margin-top:10px">Phông chữ<select id="font">${["Calibri", "Arial", "Be Vietnam Pro", "Times New Roman"].map((f) => `<option ${f === st.font ? "selected" : ""}>${f}</option>`).join("")}</select><span class="hint">Be Vietnam Pro đẹp nhất nhưng máy chiếu phải cài phông; Calibri/Arial an toàn trên mọi máy.</span></label>
+          <label class="field" style="margin-top:10px">Phông chữ<select id="font">${["Calibri", "Arial", "Times New Roman", "Be Vietnam Pro"].map((f) => `<option ${f === st.font ? "selected" : ""}>${f}</option>`).join("")}</select><span class="hint">Calibri, Arial, Times New Roman có sẵn trên mọi máy Windows/Mac nên trình chiếu offline không lỗi phông. Be Vietnam Pro chỉ đúng khi máy chiếu đã cài phông này.</span></label>
+          <div class="note small" style="margin-top:10px">${L360.icon("info")} Tệp dùng được <b>không cần mạng</b>: ảnh đã nhúng sẵn, có hiệu ứng bấm để hiện (từng ý, đáp án đúng, giải thích, ô chữ lật từng hàng, ghép nối, sơ đồ hiện từng nhánh) và <b>thanh đếm giờ</b> ở trang hoạt động: bấm để chạy, hết giờ hiện “Hết giờ!”. Video cần mạng khi chiếu.</div>
           <button class="btn primary block lg" id="mk" style="margin-top:10px">${icon("download")} Tải PowerPoint (.pptx)</button><p class="small muted" id="mkmsg" style="margin-top:8px"></p></section>
         <section class="card small"><b>Có gì trong tệp?</b><ul><li>Trang bìa, mục tiêu, trang chuyển pha theo màu Khởi động – Hình thành – Luyện tập – Vận dụng.</li><li>Bài giảng trực quan: ảnh, dòng thời gian, sơ đồ tư duy, bảng so sánh, quy trình, số liệu, khung <b>✎ Ghi vào vở</b>.</li><li>Câu hỏi 4 lựa chọn, Đúng/Sai, trả lời ngắn kèm trang đáp án; ô chữ có trang đáp án.</li><li>Lời dẫn và đáp án nằm trong phần <b>Ghi chú</b> của từng trang.</li></ul></section></aside>
         <section class="card"><div class="row"><h2 class="grow" style="margin:0">${pl.slides.length} trang chiếu</h2><span class="pill ${per >= 20 && per <= 40 ? "ok" : "warn"}">${per} trang/tiết · chuẩn 20–40</span></div>

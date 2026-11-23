@@ -35,6 +35,11 @@
     { ma: "NLc", ten: "Các kĩ thuật và ứng dụng AI" },
     { ma: "NLd", ten: "Thiết kế hệ thống AI" }
   ];
+  const nlsName = (ma) => {
+    const c = String(ma).split(".").slice(0, 2).join(".");
+    for (const d of NLS) for (const [a, b] of d.items) if (a === c) return b;
+    return "";
+  };
   const CHUNG = ["Tự chủ và tự học", "Giao tiếp và hợp tác", "Giải quyết vấn đề và sáng tạo"];
   const PHAM_CHAT = ["Yêu nước", "Nhân ái", "Chăm chỉ", "Trung thực", "Trách nhiệm"];
   const DAC_THU = {
@@ -577,6 +582,12 @@
     const sl = (id) => (plan && plan.range[id] ? (plan.range[id][0] === plan.range[id][1] ? `Slide ${plan.range[id][0]}` : `Slide ${plan.range[id][0]}–${plan.range[id][1]}`) : "");
     const tong = Math.max(packs.length, (p0.tiet && p0.tiet.tong) || 1);
     const dac = DAC_THU[p0.subjectId] || { ten: "Năng lực đặc thù", items: [] };
+    // Thông tin từ PPCT (Phụ lục I) gắn trong gói bài học.
+    const pps = packs.map((p) => p.ppct).filter(Boolean);
+    const pp0 = pps[0] || null;
+    const ppNls = [...new Set(pps.flatMap((x) => x.nls || []))];
+    const ppAi = [...new Set(pps.flatMap((x) => x.ai || []))];
+    const ppTb = [...new Set(pps.map((x) => (x.thietBi || "").replace(/^[-–\s]+/, "")).filter(Boolean))];
     let hdNo = 0;
     const tiet = packs.map((p, ti) => {
       const groups = [];
@@ -586,7 +597,7 @@
         g.steps.push(s);
       });
       return {
-        ten: `TIẾT ${p.tiet.so} (TIẾT […] THEO PPCT)`,
+        ten: `TIẾT ${p.tiet.so} (TIẾT ${p.ppct && p.ppct.so ? p.ppct.so : "[…]"} THEO PPCT)`,
         hoatDong: groups.map((g) => {
           hdNo++;
           const mins = g.steps.reduce((m, s) => m + (s.minutes || 0), 0);
@@ -627,17 +638,26 @@
       tenBai: `${b.so ? (/^(CĐ|Chủ đề)/i.test(b.so) ? b.so : "BÀI " + b.so) + ". " : ""}${String(b.ten || p0.title || "").toUpperCase()}`,
       mon: (L360.Curr && L360.Curr.subjectName(p0.subjectId, grade)) || p0.subject || "",
       lop: String(grade),
-      thoiGian: `${tong} tiết (Tiết […] theo PPCT – Tuần […])`,
+      thoiGian: pp0
+        ? `${pp0.tong} tiết (Tiết ${pp0.cacTiet.join(", ")} theo PPCT – Tuần ${(pp0.tuanBai || []).join(", ") || "[…]"})`
+        : `${tong} tiết (Tiết […] theo PPCT – Tuần […])`,
       mucTieu: {
         kienThuc: packs.flatMap((p) => p.objectives).filter((v, i, a) => v && a.indexOf(v) === i),
         nangLucChung: CHUNG.map((t) => ({ ten: t, nd: "[…]" })),
         dacThu: { ten: dac.ten, items: dac.items.map((t) => ({ ten: t, nd: "[…]" })) },
-        nls: { muc: LEVEL_NAME[lv], items: [{ ma: `[…].${lv}[…]`, ten: "", nd: "[GV chọn năng lực thành phần phù hợp]" }] },
-        ai: [],
+        nls: {
+          muc: LEVEL_NAME[lv],
+          items: ppNls.length
+            ? ppNls.map((ma) => ({ ma, ten: nlsName(ma), nd: "[GV mô tả biểu hiện cụ thể trong tiết]" }))
+            : [{ ma: `[…].${lv}[…]`, ten: "", nd: "[GV chọn năng lực thành phần phù hợp]" }]
+        },
+        ai: ppAi.map((ma) => ({ ma, ten: (AI.find((x) => x.ma === ma) || {}).ten || "", code: ma, nd: "[GV mô tả biểu hiện cụ thể]" })),
         phamChat: ["Chăm chỉ", "Trách nhiệm"].map((t) => ({ ten: t, nd: "[…]" }))
       },
       thietBi: {
-        giaoVien: ["Máy tính, máy chiếu/TV; phòng học Lesson 360° Studio.", "Bài giảng PowerPoint (bản xuất từ Lesson 360° Studio)."].concat(
+        giaoVien: ["Máy tính, máy chiếu/TV; phòng học Lesson 360° Studio.", "Bài giảng PowerPoint (bản xuất từ Lesson 360° Studio)."]
+          .concat(ppTb.length ? ppTb.map((x) => `Theo kế hoạch dạy học: ${x}`) : [])
+          .concat(
           L360.Curr && b.key && L360.Curr.lesson(b.key) ? [L360.Curr.lesson(b.key).bookTitle + "."] : ["SGK, tư liệu tham khảo."]
         ),
         hocLieuSo: [],

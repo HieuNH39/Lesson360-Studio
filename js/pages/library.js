@@ -10,8 +10,11 @@
   const dt = /che-do=dien-tap/.test(location.search) ? "&che-do=dien-tap" : "";
   let teacher = null;
   let metas = [];
+  const ppState = { k: "", doc: null };
   const st = { level: u.qs("cap") || "", subject: u.qs("mon") || "", grade: Number(u.qs("lop")) || 0, book: u.qs("sach") || "", bai: u.qs("bai") || "", q: "" };
 
+  let pushNext = false;
+  let libDepth = 0;
   const setUrl = () => {
     const q = new URLSearchParams();
     if (st.subject) q.set("mon", st.subject);
@@ -19,8 +22,21 @@
     if (st.book) q.set("sach", st.book);
     if (st.bai) q.set("bai", st.bai);
     if (dt) q.set("che-do", "dien-tap");
-    history.replaceState(null, "", "?" + q.toString());
+    const url = "?" + q.toString();
+    if (pushNext && url !== location.search) history.pushState({ lib: 1, d: ++libDepth }, "", url);
+    else history.replaceState({ lib: 1 }, "", url);
+    pushNext = false;
   };
+  // Nút ← của trình duyệt / nút Quay lại: trở về màn trước (danh sách môn, bài đã chọn trước…).
+  window.addEventListener("popstate", (e) => {
+    libDepth = (e.state && e.state.d) || 0;
+    st.subject = u.qs("mon") || "";
+    st.grade = Number(u.qs("lop")) || 0;
+    st.book = u.qs("sach") || "";
+    st.bai = u.qs("bai") || "";
+    if (st.subject) subjectView();
+    else home();
+  });
 
   function shell(inner) {
     app.innerHTML =
@@ -55,6 +71,7 @@
     u.$$("[data-s]").forEach(
       (b) =>
         (b.onclick = () => {
+          pushNext = true;
           st.subject = b.dataset.s;
           st.grade = C.levels.find((l) => l.id === st.level).grades.find((g) => C.gradesFor(st.subject).includes(g));
           st.book = "";
@@ -74,6 +91,17 @@
     const books = C.lessons(s.id, st.grade);
     if (!books.find((x) => x.book.id + (x.book.part || "") === st.book)) st.book = books.length ? books[0].book.id + (books[0].book.part || "") : "";
     const cur = books.find((x) => x.book.id + (x.book.part || "") === st.book);
+    const ppk = `${s.id}|${st.grade}|${cur && cur.book.cd ? 1 : 0}`;
+    if (ppk !== ppState.k) {
+      ppState.k = ppk;
+      ppState.doc = null;
+      L360.Ppct.forSubject(s.id, st.grade, { cd: !!(cur && cur.book.cd) }).then((d) => {
+        if (ppState.k !== ppk) return;
+        ppState.doc = d;
+        if (d) subjectView();
+      });
+    }
+    const ppOf = (key) => (ppState.doc ? ppState.doc.bai.find((b) => b.key === key) : null);
     const cnt = Lib.countBy(metas);
     const lessons = cur ? cur.lessons : [];
     const q = u.slug(st.q);
@@ -85,7 +113,7 @@
         ch = l.chuong;
         const n = cnt[l.key] || 0;
         const ev = C.eduVideos(l).length;
-        return `${hd}<button class="lib-row ${l.key === st.bai ? "on" : ""}" data-bai="${u.esc(l.key)}"><span class="grow" style="min-width:0"><b class="clamp2">${u.esc(l.label)}</b><span class="small muted">${l.trang ? `${cur && cur.book.local ? "Trang" : "SGK trang"} ${l.trang}` : ""}${ev ? ` · ${ev} video EduHistory` : ""}</span></span>
+        return `${hd}<button class="lib-row ${l.key === st.bai ? "on" : ""}" data-bai="${u.esc(l.key)}"><span class="grow" style="min-width:0"><b class="clamp2">${u.esc(l.label)}</b><span class="small muted">${l.trang ? `${cur && cur.book.local ? "Trang" : "SGK trang"} ${l.trang}` : ""}${ppOf(l.key) ? ` · ${ppOf(l.key).tiet.length} tiết (PPCT)` : ""}${ev ? ` · ${ev} video EduHistory` : ""}</span></span>
           <span class="pill ${n ? "brand" : ""}">${n ? n + " tiết" : "Chưa có"}</span></button>`;
       })
       .join("");
@@ -101,7 +129,7 @@
           ? `<div class="empty">Mục lục sách này đang được cập nhật từ Bộ SGK thống nhất.<br><a href="${u.esc(cur.book.reader)}" target="_blank" rel="noopener">Mở sách trên taphuan.nxbgd.vn ↗</a><br><br><a class="btn sm primary" href="studio.html?mon=${s.id}&lop=${st.grade}${dt}">Soạn tiết học mới</a></div>`
           : `<div class="empty">Môn này chưa có sách trong bộ dữ liệu.<br><br><a class="btn sm primary" href="studio.html?mon=${s.id}&lop=${st.grade}${dt}">Soạn tiết học mới</a></div>`)
       }</section><aside class="lib-side" id="side"></aside></div>`);
-    u.$("#back").onclick = () => ((st.subject = ""), (st.bai = ""), setUrl(), home());
+    u.$("#back").onclick = () => (libDepth > 0 ? history.back() : ((st.subject = ""), (st.bai = ""), (pushNext = true), setUrl(), home()));
     u.$("#q").oninput = u.debounce((e) => {
       st.q = e.target.value;
       subjectView();
@@ -111,7 +139,7 @@
     }, 250);
     u.$$("[data-g]").forEach((b) => (b.onclick = () => ((st.grade = Number(b.dataset.g)), (st.book = ""), (st.bai = ""), subjectView())));
     u.$$("[data-b]").forEach((b) => (b.onclick = () => ((st.book = b.dataset.b), (st.bai = ""), subjectView())));
-    u.$$("[data-bai]").forEach((b) => (b.onclick = () => ((st.bai = b.dataset.bai), setUrl(), u.$$("[data-bai]").forEach((x) => x.classList.toggle("on", x === b)), side())));
+    u.$$("[data-bai]").forEach((b) => (b.onclick = () => ((st.bai = b.dataset.bai), (pushNext = true), setUrl(), u.$$("[data-bai]").forEach((x) => x.classList.toggle("on", x === b)), side())));
     side();
   }
 
@@ -126,8 +154,16 @@
     const url = C.lessonUrl(l);
     const vids = C.eduVideos(l);
     const items = metas.filter((m) => m.k === l.key).sort((a, b) => a.ti - b.ti || (b.up || 0) - (a.up || 0));
+    const pb = ppState.doc ? ppState.doc.bai.find((b) => b.key === l.key) : null;
     el.innerHTML = `<div class="card"><div class="small muted">${u.esc(l.chuong || "")}</div><h2 style="margin:4px 0 10px">${u.esc(l.label)}</h2>
       <div class="row">${url ? `<a class="btn sm" href="${u.esc(url)}" target="_blank" rel="noopener">${L360.icon("sgk")} SGK${l.trang ? " trang " + l.trang : ""}</a>` : `<span class="pill">${L360.icon("sgk")} Tài liệu${l.trang ? " trang " + l.trang : ""}</span>`}<a class="btn sm primary" href="studio.html?bai=${encodeURIComponent(l.key)}${dt}">${L360.icon("plus")} Soạn tiết mới</a></div>
+      ${
+        pb
+          ? `<div class="note small" style="margin-top:12px"><b>Theo PPCT ${u.esc(L360.Ppct.yearLabel(ppState.doc.nam))}:</b> ${L360.Ppct.tietText(pb)}<div class="row" style="gap:6px;margin-top:6px">${pb.tiet
+              .map((t, i) => `<a class="chip" href="studio.html?bai=${encodeURIComponent(l.key)}&tiet=${i + 1}${dt}" title="${u.esc(t.noiDung || "")}">Tiết ${i + 1} · PPCT ${t.so}${t.tuan ? ` · tuần ${t.tuan}` : ""}</a>`)
+              .join("")}</div></div>`
+          : ""
+      }
       ${
         vids.length
           ? `<h3 style="margin-top:16px">${L360.icon("video")} Video EduHistory Studio</h3><div class="col" style="gap:8px">${vids

@@ -12,7 +12,7 @@
     async exists(room) {
       return !!(await S().get(R(room, "meta")));
     },
-    async create({ pack, room, className, classSize, groupCount, teacher }) {
+    async create({ pack, room, className, classSize, groupCount, teacher, lock }) {
       const p = Pack.normalize(pack);
       const groups = Pack.groups(p, groupCount);
       const meta = {
@@ -31,7 +31,9 @@
         packId: p.id,
         createdAt: S().TS,
         status: "open",
-        mode: S().mode
+        mode: S().mode,
+        lock: lock !== false,
+        ppct: p.ppct ? { doc: p.ppct.doc, bai: p.ppct.bai, so: p.ppct.so } : null
       };
       await S().set(R(room, "meta"), meta);
       await S().set(`priv/${room}`, { pack: p });
@@ -113,7 +115,7 @@
     async goto(i) {
       const n = this.pack.steps.length;
       i = Math.max(-1, Math.min(n, i));
-      const st = { step: i, phase: "observe", q: 0, round: 1, page: 0, screen: "content", openedAt: null, dur: 0, vcmd: null };
+      const st = { step: i, phase: "observe", q: 0, round: 1, page: 0, screen: "content", openedAt: null, dur: 0, vcmd: null, stepAt: S().TS };
       if (i >= 0 && !this.state.startedAt) st.startedAt = S().TS;
       await this.patchState(st);
       const step = this.pack.steps[i];
@@ -223,6 +225,10 @@
       const g = (this.meta.groups || []).find((x) => x.id === r.group);
       await S().set(R(this.room, "pub/overlay"), { kind: "pick", code, name: r.name || "", group: g ? g.name : "", color: g ? g.color : "", pool: pool.slice(0, 40), n: Date.now() });
       return code;
+    }
+    // Chiếu nội dung ghi vở cỡ chữ lớn (toàn màn chiếu) để học sinh chép.
+    showNote(title, text) {
+      return S().set(R(this.room, "pub/overlay"), { kind: "note", title: title || "Ghi vào vở", text: String(text || ""), n: Date.now() });
     }
     closeOverlay() {
       return S().set(R(this.room, "pub/overlay"), null);

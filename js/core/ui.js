@@ -101,26 +101,97 @@
 
   // Đồng hồ: mọi phần tử [data-timer] tự cập nhật theo trạng thái hiện tại.
   ui.timerState = null;
+  ui.timerPlan = null; // { steps:[{minutes, phase}], step } – để tính giờ hoạt động và tiến độ cả tiết
   ui.timer = () => `<span class="timer" data-timer>–:–</span>`;
+  let hgN = 0;
+  // Đồng hồ cát: cát chảy theo thời gian còn lại của hoạt động (thời gian làm bài, hoặc thời lượng dự kiến của bước).
+  ui.hourglass = (size) => {
+    const id = "hg" + ++hgN;
+    const top = "M22 14 H98 C98 58 68 76 62.5 90 H57.5 C52 76 22 58 22 14Z";
+    const bot = "M57.5 90 H62.5 C68 104 98 122 98 166 H22 C22 122 52 104 57.5 90Z";
+    return `<div class="hg ${size || ""}" data-hg><svg viewBox="0 0 120 180" aria-hidden="true"><defs><clipPath id="${id}t"><path d="${top}"/></clipPath><clipPath id="${id}b"><path d="${bot}"/></clipPath></defs>
+      <path class="hg-glass" d="M22 14 H98 C98 58 68 76 62.5 90 C68 104 98 122 98 166 H22 C22 122 52 104 57.5 90 C52 76 22 58 22 14Z"/>
+      <rect class="hg-sand" data-hgt clip-path="url(#${id}t)" x="18" y="14" width="84" height="76"/>
+      <rect class="hg-sand" data-hgb clip-path="url(#${id}b)" x="18" y="166" width="84" height="0"/>
+      <line class="hg-stream" data-hgs x1="60" y1="89" x2="60" y2="165"/>
+      <rect class="hg-cap" x="12" y="5" width="96" height="11" rx="5"/><rect class="hg-cap" x="12" y="164" width="96" height="11" rx="5"/></svg>
+      <div class="hg-txt"><b data-hgnum>–:–</b><small data-hglbl></small></div></div>`;
+  };
+  // Thời gian còn lại của hoạt động hiện tại: {rem, total, kind:"open"|"plan"} hoặc null.
+  ui.activityTime = (st) => {
+    if (!st) return null;
+    const rem = L360.Room ? L360.Room.remaining(st) : null;
+    if (rem != null) return { rem, total: st.dur, kind: "open" };
+    const pl = ui.timerPlan;
+    const s = pl && st.step >= 0 && pl.steps[st.step];
+    const plan = s ? (Number(s.minutes) || 0) * 60 : 0;
+    if (!plan || !st.stepAt) return null;
+    return { rem: plan - (L360.store.now() - st.stepAt) / 1000, total: plan, kind: "plan" };
+  };
+  const fmtSigned = (r) => (r < 0 ? "+" + u.fmtSec(-r) : u.fmtSec(r));
   setInterval(() => {
     const st = ui.timerState;
-    const els = document.querySelectorAll("[data-timer]");
-    if (!els.length) return;
     const rem = L360.Room ? L360.Room.remaining(st) : null;
-    els.forEach((el) => {
+    document.querySelectorAll("[data-timer]").forEach((el) => {
       if (rem == null) {
         el.textContent = st && st.phase === "open" ? "∞" : "–:–";
         el.classList.remove("low");
       } else {
-        el.textContent = u.fmtSec(rem);
+        el.textContent = u.fmtSec(Math.max(0, rem));
         el.classList.toggle("low", rem <= 10);
       }
     });
-    document.querySelectorAll("[data-clock]").forEach((el) => {
-      const s0 = st && st.startedAt;
-      el.textContent = s0 ? u.fmtSec((L360.store.now() - s0) / 1000) : "0:00";
+    const at = ui.activityTime(st);
+    document.querySelectorAll("[data-hg]").forEach((el) => {
+      const f = at ? Math.max(0, Math.min(1, at.rem / Math.max(1, at.total))) : 1;
+      const set = (sel, a, v) => {
+        const x = el.querySelector(sel);
+        if (x) x.setAttribute(a, v);
+      };
+      set("[data-hgt]", "y", (90 - 76 * f).toFixed(1));
+      set("[data-hgt]", "height", (76 * f).toFixed(1));
+      set("[data-hgb]", "y", (166 - 76 * (1 - f)).toFixed(1));
+      set("[data-hgb]", "height", (76 * (1 - f)).toFixed(1));
+      const running = !!(at && at.rem > 0);
+      el.classList.toggle("run", running);
+      el.classList.toggle("low", !!(at && at.rem > 0 && at.rem <= (at.kind === "open" ? 10 : 30)));
+      el.classList.toggle("over", !!(at && at.rem <= 0));
+      el.classList.toggle("idle", !at);
+      const n = el.querySelector("[data-hgnum]");
+      if (n) n.textContent = at ? (at.kind === "open" ? u.fmtSec(Math.max(0, at.rem)) : fmtSigned(Math.ceil(at.rem))) : "–:–";
+      const l = el.querySelector("[data-hglbl]");
+      if (l) l.textContent = !at ? "Chưa tính giờ" : at.kind === "open" ? (at.rem > 0 ? "Thời gian làm bài" : "Hết giờ!") : at.rem > 0 ? "Thời lượng hoạt động" : "Quá giờ dự kiến";
+    });
+    const s0 = st && st.startedAt;
+    const el0 = s0 ? (L360.store.now() - s0) / 1000 : 0;
+    document.querySelectorAll("[data-clock]").forEach((el) => (el.textContent = u.fmtSec(el0)));
+    // Dải tiến trình cả tiết: kim chạy theo thời gian thực, so với kế hoạch (tổng phút các bước).
+    document.querySelectorAll("[data-ribbon]").forEach((el) => {
+      const pl = ui.timerPlan;
+      if (!pl) return;
+      const total = pl.steps.reduce((a, s) => a + (Number(s.minutes) || 0) * 60, 0) || 2700;
+      const head = el.querySelector(".rb-head");
+      if (head) head.style.left = Math.min(100, (el0 / total) * 100).toFixed(2) + "%";
+      const pace = el.querySelector("[data-pace]");
+      if (!pace) return;
+      if (!s0 || !st || st.step < 0) return (pace.textContent = "", (pace.className = "rb-pace"));
+      const before = pl.steps.slice(0, Math.min(st.step, pl.steps.length)).reduce((a, s) => a + (Number(s.minutes) || 0) * 60, 0);
+      const cur = st.step < pl.steps.length ? (Number(pl.steps[st.step].minutes) || 0) * 60 : 0;
+      const inStep = st.stepAt ? Math.min(cur, (L360.store.now() - st.stepAt) / 1000) : 0;
+      const diff = el0 - (before + inStep);
+      const m = Math.round(Math.abs(diff) / 60);
+      pace.textContent = Math.abs(diff) < 60 ? "Đúng tiến độ" : diff > 0 ? `Chậm ${m} phút` : `Nhanh ${m} phút`;
+      pace.className = "rb-pace " + (Math.abs(diff) < 60 ? "ok" : diff > 0 ? "late" : "early");
     });
   }, 250);
+
+  // Dải tiến trình tiết học (màn chiếu): mỗi bước một đoạn dài theo số phút, tô màu theo pha.
+  ui.ribbon = (steps, cur) => {
+    const total = steps.reduce((a, s) => a + (Number(s.minutes) || 0), 0) || 45;
+    return `<div class="rb" data-ribbon><div class="rb-track">${steps
+      .map((s, i) => `<span class="rb-seg ph-${s.phase} ${i < cur ? "done" : i === cur ? "cur" : ""}" style="flex:${Math.max(0.6, Number(s.minutes) || 1)}" title="${u.esc(s.title || "")} · ${s.minutes || 0} phút"></span>`)
+      .join("")}<span class="rb-head"></span></div><div class="rb-info"><b data-clock>0:00</b><span>/ ${total}:00</span><span class="rb-pace" data-pace></span></div></div>`;
+  };
 
   ui.phaseLabel = (st, step) => {
     if (!step) return "";

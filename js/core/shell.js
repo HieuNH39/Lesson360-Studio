@@ -7,6 +7,7 @@
     ["thuvien", "thuvien.html", "Thư viện", "grid"],
     ["studio", "studio.html", "Soạn bài", "spark"],
     ["day", "giaovien.html", "Dạy học", "play"],
+    ["ppct", "ppct.html", "PPCT", "layers"],
     ["dulieu", "insight.html", "Dữ liệu", "chart"]
   ];
   const dt = () => (/che-do=dien-tap/.test(location.search) ? "?che-do=dien-tap" : "");
@@ -17,7 +18,7 @@
           <img class="mark" src="assets/img/logo-l360.svg" alt="">
           <span class="brand-name">Lesson 360° <em>Studio</em><small class="ellipsis" style="max-width:340px">${u.esc(sub || cfg.tagline || "")}</small></span>
         </a>
-        <nav class="nav">${NAV.map(([id, href, label, ic]) => `<a href="${href}${dt()}" class="${nav === id ? "on" : ""}">${L360.icon(ic)}${label}</a>`).join("")}</nav>
+        <nav class="nav">${NAV.map(([id, href, label, ic]) => `<a href="${href}${dt()}" class="${nav === id ? "on" : ""}" title="${label}">${L360.icon(ic)}<span class="nl">${label}</span></a>`).join("")}</nav>
         <span class="spacer"></span>${right}
         <img class="hsh" src="assets/img/logo-hsh-muc.png" alt="Học Sử Hữu Hiệu">
       </header>`;

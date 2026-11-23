@@ -46,12 +46,16 @@
     }
     let sel = (packs.find((p) => p.id === want) || packs[0] || {}).id;
     const rooms = recent.list();
+    const PP = L360.Ppct;
+    const C = L360.Curr;
+    const nam = await PP.activeYear().catch(() => PP.yearNow());
+    const ppIndex = await PP.list(nam).catch(() => []);
     app.innerHTML =
       L360.shell.topbar(`${L360.shell.modeBadge()}${L360.shell.userMenu(teacher)}`, { sub: "Dạy học trực tiếp", nav: "day" }) +
-      `<main class="wrap"><h1>Mở tiết học</h1><div class="grid" style="grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:20px">
+      `<main class="wrap" style="max-width:1400px"><h1>Mở tiết học</h1><div class="grid host-setup" style="grid-template-columns:minmax(0,2.1fr) minmax(300px,.9fr);gap:20px;align-items:start">
       <section class="card"><div class="row"><h2 class="grow">1. Chọn tiết học</h2><input id="q" type="search" placeholder="Tìm bài…" style="max-width:220px;min-height:38px"></div>
-        <p class="small muted" style="margin:0">Bài của tôi, bài mẫu và bài vừa chọn từ <a href="thuvien.html">Thư viện trường</a>.</p>
-        <div id="plist" class="col" style="gap:8px;max-height:60vh;overflow:auto;margin-top:8px"></div></section>
+        <p class="small muted" style="margin:0">Chọn <b>Môn → Bài → Tiết</b> theo phân phối chương trình của tổ. Gồm bài của tôi, bài mẫu và bài chọn từ <a href="thuvien.html">Thư viện trường</a>.</p>
+        <div id="sug"></div><div id="plist"></div></section>
       <section class="card"><h2>2. Thông tin lớp</h2>
         <label class="field">Lớp<input id="cls" type="text" placeholder="VD: 10A2" value="${u.esc(localStorage.getItem("l360:lastClass") || "")}"></label>
         <div class="grid g2" style="margin-top:10px"><label class="field">Sĩ số<input id="size" type="number" min="1" max="${L360.cfg.maxClassSize}" value="${
@@ -59,7 +63,8 @@
       }"></label>
         <label class="field">Số nhóm<select id="gc">${[2, 3, 4, 5, 6].map((n) => `<option ${n === (Number(localStorage.getItem("l360:lastGroups")) || L360.cfg.defaultGroupCount) ? "selected" : ""}>${n}</option>`).join("")}</select></label></div>
         <label class="field" style="margin-top:10px">Mã phòng<span class="hint">Học sinh nhập mã này hoặc quét QR. Để trống để tạo ngẫu nhiên.</span><input id="rc" type="text" maxlength="12" style="text-transform:uppercase;letter-spacing:.08em;font-weight:700" placeholder="Tự động"></label>
-        <label class="row small" style="margin-top:10px"><input type="checkbox" id="wipe"> Xoá dữ liệu cũ nếu mã phòng đã dùng (chỉ với phòng của tôi)</label>
+        <label class="row small" style="margin-top:10px"><input type="checkbox" id="lock" ${localStorage.getItem("l360:lock") === "0" ? "" : "checked"}> Chế độ tự học: máy học sinh mở toàn màn hình, chặn sao chép – dán, báo khi rời bài</label>
+        <label class="row small" style="margin-top:6px"><input type="checkbox" id="wipe"> Xoá dữ liệu cũ nếu mã phòng đã dùng (chỉ với phòng của tôi)</label>
         <button class="btn primary lg block" style="margin-top:16px" id="open">Mở phòng</button>
         <p class="small muted" style="margin-top:10px">Mẹo: mở trước giờ 10–15 phút, bật màn chiếu ở chế độ mở rộng màn hình.</p></section></div>
       ${
@@ -77,22 +82,177 @@
 
       </main>` +
       L360.shell.footer();
+    /* ---- Môn → Bài → Tiết ---- */
+    const SHORT = { "ngu-van": "Ngữ văn", "lich-su": "Lịch sử", "dia-li": "Địa lí", gdcd: "GDCD", gdktpl: "GD KT&PL", gddp: "GD địa phương" };
+    const gKey = (mon, lop, cd) => `${mon}|${Number(lop)}|${cd ? 1 : 0}`;
+    const packCd = (p) => {
+      if (p.ppct && p.ppct.doc) return /^cd-/.test(p.ppct.doc);
+      const l = p.bai && p.bai.key && !/^ppct:/.test(p.bai.key) ? C.lesson(p.bai.key) : null;
+      return !!(l && C.books[l.bookId] && C.books[l.bookId].cd);
+    };
+    const groups = {};
+    const addG = (mon, lop, cd) => (groups[gKey(mon, lop, cd)] = groups[gKey(mon, lop, cd)] || { k: gKey(mon, lop, cd), mon, lop: Number(lop), cd: !!cd, packs: [] });
+    packs.forEach((p) => p.subjectId && p.grade && addG(p.subjectId, p.grade, packCd(p)).packs.push(p));
+    ppIndex.filter((x) => (teacher.subjects || []).includes(x.mon)).forEach((x) => addG(x.mon, x.lop, x.cd));
+    const gList = Object.values(groups).sort((a, b) => a.lop - b.lop || a.mon.localeCompare(b.mon) || a.cd - b.cd);
+    const gName = (g) => `${g.cd ? "CĐ " : ""}${SHORT[g.mon] || C.subjectName(g.mon, g.lop)} ${g.lop}`;
+    const pick = (() => {
+      try {
+        return Object.assign({ g: "", b: "", t: 0 }, JSON.parse(localStorage.getItem("l360:pick") || "{}"));
+      } catch (e) {
+        return { g: "", b: "", t: 0 };
+      }
+    })();
+    if (want && packs.some((p) => p.id === want)) Object.assign(pick, { g: "", b: "", t: 0 });
+    const saveP = () => localStorage.setItem("l360:pick", JSON.stringify(pick));
+    const docs = {};
+    const docFor = async (g) => {
+      if (!(g.k in docs)) docs[g.k] = ppIndex.some((x) => x.id === PP.docId(g.mon, g.lop, g.cd)) ? await PP.get(PP.docId(g.mon, g.lop, g.cd), nam).catch(() => null) : null;
+      return docs[g.k];
+    };
+    const ofBai = (g, doc, b) => g.packs.filter((p) => (p.ppct && p.ppct.doc === doc.id && p.ppct.bai === b.id) || (p.bai && p.bai.key && (p.bai.key === PP.baiKey(doc, b) || (b.key && p.bai.key === b.key))));
+    function baiItems(g, doc) {
+      const items = [];
+      const used = new Set();
+      if (doc) {
+        const kt = [...(doc.kt || [])];
+        let lastT = 0;
+        doc.bai.forEach((b) => {
+          const t0 = PP.tuanOf(b) || lastT;
+          while (kt.length && kt[0].tuan && t0 && kt[0].tuan < t0) items.push({ kt: kt.shift() });
+          const ps = ofBai(g, doc, b);
+          ps.forEach((p) => used.add(p.id));
+          items.push({ id: "pp:" + b.id, b, ten: b.ten, chuong: b.chuong || "", packs: ps });
+          b.tiet.forEach((t) => (lastT = t.tuan || lastT));
+        });
+        kt.forEach((k) => items.push({ kt: k }));
+      }
+      const by = {};
+      g.packs.filter((p) => !used.has(p.id)).forEach((p) => {
+        const k = (p.bai && p.bai.key) || "t:" + p.title;
+        (by[k] = by[k] || []).push(p);
+      });
+      Object.keys(by).forEach((k) => {
+        const l = !/^(ppct|t):/.test(k) ? C.lesson(k) : null;
+        const ps = by[k];
+        items.push({ id: "x:" + k, ten: l ? l.label : (ps[0].bai && ps[0].bai.ten) || ps[0].title, chuong: doc ? "Bài chưa gắn với PPCT" : (l && l.chuong) || "", packs: ps });
+      });
+      return items;
+    }
+    const tag = (p) => (p._sample ? `<span class="pill">Bài mẫu</span>` : p._school ? `<span class="pill accent">${u.esc(p._school)}</span>` : `<span class="pill ok">Của tôi</span>`);
+    const optHtml = (p) => {
+      const sm = Pack.summary(p);
+      return `<label class="opt ${p.id === sel ? "sel" : ""}" style="cursor:pointer"><input type="radio" name="pk" value="${u.esc(p.id)}" ${p.id === sel ? "checked" : ""} style="margin-top:4px">
+        <span class="grow" style="min-width:0"><b class="clamp2">${u.esc(p.title)}</b><span class="small">${sm.steps} hoạt động · ${sm.minutes} phút</span> ${tag(p)}</span></label>`;
+    };
+    const studioLink = (key, thu) => `studio.html?bai=${encodeURIComponent(key)}&tiet=${thu}${forced ? "&che-do=dien-tap" : ""}`;
+    async function drawCols() {
+      if (!gList.length) {
+        u.$("#plist").innerHTML = `<p class="muted" style="margin-top:12px">Chưa có bài học. <a href="studio.html${forced ? "?che-do=dien-tap" : ""}">Soạn bài mới với trợ lý AI</a>.</p>`;
+        return;
+      }
+      let g = groups[pick.g] || gList.find((x) => x.packs.some((p) => p.id === sel)) || gList.find((x) => x.packs.length) || gList[0];
+      pick.g = g.k;
+      const doc = await docFor(g);
+      const items = baiItems(g, doc);
+      let it = items.find((x) => x.id === pick.b) || items.find((x) => x.packs && x.packs.some((p) => p.id === sel)) || items.find((x) => x.packs && x.packs.length) || items.find((x) => !x.kt);
+      pick.b = it ? it.id : "";
+      saveP();
+      let ch = null;
+      const col2 = items
+        .map((x) => {
+          if (x.kt) return `<div class="mc-i kt">${L360.icon("check")} ${u.esc(x.kt.ten)}${x.kt.tuan ? ` · tuần ${x.kt.tuan}` : ""}</div>`;
+          const head = x.chuong !== ch ? `<div class="mc-g">${u.esc(x.chuong || "")}</div>` : "";
+          ch = x.chuong;
+          const n = x.b ? x.b.tiet.length : 0;
+          const have = x.b ? new Set(x.packs.map((p) => Number(p.tiet && p.tiet.so) || 1)).size : x.packs.length;
+          return `${head}<button class="mc-i ${x.id === pick.b ? "on" : ""}" data-bi="${u.esc(x.id)}">${u.esc(x.ten)}<small>${x.b ? `${PP.tietText(x.b)} · ` : ""}${x.b ? (have ? `có bài ${have}/${n} tiết` : "chưa có bài") : `${x.packs.length} bài soạn`}</small></button>`;
+        })
+        .join("");
+      let col3 = "";
+      if (it && it.b) {
+        const b = it.b;
+        col3 = b.tiet
+          .map((t, i) => {
+            const ps = it.packs.filter((p) => (Number(p.tiet && p.tiet.so) || 1) === i + 1);
+            return `<div class="mc-t ${pick.t === i + 1 ? "on" : ""}"><b>Tiết ${i + 1}/${b.tiet.length}</b> <span class="small muted">· PPCT tiết ${t.so}${t.tuan ? ` · tuần ${t.tuan}` : ""}</span>
+              ${t.noiDung || t.ten ? `<div class="tiny muted clamp2" style="margin-top:2px">${u.esc(t.ten || t.noiDung)}</div>` : ""}
+              ${ps.length ? ps.map(optHtml).join("") : `<a class="btn sm" style="margin-top:6px" href="${studioLink(PP.baiKey(doc, b), i + 1)}">${L360.icon("plus")} Soạn tiết này</a>`}</div>`;
+          })
+          .join("");
+      } else if (it) col3 = `<div class="mc-t">${it.packs.map(optHtml).join("")}</div>`;
+      u.$("#plist").innerHTML = `<div class="mc"><div class="mc-col"><div class="mc-h">MÔN HỌC</div>${gList
+        .map((x) => `<button class="mc-i ${x.k === g.k ? "on" : ""}" data-g="${u.esc(x.k)}">${u.esc(gName(x))}<small>${x.packs.length ? x.packs.length + " bài soạn" : "chưa có bài"}${docs[x.k] || ppIndex.some((y) => y.id === PP.docId(x.mon, x.lop, x.cd)) ? " · có PPCT" : ""}</small></button>`)
+        .join("")}</div>
+        <div class="mc-col"><div class="mc-h">BÀI HỌC${doc ? ` · PPCT ${u.esc(PP.yearLabel(doc.nam))}` : ""}</div>${col2 || `<p class="small muted" style="padding:12px">Chưa có bài.</p>`}</div>
+        <div class="mc-col"><div class="mc-h">TIẾT${it && it.b ? " · " + u.esc(it.b.ten.slice(0, 40)) : ""}</div>${col3 || `<p class="small muted" style="padding:12px">Chọn một bài.</p>`}</div></div>`;
+      u.$$("[data-g]", u.$("#plist")).forEach((el) => (el.onclick = () => ((pick.g = el.dataset.g), (pick.b = ""), (pick.t = 0), drawCols())));
+      u.$$("[data-bi]", u.$("#plist")).forEach((el) => (el.onclick = () => ((pick.b = el.dataset.bi), (pick.t = 0), drawCols())));
+      bindRadios(drawCols);
+      u.$$(".mc-col .mc-i.on, .mc-col .opt.sel").forEach((el) => {
+        const c = el.closest(".mc-col");
+        if (c && (el.offsetTop < c.scrollTop || el.offsetTop > c.scrollTop + c.clientHeight - 60)) c.scrollTop = el.offsetTop - 60;
+      });
+    }
+    function bindRadios(redraw) {
+      u.$$("input[name=pk]").forEach(
+        (r) =>
+          (r.onchange = () => {
+            sel = r.value;
+            redraw();
+          })
+      );
+    }
     const drawList = () => {
       const q = u.slug(u.$("#q").value);
+      if (!q) return drawCols();
       u.$("#plist").innerHTML =
-        packs
-          .filter((p) => !q || u.slug(`${p.title} ${p.subject} ${p.grade}`).includes(q))
-          .map((p) => {
-            const sm = Pack.summary(p);
-            return `<label class="opt ${p.id === sel ? "sel" : ""}" style="cursor:pointer"><input type="radio" name="pk" value="${u.esc(p.id)}" ${p.id === sel ? "checked" : ""} style="margin-top:6px">
-            <span class="grow" style="min-width:0"><b class="clamp2">${u.esc(p.title)}</b><span class="small muted ellipsis" style="display:block">${u.esc([p.subject, p.grade && "lớp " + p.grade, Pack.label(p)].filter(Boolean).join(" · "))}</span>
-            <span class="small">${sm.steps} hoạt động · ${sm.minutes} phút</span> ${p._sample ? `<span class="pill">Bài mẫu</span>` : p._school ? `<span class="pill accent">${u.esc(p._school)}</span>` : `<span class="pill ok">Của tôi</span>`}</span></label>`;
-          })
-          .join("") || `<p class="muted">Chưa có bài học. <a href="studio.html">Soạn bài mới với trợ lý AI</a>.</p>`;
-      u.$$("input[name=pk]").forEach((r) => (r.onchange = () => ((sel = r.value), drawList())));
+        `<div class="col" style="gap:8px;max-height:60vh;overflow:auto;margin-top:8px">${
+          packs
+            .filter((p) => u.slug(`${p.title} ${p.subject} ${p.grade} ${(p.bai && p.bai.ten) || ""}`).includes(q))
+            .map((p) => optHtml(p).replace('<span class="small">', `<span class="small muted ellipsis" style="display:block">${u.esc([p.subject, p.grade && "lớp " + p.grade, Pack.label(p)].filter(Boolean).join(" · "))}</span><span class="small">`))
+            .join("") || `<p class="muted">Không tìm thấy bài phù hợp.</p>`
+        }</div>`;
+      bindRadios(drawList);
     };
-    drawList();
+    // Gợi ý tiết dạy tiếp theo của lớp (theo tiết gần nhất đã dạy lớp đó).
+    async function suggest() {
+      const box = u.$("#sug");
+      if (!box || !u.$("#cls")) return;
+      const cls = (u.$("#cls").value || "").trim().toUpperCase();
+      box.innerHTML = "";
+      if (!cls) return;
+      const last = recent.list().find((r) => (r.className || "").toUpperCase() === cls && r.ppct);
+      if (!last) return;
+      const g = Object.values(groups).find((x) => x.k === gKey(last.mon, last.lop, /^cd-/.test(last.ppct.doc)));
+      if (!g) return;
+      const doc = await docFor(g);
+      if (!doc) return;
+      const bi = doc.bai.findIndex((b) => b.id === last.ppct.bai);
+      if (bi < 0) return;
+      let b = doc.bai[bi];
+      let thu = (last.thu || 1) + 1;
+      if (thu > b.tiet.length) {
+        b = doc.bai[bi + 1];
+        thu = 1;
+      }
+      if (!b) return;
+      const t = b.tiet[thu - 1];
+      box.innerHTML = `<button class="mc-sug" id="sugGo">${L360.icon("play")}<span>Gợi ý cho <b>${u.esc(cls)}</b> (tiết trước: ${u.esc(last.title.slice(0, 40))}): <b>${u.esc(b.ten.slice(0, 60))} · Tiết ${thu}/${b.tiet.length}</b> – PPCT tiết ${t.so}${t.tuan ? `, tuần ${t.tuan}` : ""}</span></button>`;
+      u.$("#sugGo").onclick = () => {
+        pick.g = g.k;
+        pick.b = "pp:" + b.id;
+        pick.t = thu;
+        const p = ofBai(g, doc, b).find((x) => (Number(x.tiet && x.tiet.so) || 1) === thu);
+        if (p) sel = p.id;
+        u.$("#q").value = "";
+        drawCols();
+      };
+    }
+    drawCols();
     u.$("#q").oninput = drawList;
+    u.$("#cls").addEventListener("input", u.debounce(suggest, 300));
+    suggest();
     L360.shell.bindUserMenu(teacher);
     u.$$("[data-drop]").forEach((b) => (b.onclick = () => (recent.drop(b.dataset.drop), setupView())));
     u.$$("[data-resume]").forEach((b) => (b.onclick = () => resume(b.dataset.resume)));
@@ -119,8 +279,10 @@
           }
           await Room.wipe(room);
         }
-        await Room.create({ pack, room, className: cls, classSize: size, groupCount: gc, teacher });
-        recent.add({ room, title: pack.title, className: cls, at: Date.now() });
+        const lockOn = !!(u.$("#lock") && u.$("#lock").checked);
+        localStorage.setItem("l360:lock", lockOn ? "1" : "0");
+        await Room.create({ pack, room, className: cls, classSize: size, groupCount: gc, teacher, lock: lockOn });
+        recent.add({ room, title: pack.title, className: cls, at: Date.now(), packId: pack.id, mon: pack.subjectId, lop: Number(pack.grade), thu: Number(pack.tiet && pack.tiet.so) || 1, ppct: pack.ppct ? { doc: pack.ppct.doc, bai: pack.ppct.bai, so: pack.ppct.so } : null });
         history.replaceState(null, "", `?phong=${room}${L360.isLocal && /che-do=dien-tap/.test(location.search) ? "&che-do=dien-tap" : ""}`);
         liveView(room, pack);
       } catch (e) {
@@ -271,6 +433,7 @@
     const d = host.data;
     const st = host.state;
     ui.timerState = st;
+    ui.timerPlan = { steps: host.pack.steps };
     const steps = host.pack.steps;
     const step = host.step;
     const meta = host.meta;
@@ -329,13 +492,13 @@
         st.phase === "open" ? "ok" : st.phase === "revealed" ? "accent" : ""
       }">${ui.phaseLabel(st, T)}</span>${step.type === "quiz" ? `<span class="pill">Câu ${(st.q || 0) + 1}/${step.questions.length}</span>` : ""}${step.type === "poll2" ? `<span class="pill">Vòng ${st.round === 2 ? 2 : 1}</span>` : ""}${
         step.type === "slide" && (step.pages || []).length > 1 ? `<span class="pill">Trang ${(st.page || 0) + 1}/${step.pages.length}</span>` : ""
-      }${noteNow ? `<span class="ghi-badge">${L360.icon("ghiBai")} Nhắc học sinh ghi vở</span>` : ""}<span class="spacer"></span><span style="font-size:1.8rem">${ui.timer()}</span></div>
+      }${noteNow ? `<span class="ghi-badge">${L360.icon("ghiBai")} Nhắc học sinh ghi vở</span>` : ""}<span class="spacer"></span>${ui.hourglass("mini")}</div>
         <h2 style="margin-top:8px">${u.esc(step.title)}</h2>
         ${step.script ? `<div class="script"><b>Lời dẫn gợi ý.</b> ${u.rich(step.script)}</div>` : ""}
         ${step.instructions ? `<p class="small"><b>Nhiệm vụ cho học sinh:</b> ${u.rich(step.instructions)}</p>` : ""}
         <div class="row" style="margin-top:12px">${btns.map((b, i) => `<button class="btn ${b.cls || ""}" data-b="${i}">${u.esc(b.label)}</button>`).join("")}</div>
         <div class="row" style="margin-top:12px;border-top:1px solid var(--line);padding-top:12px"><button class="btn sm" id="prev">‹ Bước trước</button><button class="btn sm dark" id="next">Bước tiếp theo ›</button>
-        <button class="btn sm" id="pick" title="Gọi một học sinh ngẫu nhiên lên màn chiếu">${L360.icon("dice")} Gọi ngẫu nhiên</button>${d.pub && d.pub.overlay ? `<button class="btn sm" id="ovx">Tắt lớp phủ</button>` : ""}
+        <button class="btn sm" id="pick" title="Gọi một học sinh ngẫu nhiên lên màn chiếu">${L360.icon("dice")} Gọi ngẫu nhiên</button>${noteNow ? `<button class="btn sm" id="noteBig" title="Chiếu phần ghi vở chữ cỡ lớn lên toàn màn chiếu">${L360.icon("ghiBai")} Chiếu ghi vở cỡ lớn</button>` : ""}${d.pub && d.pub.overlay ? `<button class="btn sm" id="ovx">Tắt lớp phủ</button>` : ""}
         <button class="btn sm ghost" id="snd" title="Âm thanh trên màn chiếu">${L360.icon(st.sound === false ? "soundOff" : "soundOn")}</button>
         <span class="spacer"></span><span class="small muted">Màn chiếu:</span>${modes
           .map(([m, l]) => `<button class="btn sm ${(st.screen || "content") === m ? "primary" : ""}" data-sm="${m}">${l}</button>`)
@@ -345,6 +508,12 @@
       u.$("#prev").onclick = () => host.prev();
       u.$("#pick").onclick = async () => ((await host.pick()) ? null : u.toast("Chưa có học sinh trong lớp.", "bad"));
       if (u.$("#ovx")) u.$("#ovx").onclick = () => host.closeOverlay();
+      if (u.$("#noteBig"))
+        u.$("#noteBig").onclick = () => {
+          const notes = pg ? L360.blocks.notes(pg).filter((x) => x.kind === "note") : [];
+          const text = notes.length ? notes.map((x) => x.text).join("\n") : step.ghiBai || "";
+          host.showNote(notes[0] ? notes[0].title : "Ghi vào vở", text);
+        };
       u.$("#snd").onclick = () => host.setSound(st.sound === false);
       u.$("#next").onclick = async () => {
         if (st.phase === "open" && !(await u.confirm("Bước hiện tại đang nhận bài. Khoá và chuyển bước?", "Chuyển"))) return;
@@ -380,9 +549,11 @@
     const gmap = Object.fromEntries(groups.map((g) => [g.id, g]));
     const codes = Room.codes(meta.classSize);
     const nDone = step && !host.type.noSubmit ? (gm ? Object.keys(gsubs).length : Object.keys(subs).length) : null;
+    const focus = d.focus || {};
+    const awayN = Object.values(focus).filter((f) => f && f.away).length;
     u.$("#seats").innerHTML = `<div class="row"><h3 class="grow" style="margin:0">Lưới lớp học</h3><span class="pill">${joined.length}/${meta.classSize} vào lớp</span>${
       nDone != null ? `<span class="pill ok">${nDone} ${gm ? "nhóm" : "HS"} đã nộp</span>` : ""
-    }</div>
+    }${awayN ? `<span class="pill bad" title="Học sinh đang rời khỏi trang học (chuyển tab/thoát toàn màn hình)">🔒 ${awayN} em rời bài</span>` : ""}</div>
       <div class="seat-grid" style="margin-top:10px">${codes
         .map((c) => {
           const r = d.roster && d.roster[c];
@@ -390,10 +561,11 @@
           const g = on && gmap[r.group];
           const done = on && (gm ? gsubs[r.group] : subs[c]);
           const off = on && !Room.online(d, c);
-          return `<button class="seat ${on ? "in" : ""} ${done ? "done" : ""} ${off ? "off" : ""}" data-seat="${c}" style="${g ? `border-color:${g.color}` : ""}">${c}<span class="nm">${u.esc((r && r.name) || "")}</span></button>`;
+          const fo = focus[c];
+          return `<button class="seat ${on ? "in" : ""} ${done ? "done" : ""} ${off ? "off" : ""} ${fo && fo.away ? "away" : ""}" data-seat="${c}" style="${g ? `border-color:${g.color}` : ""}" title="${fo && fo.out ? `Rời bài ${fo.out} lần` : ""}">${c}<span class="nm">${u.esc((r && r.name) || "")}</span>${fo && fo.out ? `<span class="out-n">${fo.out}</span>` : ""}</button>`;
         })
         .join("")}</div>
-      <p class="tiny muted" style="margin-top:8px">Xám: chưa vào · viền màu: nhóm · xanh: đã nộp · chấm đỏ: mất kết nối. Bấm vào ô để đổi nhóm hoặc giải phóng mã.</p>
+      <p class="tiny muted" style="margin-top:8px">Xám: chưa vào · viền màu: nhóm · xanh: đã nộp · chấm đỏ: mất kết nối · nền cam 🔒: đang rời bài (số nhỏ = số lần rời). Bấm vào ô để đổi nhóm hoặc giải phóng mã.</p>
       <div class="col" style="gap:6px;margin-top:8px">${groups
         .map((g) => `<div class="row nowrap">${ui.gbadge(g)}<span class="small">${joined.filter(([, r]) => r.group === g.id).length} học sinh</span></div>`)
         .join("")}</div>`;

@@ -32,6 +32,12 @@
   // Thanh tiến trình theo 4 pha.
   function progHtml(pm, st) {
     if (!pm) return "";
+    const legend = L360.PHASES.filter((ph) => pm.steps.some((s) => s.phase === ph.id))
+      .map((ph) => `<span class="rb-lg ph-${ph.id} ${pm.steps[st.step] && pm.steps[st.step].phase === ph.id ? "on" : ""}">${ph.name}</span>`)
+      .join("");
+    return `<div class="rb-legend">${legend}</div>${ui.ribbon(pm.steps, st.step)}`;
+  }
+  function progDots(pm, st) {
     return L360.PHASES.map((ph) => {
       const idx = pm.steps.map((s, i) => [s, i]).filter(([s]) => s.phase === ph.id);
       if (!idx.length) return "";
@@ -136,6 +142,14 @@
       box.className = "overlay";
       stage.appendChild(box);
     }
+    if (ov.kind === "note") {
+      // Ghi vở cỡ lớn: tự chọn cỡ chữ theo lượng chữ (không nhỏ hơn 34px trên màn 1600×900).
+      const len = String(ov.text || "").length;
+      const fs = Math.max(34, Math.min(54, Math.round(54 - (len - 120) / 12)));
+      box.innerHTML = `<div class="ov-note"><div class="ov-note-h">${L360.icon("ghiBai")} ${u.esc(ov.title || "Ghi vào vở")}</div><div class="md" style="font-size:${fs}px">${L360.ui.md(ov.text || "")}</div></div>`;
+      snd.page && snd.page();
+      return;
+    }
     const pool = (ov.pool || []).map((c) => (data.roster && data.roster[c] && data.roster[c].name) || c);
     box.innerHTML = `<div class="ov-card"><div class="k">${L360.icon("dice")} Gọi ngẫu nhiên</div><div class="ov-name spin" id="ovn">…</div><div id="ovg"></div></div>`;
     snd.drumroll(1.6);
@@ -168,6 +182,19 @@
     if (pm && st.step >= 0 && prev.step === st.step && prev.page !== st.page && st.page != null) snd.page();
     prev = { step: st.step, phase: st.phase, q: st.q, round: st.round, screen: st.screen, page: st.page };
   }
+  let planEnd = "";
+  setInterval(() => {
+    const st0 = data.state;
+    if (st0 && st0.sound !== false && st0.phase !== "open") {
+      const at = ui.activityTime(st0);
+      const k = st0.step + ":" + st0.stepAt;
+      const step = data.pub && data.pub.meta && data.pub.meta.steps[st0.step];
+      if (at && at.kind === "plan" && at.rem <= 0 && planEnd !== k && step && !step.noSubmit) {
+        planEnd = k;
+        snd.end();
+      }
+    }
+  }, 500);
   setInterval(() => {
     const st = data.state;
     if (!st || st.phase !== "open" || st.sound === false) return (lastSec = null);
@@ -197,7 +224,8 @@
     inner.style.zoom = 1;
     const avail = box.clientHeight - 52;
     const need = inner.scrollHeight;
-    if (need > avail) inner.style.zoom = Math.max(0.55, avail / need);
+    // Không thu nhỏ quá 72% để chữ (nhất là phần ghi vở) vẫn đọc rõ; nội dung dài hơn nên tách trang.
+    if (need > avail) inner.style.zoom = Math.max(0.72, avail / need);
   }
   const render = u.throttleRaf(() => {
     const meta = data.meta;
@@ -208,6 +236,7 @@
     const pm = data.pub && data.pub.meta;
     const st = data.state || { step: -1 };
     ui.timerState = st;
+    ui.timerPlan = pm ? { steps: pm.steps } : null;
     if (pm) L360.Design.apply(pm, stage);
     if (!stage.querySelector(".s-head"))
       stage.innerHTML = `<div class="ds-pat"></div><div class="s-head"></div><div class="s-prog"></div><div class="s-body"><div class="s-main" id="sm"></div><aside class="s-side" id="side"></aside></div>`;
@@ -236,11 +265,12 @@
     const item = key && data.pub && data.pub.items && data.pub.items[key];
     const pageNote = step && step.type === "slide" && item && item.pages && L360.blocks.hasNote(item.pages[st.page || 0] || {});
     const note = step && (pageNote || (data.pub && data.pub.notes && data.pub.notes[key]));
-    side.innerHTML = `<div class="sun ${rem != null && rem <= 10 ? "low" : ""}" style="--p:${p}%">${ui.timer()}</div>
+    if (!side.querySelector("[data-hg]")) side.innerHTML = `${ui.hourglass()}<div id="sideRest" class="side-rest"></div>`;
+    u.$("#sideRest", side).innerHTML = `
       ${step && !step.noSubmit ? `<div><div class="lbl">${step.groupMode ? "Nhóm đã nộp" : "Đã nộp"}</div><div class="big-n">${n}/${denom}</div></div>` : `<div><div class="lbl">Sĩ số</div><div class="big-n">${joined.length}</div></div>`}
       ${step ? `<div><div class="lbl">Trạng thái</div><div style="font-size:22px;font-weight:700">${ui.phaseLabel(st, step)}${step.type === "slide" && step.pages > 1 ? ` · trang ${(st.page || 0) + 1}/${step.pages}` : ""}</div></div>` : ""}
       ${note ? `<span class="ghi-badge">${L360.icon("ghiBai")} Ghi vào vở</span>` : step && step.ghiBai ? `<span class="ghi-badge" style="opacity:.6">${L360.icon("ghiBai")} Có nội dung ghi vở</span>` : ""}
-      <div style="margin-top:auto"><div class="lbl">Tiết học</div><div style="font-size:30px;font-weight:800" data-clock>0:00</div></div>
+      <div style="margin-top:auto"><div class="lbl">Tiết học</div><div style="font-size:30px;font-weight:800"><span data-clock>0:00</span><span class="muted" style="font-size:18px;font-weight:600"> / ${pm ? pm.steps.reduce((a, x) => a + (Number(x.minutes) || 0), 0) || 45 : 45} phút</span></div></div>
       <button class="snd-btn" id="sndb" title="Âm thanh">${L360.icon(st.sound === false || !snd.enabled ? "soundOff" : "soundOn")}</button>`;
     u.$("#sndb", side).onclick = () => {
       snd.unlock();

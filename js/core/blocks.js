@@ -129,6 +129,19 @@
       })
       .join("")}</div>`;
   };
+  // Hai vòng giao nhau: điểm riêng của A, của B và điểm giống nhau ở giữa.
+  R.venn = (b) =>
+    `${head(b)}<div class="blk-venn"><div class="vn-c vn-l"><b>${rich(b.left || "A")}</b><ul>${arr(b.leftItems).map((x) => `<li>${rich(x)}</li>`).join("")}</ul></div><div class="vn-c vn-r"><b>${rich(b.right || "B")}</b><ul>${arr(b.rightItems)
+      .map((x) => `<li>${rich(x)}</li>`)
+      .join("")}</ul></div><div class="vn-m"><b>${rich(b.bothLabel || "Giống nhau")}</b><ul>${arr(b.both).map((x) => `<li>${rich(x)}</li>`).join("")}</ul></div></div>`;
+  // Tháp phân tầng: tầng trên cùng hẹp nhất (thứ bậc xã hội, mức độ, cấp quản lí…).
+  R.pyramid = (b) => {
+    const it = arr(b.items).slice(0, 6);
+    const n = it.length || 1;
+    return `${head(b)}<div class="blk-pyr">${it
+      .map((x, i) => `<div class="py-t" style="--w:${(38 + (62 * (i + 1)) / n).toFixed(1)}%;--i:${i}"><b>${rich(x.label || x)}</b>${x.desc ? `<span>${rich(x.desc)}</span>` : ""}</div>`)
+      .join("")}</div>`;
+  };
   R.stats = (b) => `${head(b)}<div class="blk-stats">${arr(b.items).map((x) => `<div class="st-i"><b>${rich(x.value)}</b><span>${rich(x.label || "")}</span></div>`).join("")}</div>`;
   R.quote = (b) => `<div class="blk-quote">${head(b, "Tư liệu", "tuLieu")}<blockquote>${ui.md(b.text || "")}</blockquote>${b.source ? `<div class="q-src">— ${rich(b.source)}</div>` : ""}</div>`;
   R.map = (b) =>
@@ -157,6 +170,8 @@
       ["compare", "Bảng so sánh"],
       ["flow", "Quy trình / diễn biến"],
       ["cycle", "Vòng tuần hoàn"],
+      ["venn", "Giống – khác (hai vòng)"],
+      ["pyramid", "Tháp phân tầng"],
       ["stats", "Số liệu nổi bật"],
       ["quote", "Tư liệu / trích dẫn"],
       ["map", "Bản đồ có ghim"],
@@ -212,6 +227,10 @@
           return arr(b.items).map((s, i) => `${i + 1}. ${s.label || s}`).join("\n");
         case "stats":
           return arr(b.items).map((s) => `${s.value} – ${s.label}`).join("\n");
+        case "venn":
+          return `${b.left || "A"}: ${arr(b.leftItems).join("; ")}\n${b.right || "B"}: ${arr(b.rightItems).join("; ")}\n${b.bothLabel || "Giống nhau"}: ${arr(b.both).join("; ")}`;
+        case "pyramid":
+          return arr(b.items).map((s, i) => `${i + 1}. ${s.label || s}${s.desc ? " – " + s.desc : ""}`).join("\n");
         case "keyterms":
           return arr(b.items).map((t) => `${t.term}: ${t.def}`).join("\n");
         case "map":

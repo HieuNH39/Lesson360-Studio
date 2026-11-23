@@ -192,13 +192,23 @@
   };
   u.modal = (innerHtml, { onClose, wide } = {}) => {
     const bg = u.html(`<div class="modal-bg"><div class="modal ${wide ? "wide" : ""}">${innerHtml}</div></div>`);
+    const onKey = (e) => {
+      if (e.key === "Escape" && document.body.lastElementChild === bg) close();
+    };
     const close = () => {
+      if (!bg.isConnected) return;
       bg.remove();
+      document.removeEventListener("keydown", onKey);
       onClose && onClose();
     };
+    document.addEventListener("keydown", onKey);
     bg.addEventListener("click", (e) => {
       if (e.target === bg) close();
     });
+    if (!bg.querySelector("[data-close]")) {
+      const x = u.html(`<button class="modal-x" data-close title="Đóng (Esc)" aria-label="Đóng">×</button>`);
+      bg.firstElementChild.prepend(x);
+    }
     u.$$("[data-close]", bg).forEach((b) => b.addEventListener("click", close));
     document.body.appendChild(bg);
     return { el: bg.firstElementChild, close };

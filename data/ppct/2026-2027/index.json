@@ -1,0 +1,795 @@
+[
+{
+"id": "gddp-6",
+"mon": "gddp",
+"lop": 6,
+"cd": false,
+"tongTiet": 31,
+"soBai": 14,
+"khop": {
+"co": 13,
+"tong": 13
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN NỘI DUNG GIÁO DỤC ĐỊA PHƯƠNG, LỚP 6",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1.NDGD_P.6.docx"
+},
+"canhBao": []
+},
+{
+"id": "dia-li-6",
+"mon": "dia-li",
+"lop": 6,
+"cd": false,
+"tongTiet": 44,
+"soBai": 31,
+"khop": {
+"co": 31,
+"tong": 31
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN LỊCH SỬ VÀ ĐỊA LÍ (PHÂN MÔN ĐỊA LÍ), LỚP 6",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1_DILI.6.docx"
+},
+"canhBao": []
+},
+{
+"id": "dia-li-12",
+"mon": "dia-li",
+"lop": 12,
+"cd": false,
+"tongTiet": 62,
+"soBai": 35,
+"khop": {
+"co": 35,
+"tong": 35
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN ĐỊA LÍ, LỚP 12",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1_DILI12.docx"
+},
+"canhBao": []
+},
+{
+"id": "cd-dia-li-12",
+"mon": "dia-li",
+"lop": 12,
+"cd": true,
+"tongTiet": 35,
+"soBai": 3,
+"khop": {
+"co": 3,
+"tong": 3
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN ĐỊA LÍ, LỚP 12",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1_DILI12.docx"
+},
+"canhBao": []
+},
+{
+"id": "lich-su-7",
+"mon": "lich-su",
+"lop": 7,
+"cd": false,
+"tongTiet": 4344,
+"soBai": 10,
+"khop": {
+"co": 10,
+"tong": 10
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN LỊCH SỬ - ĐỊA LÍ (PHÂN MÔN LỊCH SỬ), LỚP 7",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1_LISU7.pdf"
+},
+"canhBao": []
+},
+{
+"id": "dia-li-10",
+"mon": "dia-li",
+"lop": 10,
+"cd": false,
+"tongTiet": 62,
+"soBai": 40,
+"khop": {
+"co": 40,
+"tong": 40
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN ĐỊA LÍ, LỚP 10",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1._DILI10.docx"
+},
+"canhBao": []
+},
+{
+"id": "cd-dia-li-10",
+"mon": "dia-li",
+"lop": 10,
+"cd": true,
+"tongTiet": 35,
+"soBai": 3,
+"khop": {
+"co": 3,
+"tong": 3
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN ĐỊA LÍ, LỚP 10",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1._DILI10.docx"
+},
+"canhBao": []
+},
+{
+"id": "dia-li-11",
+"mon": "dia-li",
+"lop": 11,
+"cd": false,
+"tongTiet": 62,
+"soBai": 31,
+"khop": {
+"co": 31,
+"tong": 31
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN ĐỊA LÍ, LỚP 11",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1_DILI.11.docx"
+},
+"canhBao": []
+},
+{
+"id": "cd-dia-li-11",
+"mon": "dia-li",
+"lop": 11,
+"cd": true,
+"tongTiet": 35,
+"soBai": 3,
+"khop": {
+"co": 3,
+"tong": 3
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN ĐỊA LÍ, LỚP 11",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1_DILI.11.docx"
+},
+"canhBao": []
+},
+{
+"id": "lich-su-8",
+"mon": "lich-su",
+"lop": 8,
+"cd": false,
+"tongTiet": 3031,
+"soBai": 14,
+"khop": {
+"co": 14,
+"tong": 14
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN LỊCH SỬ - ĐỊA LÍ (PHÂN MÔN LỊCH SỬ), LỚP 8",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1_LISU8.pdf"
+},
+"canhBao": []
+},
+{
+"id": "gddp-8",
+"mon": "gddp",
+"lop": 8,
+"cd": false,
+"tongTiet": 24,
+"soBai": 10,
+"khop": {
+"co": 10,
+"tong": 10
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN GIÁO DỤC ĐỊA PHƯƠNG , LỚP 8",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1__GD_P_8.pdf"
+},
+"canhBao": []
+},
+{
+"id": "ngu-van-11",
+"mon": "ngu-van",
+"lop": 11,
+"cd": false,
+"tongTiet": 94,
+"soBai": 9,
+"khop": {
+"co": 9,
+"tong": 9
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN NGỮ VĂN, LỚP 11",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1_NVAN_11.docx"
+},
+"canhBao": [
+"1 dòng không ghi số tiết – đã đánh số nối tiếp, cần kiểm tra.",
+"Số tiết bị trùng: 21."
+]
+},
+{
+"id": "cd-ngu-van-11",
+"mon": "ngu-van",
+"lop": 11,
+"cd": true,
+"tongTiet": 35,
+"soBai": 3,
+"khop": {
+"co": 3,
+"tong": 3
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN NGỮ VĂN, LỚP 11",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1_NVAN_11.docx"
+},
+"canhBao": [
+"1 dòng không ghi số tiết – đã đánh số nối tiếp, cần kiểm tra.",
+"Số tiết bị trùng: 21."
+]
+},
+{
+"id": "ngu-van-12",
+"mon": "ngu-van",
+"lop": 12,
+"cd": false,
+"tongTiet": 94,
+"soBai": 9,
+"khop": {
+"co": 9,
+"tong": 9
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN NGỮ VĂN, LỚP 12",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1_NVAN_12.docx"
+},
+"canhBao": []
+},
+{
+"id": "cd-ngu-van-12",
+"mon": "ngu-van",
+"lop": 12,
+"cd": true,
+"tongTiet": 35,
+"soBai": 3,
+"khop": {
+"co": 3,
+"tong": 3
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN NGỮ VĂN, LỚP 12",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1_NVAN_12.docx"
+},
+"canhBao": []
+},
+{
+"id": "gdktpl-10",
+"mon": "gdktpl",
+"lop": 10,
+"cd": false,
+"tongTiet": 64,
+"soBai": 21,
+"khop": {
+"co": 21,
+"tong": 21
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN GIÁO DỤC KINH TẾ VÀ PHÁP LUẬT, LỚP 10",
+"nguon": {
+"kieu": "nap-san",
+"tep": "GDKTPL_PL1_10.docx"
+},
+"canhBao": []
+},
+{
+"id": "gdcd-8",
+"mon": "gdcd",
+"lop": 8,
+"cd": false,
+"tongTiet": 29,
+"soBai": 10,
+"khop": {
+"co": 10,
+"tong": 10
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN GIÁO DỤC CÔNG DÂN, LỚP 8",
+"nguon": {
+"kieu": "nap-san",
+"tep": "GDCD_PL1_8.docx"
+},
+"canhBao": []
+},
+{
+"id": "gdcd-7",
+"mon": "gdcd",
+"lop": 7,
+"cd": false,
+"tongTiet": 29,
+"soBai": 10,
+"khop": {
+"co": 10,
+"tong": 10
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN GIÁO DỤC CÔNG DÂN, LỚP 7",
+"nguon": {
+"kieu": "nap-san",
+"tep": "GDCD_PL1_7.docx"
+},
+"canhBao": [
+"1 dòng không ghi số tiết – đã đánh số nối tiếp, cần kiểm tra."
+]
+},
+{
+"id": "gdcd-9",
+"mon": "gdcd",
+"lop": 9,
+"cd": false,
+"tongTiet": 15,
+"soBai": 6,
+"khop": {
+"co": 6,
+"tong": 6
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN GIÁO DỤC CÔNG DÂN, LỚP 9",
+"nguon": {
+"kieu": "nap-san",
+"tep": "GDCD_PL1_9.docx"
+},
+"canhBao": []
+},
+{
+"id": "gdcd-6",
+"mon": "gdcd",
+"lop": 6,
+"cd": false,
+"tongTiet": 29,
+"soBai": 12,
+"khop": {
+"co": 12,
+"tong": 12
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN GIÁO DỤC CÔNG DÂN, LỚP 6",
+"nguon": {
+"kieu": "nap-san",
+"tep": "GDCD_PL1_6.docx"
+},
+"canhBao": []
+},
+{
+"id": "gddp-7",
+"mon": "gddp",
+"lop": 7,
+"cd": false,
+"tongTiet": 31,
+"soBai": 12,
+"khop": {
+"co": 12,
+"tong": 12
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN NỘI DUNG GIÁO DỤC ĐỊA PHƯƠNG, LỚP 7",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1.NDGD_P.7.docx"
+},
+"canhBao": []
+},
+{
+"id": "lich-su-9",
+"mon": "lich-su",
+"lop": 9,
+"cd": false,
+"tongTiet": 29,
+"soBai": 12,
+"khop": {
+"co": 12,
+"tong": 12
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN LỊCH SỬ - ĐỊA LÍ (PHÂN MÔN LỊCH SỬ), LỚP 9",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1_LISU9.pdf"
+},
+"canhBao": []
+},
+{
+"id": "ngu-van-8",
+"mon": "ngu-van",
+"lop": 8,
+"cd": false,
+"tongTiet": 122,
+"soBai": 10,
+"khop": {
+"co": 10,
+"tong": 10
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN NGỮ VĂN, LỚP 8",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1_NVAN8_docx.docx"
+},
+"canhBao": []
+},
+{
+"id": "gddp-10",
+"mon": "gddp",
+"lop": 10,
+"cd": false,
+"tongTiet": 31,
+"soBai": 12,
+"khop": {
+"co": 12,
+"tong": 12
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN GIÁO DỤC ĐỊA PHƯƠNG, LỚP 10",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1_NDGD_P10.docx"
+},
+"canhBao": []
+},
+{
+"id": "gdktpl-11",
+"mon": "gdktpl",
+"lop": 11,
+"cd": false,
+"tongTiet": 64,
+"soBai": 21,
+"khop": {
+"co": 21,
+"tong": 21
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN GIÁO DỤC KINH TẾ VÀ PHÁP LUẬT, LỚP 11",
+"nguon": {
+"kieu": "nap-san",
+"tep": "GDKTPL_PL1_11.docx"
+},
+"canhBao": []
+},
+{
+"id": "gddp-12",
+"mon": "gddp",
+"lop": 12,
+"cd": false,
+"tongTiet": 31,
+"soBai": 19,
+"khop": {
+"co": 19,
+"tong": 19
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN GIÁO DỤC ĐỊA PHƯƠNG, LỚP 12",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1_NDGD_P12.docx"
+},
+"canhBao": []
+},
+{
+"id": "lich-su-11",
+"mon": "lich-su",
+"lop": 11,
+"cd": false,
+"tongTiet": 48,
+"soBai": 19,
+"khop": {
+"co": 13,
+"tong": 13
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN LỊCH SỬ, LỚP 11",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1_LISU11.docx"
+},
+"canhBao": []
+},
+{
+"id": "cd-lich-su-11",
+"mon": "lich-su",
+"lop": 11,
+"cd": true,
+"tongTiet": 35,
+"soBai": 3,
+"khop": {
+"co": 3,
+"tong": 3
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN LỊCH SỬ, LỚP 11",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1_LISU11.docx"
+},
+"canhBao": []
+},
+{
+"id": "ngu-van-6",
+"mon": "ngu-van",
+"lop": 6,
+"cd": false,
+"tongTiet": 121,
+"soBai": 10,
+"khop": {
+"co": 10,
+"tong": 10
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN NGỮ VĂN, LỚP 6",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1_NVAN6_2026-2027.docx"
+},
+"canhBao": []
+},
+{
+"id": "lich-su-12",
+"mon": "lich-su",
+"lop": 12,
+"cd": false,
+"tongTiet": 48,
+"soBai": 23,
+"khop": {
+"co": 17,
+"tong": 17
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN LỊCH SỬ, LỚP 12",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1_LISU12.docx"
+},
+"canhBao": []
+},
+{
+"id": "cd-lich-su-12",
+"mon": "lich-su",
+"lop": 12,
+"cd": true,
+"tongTiet": 35,
+"soBai": 3,
+"khop": {
+"co": 3,
+"tong": 3
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN LỊCH SỬ, LỚP 12",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1_LISU12.docx"
+},
+"canhBao": []
+},
+{
+"id": "gdktpl-12",
+"mon": "gdktpl",
+"lop": 12,
+"cd": false,
+"tongTiet": 64,
+"soBai": 16,
+"khop": {
+"co": 16,
+"tong": 16
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN GIÁO DỤC KINH TẾ VÀ PHÁP LUẬT, LỚP 11",
+"nguon": {
+"kieu": "nap-san",
+"tep": "GDKTPL_PL1_12.docx"
+},
+"canhBao": []
+},
+{
+"id": "dia-li-9",
+"mon": "dia-li",
+"lop": 9,
+"cd": false,
+"tongTiet": 44,
+"soBai": 22,
+"khop": {
+"co": 22,
+"tong": 22
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN LỊCH SỬ VÀ ĐỊA LÍ (PHÂN MÔN ĐỊA LÍ), LỚP 9",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1_DILI.9.docx"
+},
+"canhBao": [
+"Số tiết bị trùng: 30."
+]
+},
+{
+"id": "ngu-van-10",
+"mon": "ngu-van",
+"lop": 10,
+"cd": false,
+"tongTiet": 89,
+"soBai": 9,
+"khop": {
+"co": 9,
+"tong": 9
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN NGỮ VĂN, LỚP 10",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1_NVAN10.docx"
+},
+"canhBao": [
+"Số tiết bị trùng: 86."
+]
+},
+{
+"id": "cd-ngu-van-10",
+"mon": "ngu-van",
+"lop": 10,
+"cd": true,
+"tongTiet": 35,
+"soBai": 3,
+"khop": {
+"co": 3,
+"tong": 3
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN NGỮ VĂN, LỚP 10",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1_NVAN10.docx"
+},
+"canhBao": [
+"Số tiết bị trùng: 86."
+]
+},
+{
+"id": "lich-su-6",
+"mon": "lich-su",
+"lop": 6,
+"cd": false,
+"tongTiet": 45,
+"soBai": 20,
+"khop": {
+"co": 20,
+"tong": 20
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN LỊCH SỬ - ĐỊA LÍ (PHÂN MÔN LỊCH SỬ), LỚP 6",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1_LISU6.pdf"
+},
+"canhBao": []
+},
+{
+"id": "lich-su-10",
+"mon": "lich-su",
+"lop": 10,
+"cd": false,
+"tongTiet": 48,
+"soBai": 20,
+"khop": {
+"co": 13,
+"tong": 13
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN LỊCH SỬ, LỚP 10",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1_LISU10.docx"
+},
+"canhBao": []
+},
+{
+"id": "cd-lich-su-10",
+"mon": "lich-su",
+"lop": 10,
+"cd": true,
+"tongTiet": 35,
+"soBai": 3,
+"khop": {
+"co": 3,
+"tong": 3
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN LỊCH SỬ, LỚP 10",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1_LISU10.docx"
+},
+"canhBao": []
+},
+{
+"id": "gddp-11",
+"mon": "gddp",
+"lop": 11,
+"cd": false,
+"tongTiet": 31,
+"soBai": 12,
+"khop": {
+"co": 12,
+"tong": 12
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN GIÁO DỤC ĐỊA PHƯƠNG, LỚP 11",
+"nguon": {
+"kieu": "nap-san",
+"tep": "GD_P_PL1_11.docx"
+},
+"canhBao": [
+"1 dòng không ghi số tiết – đã đánh số nối tiếp, cần kiểm tra."
+]
+},
+{
+"id": "ngu-van-9",
+"mon": "ngu-van",
+"lop": 9,
+"cd": false,
+"tongTiet": 122,
+"soBai": 10,
+"khop": {
+"co": 10,
+"tong": 10
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN NGỮ VĂN LỚP 9",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1._NVAN9.docx"
+},
+"canhBao": [
+"3 dòng không ghi số tiết – đã đánh số nối tiếp, cần kiểm tra.",
+"Số tiết bị trùng: 32, 59, 60, 8."
+]
+},
+{
+"id": "ngu-van-7",
+"mon": "ngu-van",
+"lop": 7,
+"cd": false,
+"tongTiet": 124,
+"soBai": 10,
+"khop": {
+"co": 10,
+"tong": 10
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN NGỮ VĂN, LỚP 7",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1_NVAN7.docx"
+},
+"canhBao": []
+},
+{
+"id": "dia-li-7",
+"mon": "dia-li",
+"lop": 7,
+"cd": false,
+"tongTiet": 44,
+"soBai": 20,
+"khop": {
+"co": 20,
+"tong": 20
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN LỊCH SỬ VÀ ĐỊA LÍ (PHÂN MÔN ĐỊA LÍ), LỚP 7",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1_DILI.7.docx"
+},
+"canhBao": []
+},
+{
+"id": "dia-li-8",
+"mon": "dia-li",
+"lop": 8,
+"cd": false,
+"tongTiet": 44,
+"soBai": 13,
+"khop": {
+"co": 13,
+"tong": 13
+},
+"tieuDe": "KẾ HOẠCH DẠY HỌC MÔN LỊCH SỬ VÀ ĐỊA LÍ (PHÂN MÔN ĐỊA LÍ), LỚP 8",
+"nguon": {
+"kieu": "nap-san",
+"tep": "PL1_DILI8.docx"
+},
+"canhBao": []
+}
+]

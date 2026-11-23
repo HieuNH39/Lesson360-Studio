@@ -58,19 +58,14 @@
         else if (T === "quiz" || T === "video") {
           if (T === "video") add({ k: "video", p, s });
           const qs = s.questions || [];
+          // Mỗi câu một trang; đáp án và giải thích hiện ra khi giáo viên bấm (hiệu ứng), không cần trang đáp án riêng.
           qs.forEach((q, i) => add({ k: "q", p, s, q, i, n: qs.length }));
-          if (qs.length) add({ k: "qans", p, s, qs });
         } else if (T === "poll2") {
-          const q = { kind: "mcq", q: s.question, options: s.options || [], answer: s.answer, explain: s.explain };
+          const q = { kind: "mcq", q: s.question, options: s.options || [], answer: s.answer, explain: s.explain, opinion: s.answer == null };
           add({ k: "q", p, s, q, i: 0, n: 1 });
-          add({ k: "qans", p, s, qs: [q] });
-        } else if (T === "crossword") {
-          add({ k: "cw", p, s, reveal: false });
-          add({ k: "cw", p, s, reveal: true });
-        } else if (T === "match" || T === "order") {
-          add({ k: T, p, s, reveal: false });
-          add({ k: T, p, s, reveal: true });
-        } else if (T === "groupwork") {
+        } else if (T === "crossword") add({ k: "cw", p, s });
+        else if (T === "match" || T === "order") add({ k: T, p, s });
+        else if (T === "groupwork") {
           add({ k: "group", p, s });
           add({ k: "sheet", p, s });
         } else if (T === "cards" || T === "auction") add({ k: T, p, s });
@@ -79,7 +74,8 @@
         const d = L360.describeStep ? L360.describeStep(s) : { notes: [] };
         notes = notes.concat(d.notes.filter(Boolean));
       });
-      if (notes.length) add({ k: "recap", p, notes });
+      // Ghi nhớ: tối đa 6 ý mỗi trang để chữ đủ lớn khi chiếu.
+      for (let i = 0; i < notes.length; i += 6) add({ k: "recap", p, notes: notes.slice(i, i + 6), part: notes.length > 6 ? `${i / 6 + 1}/${Math.ceil(notes.length / 6)}` : "" });
       if (pi === packs.length - 1) add({ k: "end", p, vd: p.steps.find((s) => s.phase === "van-dung") });
     });
     return { slides, range, packs };
@@ -265,6 +261,33 @@
       sl.addImage({ data: im.data.replace(/^data:/, ""), x: ix, y: iy, w: iw, h: ih, rounding: false });
       return { x: ix, y: iy, w: iw, h: ih };
     };
+    /* --- hiệu ứng (đánh dấu hình bằng tên; sau khi đóng gói sẽ dựng phần <p:timing> cho PowerPoint) --- */
+    const click = (sl) => ++sl._click;
+    const anim = (sl, k, fx, fn, dur) => {
+      const prev = sl._an;
+      sl._an = k ? { k, fx: fx || "fade", dur: dur || 0 } : null;
+      try {
+        return fn();
+      } finally {
+        sl._an = prev;
+      }
+    };
+    // Thanh đếm giờ chạy offline: bấm để bắt đầu, thanh rút ngắn dần trong N phút, hết giờ hiện "Hết giờ!".
+    const timerBar = (sl, minutes) => {
+      const m = Number(minutes) || 0;
+      if (!m) return;
+      const y = H - 0.78;
+      const x = MX + 2.4;
+      const w = W - 2 * MX - 2.4 - 1.5;
+      T(sl, `⏱ ${m} phút`, { x: MX, y: y - 0.1, w: 2.3, h: 0.34, fontSize: 13, bold: true, color: col.accent2, valign: "middle" });
+      sl.addShape(S.roundRect, { x, y, w, h: 0.14, rectRadius: 0.07, fill: { color: col.line }, line: { type: "none" } });
+      const k = click(sl);
+      anim(sl, k, "timer", () => sl.addShape(S.roundRect, { x, y, w, h: 0.14, rectRadius: 0.07, fill: { color: col.accent }, line: { type: "none" } }), m * 60000);
+      anim(sl, k, "after", () => {
+        sl.addShape(S.roundRect, { x: W - MX - 1.35, y: y - 0.12, w: 1.35, h: 0.38, rectRadius: 0.19, fill: { color: "D2453B" }, line: { type: "none" } });
+        T(sl, "Hết giờ!", { x: W - MX - 1.35, y: y - 0.12, w: 1.35, h: 0.38, fontSize: 13, bold: true, color: "FFFFFF", align: "center", valign: "middle", margin: 0 });
+      }, m * 60000);
+    };
     const decorate = (sl, strong) => {
       if (decor === "circles") {
         sl.addShape(S.ellipse, { x: W - 2.4, y: -1.4, w: 3.6, h: 3.6, fill: { color: strong ? col.accent2 : col.soft, transparency: strong ? 40 : 10 }, line: { type: "none" } });
@@ -309,7 +332,10 @@
           return 2.6;
         case "mindmap":
         case "cycle":
+        case "venn":
           return 4.2;
+        case "pyramid":
+          return 3.4;
         case "flow":
           return 1.9;
         case "stats":
@@ -318,6 +344,9 @@
           return 1 + arr(b.rows).length * 0.55;
         case "video":
           return 1.5;
+        case "note":
+        case "conclusion":
+          return 1.1 + Math.min(4, t.length / 80);
         default:
           return 0.9 + Math.min(4, t.length / 110) + (b.title ? 0.35 : 0);
       }
@@ -400,13 +429,13 @@
         const ly = y + ty + (h - ty) * 0.38;
         sl.addShape(S.rect, { x: x + 0.05, y: ly - 0.025, w: w - 0.1, h: 0.05, fill: { color: col.accent }, line: { type: "none" } });
         const fs = fit(it.map((t) => plain(t.label || t.title || "")).join("\n"), cw * n, (h - ty) * 0.55 * 2, 15, 10);
-        it.forEach((t, i) => {
+        it.forEach((t, i) => anim(sl, sl._sub ? click(sl) : 0, "fade", () => {
           const cx = x + i * cw;
           sl.addShape(S.ellipse, { x: cx + cw / 2 - 0.13, y: ly - 0.13, w: 0.26, h: 0.26, fill: { color: col.card }, line: { color: col.accent, width: 2.5 } });
           T(sl, plain(t.time || t.year || ""), { x: cx + 0.04, y: ly - 0.62, w: cw - 0.08, h: 0.44, fontSize: Math.min(18, fs + 3), bold: true, color: col.accent2, align: "center", valign: "bottom" });
           const body = [{ text: plain(t.label || t.title || ""), options: { bold: true, breakLine: !!t.desc } }].concat(t.desc ? [{ text: plain(t.desc), options: { fontSize: Math.max(9, fs - 3), color: col.muted } }] : []);
           T(sl, body, { x: cx + 0.04, y: ly + 0.2, w: cw - 0.08, h: y + h - ly - 0.2, fontSize: fs, align: "center", color: col.ink });
-        });
+        }));
         return;
       }
       if (k === "mindmap") {
@@ -421,7 +450,7 @@
         const side = (list, isRight) => {
           const bh = Math.min(1.7, (h - (list.length - 1) * 0.15) / Math.max(1, list.length));
           const total = list.length * bh + (list.length - 1) * 0.15;
-          list.forEach((bb, i) => {
+          list.forEach((bb, i) => anim(sl, sl._sub ? click(sl) : 0, "fade", () => {
             const bx = isRight ? x + w - bw : x;
             const by = cy - total / 2 + i * (bh + 0.15);
             sl.addShape(S.line, { x: isRight ? cx + cw / 2 : bx + bw, y: Math.min(cy, by + bh / 2), w: Math.abs((isRight ? bx : cx - cw / 2) - (isRight ? cx + cw / 2 : bx + bw)), h: Math.max(0.001, Math.abs(by + bh / 2 - cy)), line: { color: col.accent, width: 1.5 }, flipV: by + bh / 2 < cy });
@@ -437,13 +466,13 @@
               fontSize: fs,
               valign: "middle"
             });
-          });
+          }));
         };
-        side(left, false);
-        side(right, true);
         sl.addShape(S.roundRect, { x: cx - cw / 2, y: cy - chh / 2, w: cw, h: chh, rectRadius: 0.45, fill: { color: col.accent }, line: { type: "none" } });
         const ct = plain(b.center || b.title || "");
         T(sl, ct, { x: cx - cw / 2 + 0.1, y: cy - chh / 2, w: cw - 0.2, h: chh, fontSize: fit(ct, cw - 0.2, chh, 18, 11), bold: true, color: "FFFFFF", align: "center", valign: "middle" });
+        side(left, false);
+        side(right, true);
         return;
       }
       if (k === "compare") {
@@ -470,7 +499,7 @@
           const by = y + ty + (h - ty - bh) / 2;
           const txt = st.map((s) => plain(s.label) + (s.desc ? "\n" + plain(s.desc) : "")).join("\n");
           const fs = fit(txt, bw * n, bh * 1.6, 15, 9);
-          st.forEach((s, i) => {
+          st.forEach((s, i) => anim(sl, sl._sub ? click(sl) : 0, "fade", () => {
             const bx = x + i * (bw + gap);
             box(sl, bx, by, bw, bh, { fill: i % 2 ? col.soft : col.card, line: col.accent, lw: 1.25 });
             sl.addShape(S.ellipse, { x: bx + bw / 2 - 0.2, y: by - 0.2, w: 0.4, h: 0.4, fill: { color: col.accent }, line: { color: col.bg, width: 2 } });
@@ -484,8 +513,8 @@
               align: "center",
               valign: "middle"
             });
-            if (i < n - 1) sl.addShape(S.rightArrow, { x: bx + bw + 0.04, y: by + bh / 2 - 0.12, w: gap - 0.08, h: 0.24, fill: { color: col.accent }, line: { type: "none" } });
-          });
+            if (i > 0) sl.addShape(S.rightArrow, { x: bx - gap + 0.04, y: by + bh / 2 - 0.12, w: gap - 0.08, h: 0.24, fill: { color: col.accent }, line: { type: "none" } });
+          }));
         } else {
           const cx = x + w / 2;
           const cy = y + ty + (h - ty) / 2;
@@ -493,15 +522,53 @@
           sl.addShape(S.ellipse, { x: cx - R, y: cy - R, w: 2 * R, h: 2 * R, fill: { type: "none" }, line: { color: col.accent, width: 2, dashType: "dash" } });
           if (b.center) T(sl, plain(b.center), { x: cx - R * 0.6, y: cy - 0.5, w: R * 1.2, h: 1, fontSize: 16, bold: true, align: "center", valign: "middle", color: col.accent2 });
           const nw = Math.min(2.4, R * 1.15);
-          st.forEach((s, i) => {
+          st.forEach((s, i) => anim(sl, sl._sub ? click(sl) : 0, "fade", () => {
             const a = -Math.PI / 2 + (2 * Math.PI * i) / n;
             const nx = cx + R * Math.cos(a) - nw / 2;
             const ny = cy + R * Math.sin(a) - 0.42;
             box(sl, nx, ny, nw, 0.84, { fill: col.card, line: col.accent, lw: 1.25 });
             const t = `${i + 1}. ${plain(s.label)}`;
             T(sl, t, { x: nx + 0.06, y: ny, w: nw - 0.12, h: 0.84, fontSize: fit(t, nw - 0.12, 0.84, 13, 8), bold: true, align: "center", valign: "middle" });
-          });
+          }));
         }
+        return;
+      }
+      if (k === "venn") {
+        const ty = blockTitle(sl, b, x, y, w);
+        const hh = h - ty;
+        const cw = Math.min(w * 0.58, hh * 1.5);
+        const cy = y + ty;
+        const lx = x + w / 2 - cw + cw * 0.22;
+        const rx = x + w / 2 - cw * 0.22;
+        sl.addShape(S.ellipse, { x: lx, y: cy, w: cw, h: hh, fill: { color: col.accent, transparency: 78 }, line: { color: col.accent, width: 1.5 } });
+        anim(sl, sl._sub ? click(sl) : 0, "fade", () => sl.addShape(S.ellipse, { x: rx, y: cy, w: cw, h: hh, fill: { color: "E8930C", transparency: 78 }, line: { color: "E8930C", width: 1.5 } }));
+        const L = [plain(b.left || "A")].concat(arr(b.leftItems).map((t) => "• " + plain(t)));
+        const Rr = [plain(b.right || "B")].concat(arr(b.rightItems).map((t) => "• " + plain(t)));
+        const M = [plain(b.bothLabel || "Giống nhau")].concat(arr(b.both).map((t) => "• " + plain(t)));
+        const tw = cw * 0.5;
+        const fs = fit(L.concat(Rr, M).join("\n"), tw * 3, hh * 0.8, 15, 9);
+        const blockTxt = (lines, bx, color) =>
+          T(sl, lines.map((t, i) => ({ text: t, options: { bold: i === 0, color: i === 0 ? color : col.ink, breakLine: i < lines.length - 1 } })), { x: bx, y: cy + hh * 0.12, w: tw, h: hh * 0.76, fontSize: fs, valign: "middle", align: "center" });
+        blockTxt(L, lx + cw * 0.06, col.accent2);
+        anim(sl, sl._sub ? click(sl) : 0, "fade", () => blockTxt(Rr, rx + cw - tw - cw * 0.06, "B25E00"));
+        anim(sl, sl._sub ? click(sl) : 0, "fade", () => blockTxt(M, x + w / 2 - tw / 2, "1E8E5A"));
+        return;
+      }
+      if (k === "pyramid") {
+        const it = arr(b.items).slice(0, 6);
+        const ty = blockTitle(sl, b, x, y, w);
+        const n = Math.max(1, it.length);
+        const lh = (h - ty - (n - 1) * 0.06) / n;
+        const fs = fit(it.map((t) => plain(t.label || t) + " – " + plain(t.desc || "")).join("\n"), w * 0.7, h - ty, 16, 9);
+        it.forEach((t, i) =>
+          anim(sl, sl._sub ? click(sl) : 0, "fade", () => {
+            const pw = w * (0.38 + (0.62 * (i + 1)) / n);
+            const px = x + (w - pw) / 2;
+            const py = y + ty + i * (lh + 0.06);
+            sl.addShape(S.trapezoid, { x: px, y: py, w: pw, h: lh, fill: { color: i % 2 ? col.accent2 : col.accent, transparency: 10 + i * 6 }, line: { type: "none" } });
+            T(sl, [{ text: plain(t.label || t), options: { bold: true, color: "FFFFFF", breakLine: !!t.desc } }].concat(t.desc ? [{ text: plain(t.desc), options: { fontSize: Math.max(8, fs - 2), color: "FFFFFF" } }] : []), { x: px + pw * 0.12, y: py, w: pw * 0.76, h: lh, fontSize: fs, align: "center", valign: "middle" });
+          })
+        );
         return;
       }
       if (k === "stats") {
@@ -558,7 +625,7 @@
         T(sl, cfg.icon, { x: x + 0.14, y: y + 0.12, w: 0.38, h: 0.38, fontSize: 14, bold: true, color: "FFFFFF", align: "center", valign: "middle", margin: 0 });
         T(sl, plain(cfg.title).toUpperCase(), { x: x + 0.62, y: y + 0.12, w: w - 0.8, h: 0.38, fontSize: 12, bold: true, color: cfg.tc, valign: "middle", charSpacing: 1 });
         const txt = String(b.text || "");
-        T(sl, runs(txt), { x: x + 0.2, y: y + 0.56, w: w - 0.4, h: h - 0.66, fontSize: fit(plain(txt), w - 0.4, h - 0.66, k === "note" ? 18 : 20, 10), color: dark && k !== "conclusion" ? col.ink : col.ink, paraSpaceAfter: 4 });
+        T(sl, runs(txt), { x: x + 0.2, y: y + 0.56, w: w - 0.4, h: h - 0.66, fontSize: fit(plain(txt), w - 0.4, h - 0.66, k === "note" ? 22 : 22, 14), color: col.ink, paraSpaceAfter: 4, fit: "shrink" });
         return;
       }
       // text, list và mặc định
@@ -566,7 +633,8 @@
       const md = k === "list" ? arr(b.items).map((it) => "- " + (typeof it === "string" ? it : it.text)).join("\n") : b.md || b.text || L360.blocks.plain(b) || "";
       T(sl, runs(md), { x, y: y + ty, w, h: h - ty, fontSize: fit(plain(md), w, h - ty, 22, 11), paraSpaceAfter: 6, lineSpacingMultiple: 1.05 });
     }
-    function stackBlocks(sl, list, x, y, w, h) {
+    const SUB = ["timeline", "mindmap", "flow", "cycle", "venn", "pyramid"];
+    function stackBlocks(sl, list, x, y, w, h, o = {}) {
       if (!list.length) return;
       const gap = 0.18;
       const ws = list.map(weight);
@@ -574,7 +642,11 @@
       let cy = y;
       list.forEach((b, i) => {
         const bh = ((h - gap * (list.length - 1)) * ws[i]) / sum;
-        drawBlock(sl, b, x, cy, w, bh);
+        // Khối đầu hiện sẵn; các khối sau (kết luận, ghi vở…) hiện lần lượt khi bấm. Sơ đồ hiện từng nhánh/mốc.
+        const k = o.anim && (i > 0 || o.all) ? click(sl) : 0;
+        sl._sub = o.anim && SUB.includes(b.kind);
+        anim(sl, k, b.kind === "note" || b.kind === "conclusion" ? "wipe" : "fade", () => drawBlock(sl, b, x, cy, w, bh));
+        sl._sub = false;
         cy += bh + gap;
       });
     }
@@ -615,13 +687,13 @@
       header(sl, d.p.steps[0] ? d.p.steps[0].phase : "khoi-dong", "Mục tiêu tiết học");
       const g = d.p.objectives.slice(0, 6);
       const rowH = Math.min(0.95, 5.0 / g.length);
-      g.forEach((o, i) => {
+      g.forEach((o, i) => anim(sl, click(sl), "fade", () => {
         const y = 1.95 + i * (rowH + 0.08);
         box(sl, MX, y, W - 2 * MX, rowH, { fill: col.card, line: col.line });
         sl.addShape(S.ellipse, { x: MX + 0.18, y: y + rowH / 2 - 0.2, w: 0.4, h: 0.4, fill: { color: col.accent }, line: { type: "none" } });
         T(sl, "✓", { x: MX + 0.18, y: y + rowH / 2 - 0.2, w: 0.4, h: 0.4, fontSize: 14, bold: true, color: "FFFFFF", align: "center", valign: "middle", margin: 0 });
         T(sl, plain(o), { x: MX + 0.75, y, w: W - 2 * MX - 0.9, h: rowH, fontSize: fit(plain(o), W - 2 * MX - 0.9, rowH, 20, 12), valign: "middle" });
-      });
+      }));
       footer(sl, d.p, n);
     };
     R.phase = (sl, d, n) => {
@@ -649,8 +721,8 @@
       if (layout === "split") {
         const lw = (W - 2 * MX) * 0.47;
         stackBlocks(sl, vis, MX, y, lw, h);
-        stackBlocks(sl, rest, MX + lw + 0.3, y, W - 2 * MX - lw - 0.3, h);
-      } else stackBlocks(sl, bl, MX, y, W - 2 * MX, h);
+        stackBlocks(sl, rest, MX + lw + 0.3, y, W - 2 * MX - lw - 0.3, h, { anim: true });
+      } else stackBlocks(sl, bl, MX, y, W - 2 * MX, h, { anim: true });
       footer(sl, d.p, n);
     };
     R.video = (sl, d, n) => {
@@ -660,7 +732,8 @@
       drawBlock(sl, { kind: "video", src: (d.s.source || {}).url, edu: (d.s.source || {}).edu, caption: v.title || d.s.title }, MX, 1.95, W - 2 * MX, 1.6);
       if (d.s.instructions) T(sl, plain(d.s.instructions), { x: MX, y: 3.75, w: W - 2 * MX, h: 0.6, fontSize: 18, italic: true });
       const lines = qs.map((q, i) => `${q.t != null ? u.fmtSec(q.t) + " – " : ""}Câu ${i + 1}: ${plain(q.q)}`);
-      T(sl, lines.join("\n"), { x: MX, y: 4.45, w: W - 2 * MX, h: 2.3, fontSize: fit(lines.join("\n"), W - 2 * MX, 2.3, 18, 11), paraSpaceAfter: 6 });
+      T(sl, lines.join("\n"), { x: MX, y: 4.45, w: W - 2 * MX, h: 2.0, fontSize: fit(lines.join("\n"), W - 2 * MX, 2.0, 18, 11), paraSpaceAfter: 6 });
+      timerBar(sl, d.s.minutes);
       footer(sl, d.p, n);
     };
     R.q = (sl, d, n) => {
@@ -685,9 +758,23 @@
             T(sl, lab, { x: MX + ow - 1.5 + j * 0.7, y: y + 0.12, w: 0.55, h: 0.44, fontSize: 14, bold: true, align: "center", valign: "middle", color: col.accent2, margin: 0 });
           });
         });
+        // Bấm: hiện đáp án từng ý (ô Đ/S đúng tô xanh).
+        const kA = click(sl);
+        st.forEach((x, i) => {
+          const y = 3.6 + i * 0.8;
+          const j = x.answer ? 0 : 1;
+          anim(sl, kA, "appear", () => {
+            sl.addShape(S.roundRect, { x: MX + ow - 1.5 + j * 0.7, y: y + 0.12, w: 0.55, h: 0.44, rectRadius: 0.08, fill: { color: "1E8E5A" }, line: { color: "1E8E5A", width: 1 } });
+            T(sl, j ? "S" : "Đ", { x: MX + ow - 1.5 + j * 0.7, y: y + 0.12, w: 0.55, h: 0.44, fontSize: 14, bold: true, align: "center", valign: "middle", color: "FFFFFF", margin: 0 });
+          });
+        });
       } else if (q.kind === "short") {
         box(sl, MX, 3.75, ow, 1.1, { fill: col.card, line: col.accent, dash: "dash" });
         T(sl, `Trả lời ngắn${q.unit ? " (đơn vị: " + q.unit + ")" : ""}: ……………………………`, { x: MX + 0.25, y: 3.75, w: ow - 0.5, h: 1.1, fontSize: 22, color: col.muted, valign: "middle" });
+        anim(sl, click(sl), "appear", () => {
+          box(sl, MX, 3.75, ow, 1.1, { fill: "E3F4EB", line: "1E8E5A", lw: 1.5 });
+          T(sl, [{ text: "Đáp án: ", options: { color: "1E8E5A" } }, { text: String(q.answer == null ? "" : q.answer) + (q.unit ? " " + q.unit : ""), options: { color: "0F2742" } }], { x: MX + 0.25, y: 3.75, w: ow - 0.5, h: 1.1, fontSize: 26, bold: true, valign: "middle" });
+        });
       } else {
         const op = arr(q.options);
         const two = op.length > 2 && op.every((o) => plain(o).length < 60);
@@ -704,7 +791,23 @@
           T(sl, LET[i], { x: x + 0.12, y: y + ohh / 2 - 0.27, w: 0.54, h: 0.54, fontSize: 18, bold: true, color: "FFFFFF", align: "center", valign: "middle", margin: 0 });
           T(sl, plain(o), { x: x + 0.8, y, w: cw - 0.95, h: ohh, fontSize: fit(plain(o), cw - 0.95, ohh, 20, 10), valign: "middle" });
         });
+        // Bấm: khoanh đáp án đúng (câu hỏi ý kiến thì không có đáp án).
+        const ai = Number(q.answer);
+        if (!q.opinion && q.answer != null && ai >= 0 && ai < op.length)
+          anim(sl, click(sl), "appear", () => {
+            const x = MX + (ai % cols) * (cw + 0.2);
+            const y = 3.6 + Math.floor(ai / cols) * (ohh + 0.15);
+            sl.addShape(S.roundRect, { x: x - 0.04, y: y - 0.04, w: cw + 0.08, h: ohh + 0.08, rectRadius: 0.14, fill: { type: "none" }, line: { color: "1E8E5A", width: 4 } });
+            sl.addShape(S.ellipse, { x: x + cw - 0.5, y: y + ohh / 2 - 0.2, w: 0.4, h: 0.4, fill: { color: "1E8E5A" }, line: { type: "none" } });
+            T(sl, "✓", { x: x + cw - 0.5, y: y + ohh / 2 - 0.2, w: 0.4, h: 0.4, fontSize: 15, bold: true, color: "FFFFFF", align: "center", valign: "middle", margin: 0 });
+          });
       }
+      // Bấm tiếp: giải thích.
+      if (q.explain && !q.opinion)
+        anim(sl, click(sl), "fade", () => {
+          const ex = "Giải thích: " + plain(q.explain);
+          T(sl, ex, { x: MX, y: H - 1.02, w: ow, h: 0.56, fontSize: fit(ex, ow, 0.56, 15, 10), italic: true, color: col.accent2, valign: "middle" });
+        });
       footer(sl, d.p, n);
     };
     R.qans = (sl, d, n) => {
@@ -723,63 +826,90 @@
     R.cw = (sl, d, n) => {
       const s = d.s;
       const rows = arr(s.rows);
-      header(sl, s.phase, s.title + (d.reveal ? " – Đáp án" : ""), { chip: d.reveal ? "Đáp án" : `${rows.length} hàng ngang` });
+      header(sl, s.phase, s.title, { chip: `${rows.length} hàng ngang` });
       const keyCol = Math.max(0, ...rows.map((r) => (r.key >= 0 ? r.key : 0)));
       const left = rows.map((r) => keyCol - Math.max(0, r.key));
       const width = Math.max(...rows.map((r, i) => left[i] + r.answer.length), 1);
-      const gridW = d.reveal ? W - 2 * MX - 0.5 : 6.6;
-      const cell = Math.min(0.55, gridW / (width + 1), 4.8 / Math.max(rows.length, 1));
+      const cell = Math.min(0.55, 6.6 / (width + 1), 4.3 / Math.max(rows.length, 1));
       const gx = MX + 0.5;
       const gy = 1.95;
       rows.forEach((r, i) => {
         T(sl, String(i + 1), { x: gx - 0.5, y: gy + i * cell, w: 0.4, h: cell, fontSize: Math.min(14, cell * 26), bold: true, color: col.accent2, align: "right", valign: "middle" });
         r.answer.split("").forEach((ch, j) => {
           const isKey = left[i] + j === keyCol;
-          sl.addShape(S.rect, { x: gx + (left[i] + j) * cell, y: gy + i * cell, w: cell, h: cell, fill: { color: isKey ? col.accent : col.card }, line: { color: col.accent2, width: 1 } });
-          if (d.reveal) T(sl, ch, { x: gx + (left[i] + j) * cell, y: gy + i * cell, w: cell, h: cell, fontSize: Math.min(20, cell * 30), bold: true, align: "center", valign: "middle", color: isKey ? "FFFFFF" : col.ink, margin: 0 });
+          sl.addShape(S.rect, { x: gx + (left[i] + j) * cell, y: gy + i * cell, w: cell, h: cell, fill: { color: isKey ? col.soft : col.card }, line: { color: col.accent2, width: 1 } });
         });
       });
-      if (d.reveal) T(sl, [{ text: "Từ khoá: ", options: { bold: true } }, { text: s.keyword, options: { bold: true, color: col.accent } }, { text: s.keyClue ? "  –  " + plain(s.keyClue) : "", options: { color: col.muted } }], { x: MX, y: H - 1.05, w: W - 2 * MX, h: 0.5, fontSize: 20 });
-      else {
-        const cl = rows.map((r, i) => `${i + 1}. ${plain(r.clue)}`).join("\n") + (s.keyClue ? `\nTừ khoá: ${plain(s.keyClue)}` : "");
-        T(sl, cl, { x: 7.6, y: 1.95, w: W - 7.6 - MX, h: 4.85, fontSize: fit(cl, W - 7.6 - MX, 4.85, 17, 9), paraSpaceAfter: 5 });
-      }
+      const cl = rows.map((r, i) => `${i + 1}. ${plain(r.clue)}`).join("\n") + (s.keyClue ? `\nTừ khoá: ${plain(s.keyClue)}` : "");
+      T(sl, cl, { x: 7.6, y: 1.95, w: W - 7.6 - MX, h: 4.0, fontSize: fit(cl, W - 7.6 - MX, 4.0, 17, 10), paraSpaceAfter: 5 });
+      // Mỗi lần bấm lật một hàng ngang; lần bấm cuối hiện từ khoá.
+      rows.forEach((r, i) =>
+        anim(sl, click(sl), "fade", () =>
+          r.answer.split("").forEach((ch, j) => {
+            const isKey = left[i] + j === keyCol;
+            sl.addShape(S.rect, { x: gx + (left[i] + j) * cell, y: gy + i * cell, w: cell, h: cell, fill: { color: isKey ? col.accent : col.card }, line: { color: col.accent2, width: 1 } });
+            T(sl, ch, { x: gx + (left[i] + j) * cell, y: gy + i * cell, w: cell, h: cell, fontSize: Math.min(20, cell * 30), bold: true, align: "center", valign: "middle", color: isKey ? "FFFFFF" : col.ink, margin: 0 });
+          })
+        )
+      );
+      anim(sl, click(sl), "wipe", () => {
+        box(sl, 7.6, 6.05, W - 7.6 - MX, 0.6, { fill: col.accent });
+        T(sl, [{ text: "Từ khoá: ", options: { bold: true, color: "FFFFFF" } }, { text: s.keyword, options: { bold: true, color: "FFFFFF" } }], { x: 7.7, y: 6.05, w: W - 7.7 - MX, h: 0.6, fontSize: 20, valign: "middle" });
+      });
+      timerBar(sl, s.minutes);
       footer(sl, d.p, n);
     };
     R.match = (sl, d, n) => {
       const s = d.s;
       const pairs = arr(s.pairs);
-      header(sl, s.phase, s.title + (d.reveal ? " – Đáp án" : ""), { chip: d.reveal ? "Đáp án" : "Ghép nối" });
+      header(sl, s.phase, s.title, { chip: "Ghép nối" });
       T(sl, plain(s.question), { x: MX, y: 1.9, w: W - 2 * MX, h: 0.5, fontSize: 18, italic: true });
       const order = shuffle(pairs.map((p) => p.right), s.id);
-      const rh = Math.min(0.85, 4.3 / Math.max(1, pairs.length));
-      const cw = (W - 2 * MX - 0.8) / 2;
+      const rh = Math.min(0.85, 4.1 / Math.max(1, pairs.length));
+      const cw = (W - 2 * MX - 1.2) / 2;
       pairs.forEach((p, i) => {
         const y = 2.5 + i * (rh + 0.08);
         box(sl, MX, y, cw, rh, { fill: col.soft });
-        T(sl, `${i + 1}. ${plain(p.left)}`, { x: MX + 0.12, y, w: cw - 0.24, h: rh, fontSize: fit(plain(p.left), cw - 0.24, rh, 17, 9), valign: "middle", bold: true });
-        const right = d.reveal ? `${LET[order.findIndex((o) => o[1] === i)]}. ${plain(p.right)}` : `${LET[i]}. ${plain(order[i][0])}`;
-        box(sl, MX + cw + 0.8, y, cw, rh, { fill: col.card, line: col.line });
-        T(sl, right, { x: MX + cw + 0.92, y, w: cw - 0.24, h: rh, fontSize: fit(right, cw - 0.24, rh, 17, 9), valign: "middle" });
-        if (d.reveal) sl.addShape(S.rightArrow, { x: MX + cw + 0.15, y: y + rh / 2 - 0.12, w: 0.5, h: 0.24, fill: { color: col.accent }, line: { type: "none" } });
+        T(sl, `${i + 1}. ${plain(p.left)}`, { x: MX + 0.12, y, w: cw - 0.24, h: rh, fontSize: fit(plain(p.left), cw - 0.24, rh, 17, 10), valign: "middle", bold: true });
+        const right = `${LET[i]}. ${plain(order[i][0])}`;
+        box(sl, MX + cw + 1.2, y, cw, rh, { fill: col.card, line: col.line });
+        T(sl, right, { x: MX + cw + 1.32, y, w: cw - 0.24, h: rh, fontSize: fit(right, cw - 0.24, rh, 17, 10), valign: "middle" });
       });
-      if (d.reveal && s.explain) T(sl, plain(s.explain), { x: MX, y: H - 0.95, w: W - 2 * MX, h: 0.5, fontSize: 13, italic: true, color: col.muted });
+      // Mỗi lần bấm hiện đáp án của một cặp.
+      pairs.forEach((p, i) =>
+        anim(sl, click(sl), "fade", () => {
+          const y = 2.5 + i * (rh + 0.08);
+          const L = LET[order.findIndex((o) => o[1] === i)];
+          sl.addShape(S.roundRect, { x: MX + cw + 0.2, y: y + rh / 2 - 0.25, w: 0.8, h: 0.5, rectRadius: 0.12, fill: { color: "1E8E5A" }, line: { type: "none" } });
+          T(sl, "→ " + L, { x: MX + cw + 0.2, y: y + rh / 2 - 0.25, w: 0.8, h: 0.5, fontSize: 16, bold: true, color: "FFFFFF", align: "center", valign: "middle", margin: 0 });
+        })
+      );
+      if (s.explain) anim(sl, click(sl), "fade", () => T(sl, plain(s.explain), { x: MX, y: H - 1.0, w: W - 2 * MX, h: 0.5, fontSize: 14, italic: true, color: col.accent2 }));
       footer(sl, d.p, n);
     };
     R.order = (sl, d, n) => {
       const s = d.s;
       const items = arr(s.items).map((x) => (typeof x === "string" ? x : x.text));
-      header(sl, s.phase, s.title + (d.reveal ? " – Đáp án" : ""), { chip: d.reveal ? "Thứ tự đúng" : "Sắp xếp" });
+      header(sl, s.phase, s.title, { chip: "Sắp xếp" });
       T(sl, plain(s.question), { x: MX, y: 1.9, w: W - 2 * MX, h: 0.5, fontSize: 18, italic: true });
-      const list = d.reveal ? items.map((t, i) => [t, i]) : shuffle(items, s.id);
-      const rh = Math.min(0.85, 4.3 / Math.max(1, list.length));
+      const list = shuffle(items, s.id);
+      const rh = Math.min(0.85, 4.1 / Math.max(1, list.length));
       list.forEach(([t], i) => {
         const y = 2.5 + i * (rh + 0.08);
-        box(sl, MX, y, W - 2 * MX, rh, { fill: d.reveal ? col.soft : col.card, line: col.line });
-        sl.addShape(S.roundRect, { x: MX + 0.12, y: y + rh / 2 - 0.25, w: 0.5, h: 0.5, rectRadius: 0.08, fill: { color: d.reveal ? col.accent : col.card }, line: { color: col.accent, width: 1 } });
-        T(sl, d.reveal ? String(i + 1) : LET[i], { x: MX + 0.12, y: y + rh / 2 - 0.25, w: 0.5, h: 0.5, fontSize: 16, bold: true, align: "center", valign: "middle", color: d.reveal ? "FFFFFF" : col.accent2, margin: 0 });
-        T(sl, plain(t), { x: MX + 0.8, y, w: W - 2 * MX - 1, h: rh, fontSize: fit(plain(t), W - 2 * MX - 1, rh, 18, 10), valign: "middle" });
+        box(sl, MX, y, W - 2 * MX - 1.1, rh, { fill: col.card, line: col.line });
+        sl.addShape(S.roundRect, { x: MX + 0.12, y: y + rh / 2 - 0.25, w: 0.5, h: 0.5, rectRadius: 0.08, fill: { color: col.card }, line: { color: col.accent, width: 1 } });
+        T(sl, LET[i], { x: MX + 0.12, y: y + rh / 2 - 0.25, w: 0.5, h: 0.5, fontSize: 16, bold: true, align: "center", valign: "middle", color: col.accent2, margin: 0 });
+        T(sl, plain(t), { x: MX + 0.8, y, w: W - 2 * MX - 2.1, h: rh, fontSize: fit(plain(t), W - 2 * MX - 2.1, rh, 18, 10), valign: "middle" });
       });
+      // Bấm theo thứ tự đúng: số thứ tự hiện cạnh từng mục.
+      items.forEach((t, pos) =>
+        anim(sl, click(sl), "appear", () => {
+          const i = list.findIndex((x) => x[1] === pos);
+          const y = 2.5 + i * (rh + 0.08);
+          sl.addShape(S.ellipse, { x: W - MX - 0.85, y: y + rh / 2 - 0.3, w: 0.6, h: 0.6, fill: { color: "1E8E5A" }, line: { type: "none" } });
+          T(sl, String(pos + 1), { x: W - MX - 0.85, y: y + rh / 2 - 0.3, w: 0.6, h: 0.6, fontSize: 18, bold: true, color: "FFFFFF", align: "center", valign: "middle", margin: 0 });
+        })
+      );
       footer(sl, d.p, n);
     };
     R.cards = (sl, d, n) => {
@@ -790,14 +920,15 @@
       const cols = cards.length > 6 ? 4 : 3;
       const cw = (W - 2 * MX - (cols - 1) * 0.2) / cols;
       const rows = Math.ceil(cards.length / cols);
-      const ch = Math.min(1.1, (3.4 - (rows - 1) * 0.15) / Math.max(1, rows));
+      const ch = Math.min(1.1, (2.9 - (rows - 1) * 0.15) / Math.max(1, rows));
       cards.forEach((c, i) => {
         const x = MX + (i % cols) * (cw + 0.2);
         const y = 3.05 + Math.floor(i / cols) * (ch + 0.15);
         box(sl, x, y, cw, ch, { fill: col.soft, line: col.accent, lw: 1 });
         T(sl, plain(c), { x: x + 0.1, y, w: cw - 0.2, h: ch, fontSize: fit(plain(c), cw - 0.2, ch, 18, 10), align: "center", valign: "middle", bold: true });
       });
-      if (s.textPrompt) T(sl, "✎ " + plain(s.textPrompt), { x: MX, y: H - 0.95, w: W - 2 * MX, h: 0.45, fontSize: 15, italic: true, color: col.muted });
+      if (s.textPrompt) T(sl, "✎ " + plain(s.textPrompt), { x: MX, y: H - 1.4, w: W - 2 * MX, h: 0.45, fontSize: 15, italic: true, color: col.muted });
+      timerBar(sl, d.s.minutes);
       footer(sl, d.p, n);
     };
     R.auction = (sl, d, n) => {
@@ -809,13 +940,14 @@
       const tfs = Math.min(18, ...it.map((x) => fit(plain(x.title), cw - 0.3, 0.62, 18, 11)));
       it.forEach((x, i) => {
         const bx = MX + i * (cw + 0.2);
-        box(sl, bx, 2.85, cw, 3.8, { fill: col.card, line: col.accent, lw: 1.25, shadow: true });
+        box(sl, bx, 2.85, cw, 3.55, { fill: col.card, line: col.accent, lw: 1.25, shadow: true });
         const hasIm = x.image && imgs[x.image];
         if (hasIm) img(sl, x.image, bx + 0.1, 2.95, cw - 0.2, 1.6, { cover: false });
         const ty = hasIm ? 4.62 : 2.95;
         T(sl, plain(x.title), { x: bx + 0.15, y: ty, w: cw - 0.3, h: 0.62, fontSize: tfs, bold: true, color: col.accent2 });
-        T(sl, plain(x.text || ""), { x: bx + 0.15, y: ty + 0.66, w: cw - 0.3, h: 6.55 - ty - 0.66, fontSize: fit(plain(x.text || ""), cw - 0.3, 6.55 - ty - 0.66, 16, 9) });
+        T(sl, plain(x.text || ""), { x: bx + 0.15, y: ty + 0.66, w: cw - 0.3, h: 6.3 - ty - 0.66, fontSize: fit(plain(x.text || ""), cw - 0.3, 6.3 - ty - 0.66, 16, 9) });
       });
+      timerBar(sl, d.s.minutes);
       footer(sl, d.p, n);
     };
     R.group = (sl, d, n) => {
@@ -826,7 +958,7 @@
       T(sl, task, { x: MX + 0.25, y: 1.98, w: W - 2 * MX - 0.5, h: 1.45, fontSize: fit(task, W - 2 * MX - 0.5, 1.45, 22, 12), bold: true, valign: "middle" });
       T(sl, "Vai trò trong nhóm", { x: MX, y: 3.65, w: 5.5, h: 0.4, fontSize: 15, bold: true, color: col.accent2 });
       const roles = arr(s.roles);
-      const rh = Math.min(0.52, (H - 0.65 - 4.1) / Math.max(1, roles.length) - 0.08);
+      const rh = Math.min(0.52, (H - 1.05 - 4.1) / Math.max(1, roles.length) - 0.08);
       roles.forEach((r, i) => {
         box(sl, MX, 4.1 + i * (rh + 0.08), 5.5, rh, { fill: col.card, line: col.line });
         T(sl, `${i + 1}. ${plain(r)}`, { x: MX + 0.15, y: 4.1 + i * (rh + 0.08), w: 5.2, h: rh, fontSize: Math.min(15, rh * 30), valign: "middle" });
@@ -834,8 +966,9 @@
       const res = arr(s.resources).map((r) => `• ${plain(r.title)}${r.body ? ": " + plain(r.body).slice(0, 160) : ""}`).join("\n");
       if (res) {
         T(sl, "Tư liệu", { x: 6.6, y: 3.65, w: W - 6.6 - MX, h: 0.4, fontSize: 15, bold: true, color: col.accent2 });
-        T(sl, res, { x: 6.6, y: 4.1, w: W - 6.6 - MX, h: 2.7, fontSize: fit(res, W - 6.6 - MX, 2.7, 15, 9) });
+        T(sl, res, { x: 6.6, y: 4.1, w: W - 6.6 - MX, h: 2.35, fontSize: fit(res, W - 6.6 - MX, 2.35, 15, 9) });
       }
+      timerBar(sl, d.s.minutes);
       footer(sl, d.p, n);
     };
     R.sheet = (sl, d, n) => {
@@ -862,14 +995,26 @@
       if (s.type === "text" || s.type === "expo") {
         for (let i = 0; i < 3; i++) sl.addShape(S.line, { x: MX, y: 5.75 + i * 0.4, w: W - 2 * MX, h: 0, line: { color: col.line, width: 1, dashType: "dash" } });
       }
+      timerBar(sl, d.s.minutes);
       footer(sl, d.p, n);
     };
     R.recap = (sl, d, n) => {
-      header(sl, "", "Ghi nhớ", { ghi: true, label: "TỔNG KẾT" });
-      const t = d.notes.map((x) => plain(x).replace(/^\s*-\s*/gm, "")).filter(Boolean);
-      const txt = t.join("\n");
+      header(sl, "", "Ghi nhớ", { ghi: true, label: "TỔNG KẾT", chip: d.part || "" });
+      const t = d.notes.map((x) => plain(x).replace(/^\s*-\s*/gm, "").replace(/\n+/g, " ")).filter(Boolean);
       box(sl, MX, 1.95, W - 2 * MX, 4.85, { fill: dark ? "3A3214" : "FFF8E1", line: "E0A100", lw: 1.5, dash: "dash" });
-      T(sl, t.map((x, i) => ({ text: x, options: { bullet: { type: "number" }, breakLine: i < t.length - 1 } })), { x: MX + 0.3, y: 2.1, w: W - 2 * MX - 0.6, h: 4.55, fontSize: fit(txt, W - 2 * MX - 0.9, 4.55, 22, 10), paraSpaceAfter: 8 });
+      const wts = t.map((x) => 1 + x.length / 90);
+      const sum = wts.reduce((a, b) => a + b, 0) || 1;
+      const fs = Math.max(16, Math.min(...t.map((x, i) => fit(x, W - 2 * MX - 1.3, (4.55 * wts[i]) / sum, 24, 16))));
+      let y = 2.1;
+      t.forEach((x, i) => {
+        const h = (4.55 * wts[i]) / sum;
+        anim(sl, click(sl), "fade", () => {
+          sl.addShape(S.ellipse, { x: MX + 0.3, y: y + 0.05, w: 0.42, h: 0.42, fill: { color: "E0A100" }, line: { type: "none" } });
+          T(sl, String(i + 1), { x: MX + 0.3, y: y + 0.05, w: 0.42, h: 0.42, fontSize: 14, bold: true, color: "FFFFFF", align: "center", valign: "middle", margin: 0 });
+          T(sl, x, { x: MX + 0.9, y, w: W - 2 * MX - 1.2, h, fontSize: fs, color: col.ink, valign: "top", fit: "shrink" });
+        });
+        y += h;
+      });
       footer(sl, d.p, n);
     };
     R.end = (sl, d, n) => {
@@ -900,9 +1045,20 @@
       return out.join("\n");
     }
 
+    let animSeq = 0;
     pl.slides.forEach((d, i) => {
       if (opt.only && !opt.only.includes(i)) return;
       const sl = pptx.addSlide();
+      sl._click = 0;
+      sl._an = null;
+      // Gắn tên đánh dấu hiệu ứng vào hình được vẽ khi đang trong anim(…).
+      const tag = (o) => (sl._an ? Object.assign({}, o, { objectName: `L360A|${sl._an.k}|${sl._an.fx}|${sl._an.dur}|${++animSeq}` }) : o);
+      ["addText", "addShape"].forEach((fn) => {
+        const f = sl[fn].bind(sl);
+        sl[fn] = (a, o) => f(a, tag(o || {}));
+      });
+      const fi = sl.addImage.bind(sl);
+      sl.addImage = (o) => fi(tag(o));
       try {
         R[d.k](sl, d, i + 1);
       } catch (e) {
@@ -915,15 +1071,83 @@
     return { pptx, count: pl.slides.length };
   }
 
+  /* ---------- Hiệu ứng PowerPoint: dựng <p:transition> + <p:timing> từ các hình đã đánh dấu ---------- */
+  function timingXml(items) {
+    let id = 2;
+    const nid = () => ++id;
+    const tgt = (spid) => `<p:tgtEl><p:spTgt spid="${spid}"/></p:tgtEl>`;
+    const vis = (spid, val, delay) =>
+      `<p:set><p:cBhvr><p:cTn id="${nid()}" dur="1" fill="hold"><p:stCondLst><p:cond delay="${delay || 0}"/></p:stCondLst></p:cTn>${tgt(spid)}<p:attrNameLst><p:attrName>style.visibility</p:attrName></p:attrNameLst></p:cBhvr><p:to><p:strVal val="${val}"/></p:to></p:set>`;
+    const effect = (it, node) => {
+      const head = (preset, cls, sub) => `<p:par><p:cTn id="${nid()}" presetID="${preset}" presetClass="${cls}" presetSubtype="${sub}" fill="hold" grpId="0" nodeType="${node}"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>`;
+      const tail = `</p:childTnLst></p:cTn></p:par>`;
+      if (it.fx === "timer") {
+        const ms = Math.max(1000, it.dur || 60000);
+        return head(22, "exit", 2) + `<p:animEffect transition="out" filter="wipe(right)"><p:cBhvr><p:cTn id="${nid()}" dur="${ms}"/>${tgt(it.id)}</p:cBhvr></p:animEffect>` + vis(it.id, "hidden", ms - 1) + tail;
+      }
+      if (it.fx === "appear" || it.fx === "after") return head(1, "entr", 0) + vis(it.id, "visible") + tail;
+      if (it.fx === "wipe") return head(22, "entr", 4) + vis(it.id, "visible") + `<p:animEffect transition="in" filter="wipe(down)"><p:cBhvr><p:cTn id="${nid()}" dur="500"/>${tgt(it.id)}</p:cBhvr></p:animEffect>` + tail;
+      return head(10, "entr", 0) + vis(it.id, "visible") + `<p:animEffect transition="in" filter="fade"><p:cBhvr><p:cTn id="${nid()}" dur="500"/>${tgt(it.id)}</p:cBhvr></p:animEffect>` + tail;
+    };
+    const groups = {};
+    items.forEach((it) => (groups[it.k] = groups[it.k] || []).push(it));
+    const clicks = Object.keys(groups)
+      .map(Number)
+      .sort((a, b) => a - b)
+      .map((k) => {
+        const g = groups[k];
+        const now = g.filter((x) => x.fx !== "after");
+        const later = g.filter((x) => x.fx === "after");
+        const outer = nid();
+        let inner = "";
+        if (now.length) inner += `<p:par><p:cTn id="${nid()}" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>${now.map((x, i) => effect(x, i ? "withEffect" : "clickEffect")).join("")}</p:childTnLst></p:cTn></p:par>`;
+        if (later.length) {
+          const wait = Math.max(0, ...now.map((x) => (x.fx === "timer" ? x.dur : 500)));
+          inner += `<p:par><p:cTn id="${nid()}" fill="hold"><p:stCondLst><p:cond delay="${now.length ? wait : 0}"/></p:stCondLst><p:childTnLst>${later.map((x, i) => effect(x, i ? "withEffect" : now.length ? "afterEffect" : "clickEffect")).join("")}</p:childTnLst></p:cTn></p:par>`;
+        }
+        return `<p:par><p:cTn id="${outer}" fill="hold"><p:stCondLst><p:cond delay="indefinite"/></p:stCondLst><p:childTnLst>${inner}</p:childTnLst></p:cTn></p:par>`;
+      })
+      .join("");
+    const bld = items.filter((x) => x.sp).map((x) => `<p:bldP spid="${x.id}" grpId="0" animBg="1"/>`);
+    return `<p:timing><p:tnLst><p:par><p:cTn id="1" dur="indefinite" restart="never" nodeType="tmRoot"><p:childTnLst><p:seq concurrent="1" nextAc="seek"><p:cTn id="2" dur="indefinite" nodeType="mainSeq"><p:childTnLst>${clicks}</p:childTnLst></p:cTn><p:prevCondLst><p:cond evt="onPrev" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:prevCondLst><p:nextCondLst><p:cond evt="onNext" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:nextCondLst></p:seq></p:childTnLst></p:cTn></p:par></p:tnLst>${
+      bld.length ? `<p:bldLst>${bld.join("")}</p:bldLst>` : ""
+    }</p:timing>`;
+  }
+  async function animateZip(buf) {
+    const zip = await window.JSZip.loadAsync(buf);
+    const files = Object.keys(zip.files).filter((f) => /^ppt\/slides\/slide\d+\.xml$/.test(f));
+    let total = 0;
+    for (const f of files) {
+      let xml = await zip.file(f).async("string");
+      const items = [];
+      xml = xml.replace(/<p:cNvPr id="(\d+)" name="L360A\|(\d+)\|(\w+)\|(\d+)\|(\d+)"/g, (m, id, k, fx, dur, seq, off) => {
+        const before = xml.slice(Math.max(0, off - 200), off);
+        const sp = before.lastIndexOf("<p:sp>") > before.lastIndexOf("<p:pic>");
+        items.push({ id, k: Number(k), fx, dur: Number(dur), sp });
+        return `<p:cNvPr id="${id}" name="Hiệu ứng ${k}.${seq}"`;
+      });
+      const tr = `<p:transition spd="med"><p:fade/></p:transition>`;
+      const tm = items.length ? timingXml(items) : "";
+      total += items.length;
+      xml = xml.replace(/<\/p:clrMapOvr>/, `</p:clrMapOvr>${tr}${tm}`);
+      zip.file(f, xml);
+    }
+    // Bỏ các mục thư mục trong gói (một số dịch vụ đám mây không mở được tệp có mục thư mục).
+    Object.keys(zip.files).forEach((k) => zip.files[k].dir && delete zip.files[k]);
+    return { blob: await zip.generateAsync({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.presentationml.presentation", compression: "DEFLATE" }), total };
+  }
+
   async function download(packs, opt = {}) {
     const { pptx, count } = await build(packs, opt);
     const p = plan(packs).packs[0];
     const b = p.bai || {};
     const cut = (t, n) => (t.length <= n ? t : t.slice(0, n).replace(/\s+\S*$/, "").replace(/[\s.,;:–-]+$/, ""));
     const name = `${b.so ? "Bài " + b.so + " - " : ""}${cut((b.ten || p.title).replace(/[\\/:*?"<>|]+/g, " "), 90)}${packs.length === 1 && p.tiet.tong > 1 ? ` - Tiết ${p.tiet.so}` : ""}.pptx`;
-    await pptx.writeFile({ fileName: opt.fileName || name });
+    const buf = await pptx.write({ outputType: "arraybuffer" });
+    const { blob } = await animateZip(buf);
+    u.downloadBlob(opt.fileName || name, blob);
     return count;
   }
 
-  L360.Pptx = { plan, build, download, fit };
+  L360.Pptx = { plan, build, download, fit, animateZip };
 })();

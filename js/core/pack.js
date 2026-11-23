@@ -32,7 +32,10 @@
     return t && t.subKey ? t.subKey(step, state || {}) : step.id;
   };
   // Bước là "một hoạt động" (khác trình chiếu thuần) – dùng cho quy tắc 1 khởi động / 1 luyện tập / 1 vận dụng.
-  const isActivity = (s) => !(L360.types[s.type] || {}).noSubmit;
+  const isActivity = (s) => {
+    const t = L360.types[s.type] || {};
+    return !t.noSubmit || !!t.activity;
+  };
 
   const Pack = {
     SCHEMA: "l360-pack/2",
