@@ -1044,7 +1044,9 @@ ${A.QUESTIONS || '- {"kind":"mcq","q":"…","options":["…","…","…","…"],
       const sl = u.slug(t);
       return /mo-dau|khoi-dong/.test(sl) ? "khoi-dong" : /luyen-tap/.test(sl) ? "luyen-tap" : /van-dung/.test(sl) ? "van-dung" : "hinh-thanh";
     };
-    const clean = (t) => md(t).replace(/^HOẠT ĐỘNG\s*\d+\s*[.:–-]?\s*/i, "").replace(/^Nhiệm vụ\s*\d+\s*[.:–-]\s*/i, "");
+    // Tên hoạt động viết hoa toàn bộ (theo mẫu giáo án) → viết thường đầu câu cho tiêu đề trang chiếu.
+    const sentence = (t) => (!/\p{L}/u.test(t) || t !== t.toLocaleUpperCase("vi") ? t : t.toLocaleLowerCase("vi").replace(/\p{L}/u, (c) => c.toLocaleUpperCase("vi")));
+    const clean = (t) => sentence(md(t).replace(/^HOẠT ĐỘNG\s*\d+\s*[.:–-]?\s*/i, "").replace(/^Nhiệm vụ\s*\d+\s*[.:–-]\s*/i, ""));
     const mucSo = (t, j) => (md(t).match(/^(\d+(?:\.\d+)*)/) || [])[1] || String(j + 1);
     const mucTen = (t) => md(t).replace(/^\d+(?:\.\d+)*\.?\s*/, "").replace(/^[a-zđ]\)\s*/i, "");
     const tenBai = (o.bai && o.bai.ten) || md(k.tenBai).replace(/^(BÀI|CHỦ ĐỀ|CHUYÊN ĐỀ)\s*[\dIVX.]+\s*[.:–-]?\s*/i, "");
@@ -1120,7 +1122,7 @@ ${A.QUESTIONS || '- {"kind":"mcq","q":"…","options":["…","…","…","…"],
               steps.push(st);
               links.push({ id: st.id, target: x });
             }
-            const q = quiz(x, phase, clean(x.ten) || clean(h.ten));
+            const q = quiz(x, phase, pages.length ? "Câu hỏi – " + (clean(x.ten) || clean(h.ten)) : clean(x.ten) || clean(h.ten));
             q && links.push({ id: q.id, target: x, extend: pages.length > 0 });
           });
         } else {
@@ -1132,7 +1134,7 @@ ${A.QUESTIONS || '- {"kind":"mcq","q":"…","options":["…","…","…","…"],
             steps.push(st);
             links.push({ id: st.id, target: h });
           }
-          const q = quiz(h, phase, clean(h.ten));
+          const q = quiz(h, phase, pages.length ? "Câu hỏi – " + clean(h.ten) : clean(h.ten));
           q && links.push({ id: q.id, target: h, extend: pages.length > 0 });
         }
       });

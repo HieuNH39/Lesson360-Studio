@@ -239,17 +239,26 @@
   const BAD = /\b(logo|icon|flag|coat of arms|emblem|seal|signature|stamp|banner|button|diagram|chart|graph|screenshot|qr)\b/i;
   const words = (s) => (L360.Ppct ? L360.Ppct.norm(s) : String(s || "").toLowerCase()).split(" ").filter((w) => w.length > 2);
   // Xếp hạng kết quả tìm: khớp từ khoá + mô tả, ảnh nét, tránh logo/biểu tượng.
+  // Ảnh không khớp từ khoá nào bị loại (thà để trống cho giáo viên chọn còn hơn ảnh sai nội dung).
   function rank(list, b) {
     const want = new Set(words(`${b.query || ""} ${b.alt || ""} ${b.caption || ""}`));
-    const isMap = b.kind === "map" || /map|bản đồ|lược đồ/i.test(`${b.query} ${b.alt}`);
+    const qw = new Set(words(b.query || b.alt || b.caption || ""));
+    const tag = `${b.query || ""} ${b.alt || ""}`;
+    const isMap = b.kind === "map" || /map|bản đồ|lược đồ/i.test(tag);
+    const isDiagram = /diagram|illustration|scheme|sơ đồ|hình vẽ|mô phỏng/i.test(tag);
+    const vector = isMap || isDiagram;
+    const minHits = qw.size >= 4 ? 2 : 1;
     return list
-      .filter((x) => (x.ow || x.w) >= (isMap ? 600 : 900) && (isMap || !/svg/.test(x.mime || "")))
+      .filter((x) => (vector && /svg/.test(x.mime || "") ? (x.w || 0) >= 600 : (x.ow || x.w) >= (isMap ? 600 : 900)) && (vector || !/svg/.test(x.mime || "")))
       .map((x) => {
         const hay = words(`${x.title} ${x.desc} ${x.article || ""}`);
         const hit = hay.filter((w) => want.has(w)).length;
-        const sc = hit * 2 + ((x.ow || 0) >= 1600 ? 1 : (x.ow || 0) >= 1200 ? 0.6 : 0) + (x.article ? 0.8 : 0) - (!isMap && BAD.test(x.title) ? 4 : 0) - (!isMap && /\bmap\b/i.test(x.title) ? 2 : 0);
-        return Object.assign({ score: sc }, x);
+        const qhit = new Set(hay.filter((w) => qw.has(w))).size;
+        const bad = isDiagram ? /\b(logo|icon|flag|coat of arms|emblem|seal|signature|stamp|banner|button|screenshot|qr)\b/i : BAD;
+        const sc = hit * 2 + qhit + ((x.ow || 0) >= 1600 ? 1 : (x.ow || 0) >= 1200 ? 0.6 : 0) + (x.article ? 0.8 : 0) - (!isMap && bad.test(x.title) ? 4 : 0) - (!isMap && /\bmap\b/i.test(x.title) ? 2 : 0);
+        return Object.assign({ score: sc, qhit }, x);
       })
+      .filter((x) => x.qhit >= minHits && x.score > 0)
       .sort((a, c) => c.score - a.score);
   }
   async function bestFor(b, used) {
