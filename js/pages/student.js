@@ -44,6 +44,24 @@
     const url = l ? C.lessonUrl(l) : "";
     return url ? `<a class="pill sgk-pill" href="${u.esc(url)}" target="_blank" rel="noopener" data-allow-leave title="Mở SGK trang ${u.esc(l.trang || "")}">${L360.icon("sgk")} SGK${l.trang ? " tr." + l.trang : ""}</a>` : "";
   }
+  // Góp ý nhanh cuối tiết (2 chạm, không bắt buộc) – minh chứng mức hứng thú và mức hiểu bài của học sinh.
+  const fbSel = {};
+  function fbCard() {
+    if (!code) return "";
+    if (fbSel.vui && fbSel.hieu) return `<div class="card fb-card" id="fbCard" style="margin-top:14px"><p class="center" style="margin:0;font-weight:700">Cảm ơn em đã góp ý! 💙</p></div>`;
+    const q = (k, title, opts) =>
+      `<p class="fb-q">${title}</p><div class="fb-opts">${opts.map(([v, e, t]) => `<button class="fb-o ${fbSel[k] === v ? "on" : ""}" data-fbq="${k}" data-v="${v}"><span>${e}</span>${t}</button>`).join("")}</div>`;
+    return `<div class="card fb-card" id="fbCard" style="margin-top:14px"><h2 style="margin:0 0 4px">Góp ý nhanh</h2><p class="small muted" style="margin:0 0 6px">Không bắt buộc · chỉ cần 2 chạm</p>${q("vui", "Em thấy tiết học hôm nay thế nào?", [
+      [4, "😍", "Rất thích"],
+      [3, "🙂", "Thích"],
+      [2, "😐", "Bình thường"],
+      [1, "🙁", "Chưa thích"]
+    ])}${q("hieu", "Em hiểu bài ở mức nào?", [
+      [3, "✅", "Hiểu hết"],
+      [2, "👍", "Hiểu phần lớn"],
+      [1, "🤔", "Còn chưa hiểu"]
+    ])}</div>`;
+  }
   function addNote(k, t, x) {
     if (!x || nb.some((n) => n.k === k)) return;
     nb.push({ k, t, x });
@@ -298,6 +316,8 @@
     }
     if (state.step >= pubMeta.steps.length) {
       head.innerHTML = "";
+      // Hết tiết: tắt chế độ tự học (không còn tính rời bài).
+      if (L360.Lock && L360.Lock.active) L360.Lock.disable();
       const hw = live.homework;
       main.innerHTML = `<div class="card center" style="padding:30px"><h1>Cảm ơn em!</h1><p class="muted">Tiết học đã kết thúc.</p>${Object.keys(pts).length ? `<p style="font-size:1.3rem">Điểm của em: <b>${myScore()}</b></p>` : ""}${
         nb.length ? `<button class="btn primary" id="onb">${L360.icon("ghiBai")} Xem lại Vở ghi (${nb.length})</button>` : ""
@@ -307,8 +327,22 @@
               hw.prepare ? `<p style="margin:10px 0 0"><b style="color:#1E8E5A">Chuẩn bị cho tiết sau:</b> ${u.esc(hw.prepare)}</p>` : ""
             }</div>`
           : ""
-      }`;
+      }${fbCard()}`;
       if (u.$("#onb")) u.$("#onb").onclick = openNotebook;
+      u.$$("[data-fbq]").forEach(
+        (b) =>
+          (b.onclick = async () => {
+            fbSel[b.dataset.fbq] = Number(b.dataset.v);
+            u.$$(`[data-fbq="${b.dataset.fbq}"]`).forEach((x) => x.classList.toggle("on", x === b));
+            try {
+              await S.set(`rooms/${R}/fb/${code}`, Object.assign({}, fbSel, { t: S.TS }));
+            } catch (e) {}
+            if (fbSel.vui && fbSel.hieu) {
+              const c = u.$("#fbCard");
+              if (c) c.innerHTML = `<p class="center" style="margin:0;font-weight:700">Cảm ơn em đã góp ý! 💙</p>`;
+            }
+          })
+      );
       lastRender = "end";
       return;
     }

@@ -155,7 +155,7 @@
           setTimeout(() => cb(api.auth.user), 0);
         },
         async signInTeacher(email) {
-          api.auth.user = { uid: "local-teacher", email: email || "giaovien@dien-tap", isTeacher: true };
+          api.auth.user = { uid: "local-teacher", email: email || "giaovien@dien-tap", isTeacher: true, verified: true };
           sessionStorage.setItem("l360:teacher", "1");
           return api.auth.user;
         },
@@ -166,6 +166,10 @@
           return api.auth.signInTeacher("giaovien@dien-tap");
         },
         async resetPassword() {},
+        async sendVerify() {},
+        async refresh() {
+          return api.auth.user;
+        },
         async signOut() {
           sessionStorage.removeItem("l360:teacher");
           api.auth.user = null;
@@ -254,7 +258,7 @@
       auth: {
         get user() {
           const cu = auth.currentUser || currentUser;
-          return cu ? { uid: cu.uid, email: cu.email, name: cu.displayName || "", anonymous: cu.isAnonymous } : null;
+          return cu ? { uid: cu.uid, email: cu.email, name: cu.displayName || "", anonymous: cu.isAnonymous, verified: !!cu.emailVerified } : null;
         },
         onChange(cb) {
           return auth.onAuthStateChanged((usr) => {
@@ -288,6 +292,17 @@
         },
         async resetPassword(email) {
           await auth.sendPasswordResetEmail(email);
+        },
+        // Tài khoản email + mật khẩu: xác minh email trước khi gửi đăng kí.
+        async sendVerify() {
+          if (auth.currentUser) await auth.currentUser.sendEmailVerification();
+        },
+        async refresh() {
+          if (!auth.currentUser) return null;
+          await auth.currentUser.reload();
+          await auth.currentUser.getIdToken(true);
+          currentUser = auth.currentUser;
+          return api.auth.user;
         },
         async signOut() {
           await auth.signOut();

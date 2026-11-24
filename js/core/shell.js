@@ -43,7 +43,9 @@
     userMenu(t) {
       if (!t) return "";
       const role = t.role === "admin" ? "Quản trị" : t.role === "tt" ? "Tổ trưởng" : "Giáo viên";
-      return `<button class="btn sm ghost umenu" id="umenu" title="Tài khoản & quản trị">${L360.shell.avatar(t, 28)}<span class="ellipsis" style="max-width:150px">${u.esc(t.name || t.email || "")}</span><span class="pill">${role}</span></button>`;
+      const acc = t.acc || t.name || t.email || "";
+      const mon = (t.subjects || []).map((s) => L360.Curr.subjectName(s)).join(", ");
+      return `<button class="btn sm ghost umenu" id="umenu" title="${u.esc(t.name || "")} – Tài khoản & quản trị">${L360.shell.avatar(t, 28)}<span class="um-n"><b class="ellipsis">${u.esc(acc)}</b>${mon ? `<small class="ellipsis">${u.esc(mon)}</small>` : ""}</span><span class="pill">${role}</span></button>`;
     },
     // Ảnh đại diện: ảnh tải lên, biểu tượng chọn sẵn, hoặc chữ cái đầu của tên.
     avatar(t, size = 32) {
@@ -58,9 +60,20 @@
     bindUserMenu(t) {
       const b = u.$("#umenu");
       if (!b) return;
+      // Quản trị viên, tổ trưởng: báo số giáo viên đang chờ duyệt.
+      if ((t.isAdmin || t.isLeader) && !L360.isLocal && L360.store)
+        L360.store
+          .get("requests")
+          .then((v) => {
+            const n = Object.values(v || {}).filter((r) => r && r.status !== "rejected").length;
+            if (!n || b.querySelector(".req-dot")) return;
+            b.insertAdjacentHTML("beforeend", `<span class="req-dot" title="${n} giáo viên chờ duyệt">${n}</span>`);
+            b.title = `${n} giáo viên đang chờ duyệt – bấm để xem`;
+          })
+          .catch(() => {});
       b.onclick = () => {
-        const m = u.modal(`<div class="row" style="gap:12px">${L360.shell.avatar(t, 56)}<h2 style="margin:0">${u.esc(t.name || "")}</h2></div><p class="muted">${u.esc(t.email || "")}${t.subjects && t.subjects.length ? " · " + u.esc(t.subjects.map((s) => L360.Curr.subjectName(s)).join(", ")) : ""}</p>
-          <div class="col"><a class="btn" href="taikhoan.html${dt()}">${L360.icon("user")} Hồ sơ & quản trị</a><a class="btn" href="insight.html${dt()}">${L360.icon("chart")} Dữ liệu của tôi</a>
+        const m = u.modal(`<div class="row" style="gap:12px">${L360.shell.avatar(t, 56)}<div><h2 style="margin:0">${u.esc(t.acc || t.name || "")}</h2><div class="small muted">${u.esc(t.acc && t.name ? t.name : "")}</div></div></div><p class="muted">${u.esc(t.email || "")}${t.subjects && t.subjects.length ? " · " + u.esc(t.subjects.map((s) => L360.Curr.subjectName(s)).join(", ")) : ""}</p>
+          <div class="col"><a class="btn" href="taikhoan.html${dt()}${b.querySelector(".req-dot") ? "#reqs" : ""}">${L360.icon("user")} Hồ sơ & quản trị${b.querySelector(".req-dot") ? ` <span class="req-dot">${b.querySelector(".req-dot").textContent}</span>` : ""}</a><a class="btn" href="insight.html${dt()}">${L360.icon("chart")} Dữ liệu của tôi</a>
           <button class="btn" id="lo">${L360.icon("logout")} Đăng xuất</button></div>`);
         u.$("#lo", m.el).onclick = () => L360.Auth.signOut();
       };

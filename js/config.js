@@ -11,6 +11,8 @@ window.L360_CONFIG = {
   toTruong: "Nguyễn Ngọc Đức",
   diaDanh: "Bắc Giang",
   toMa: "XaHoi",
+  // Giáo viên chỉ đăng nhập được bằng email công ty (quản trị viên được dùng email riêng).
+  emailDomain: "fpt.edu.vn",
 
   firebase: {
     apiKey: "AIzaSyC8ipSHqxF6i5_u23O9OzLJaXHsD-lQiYU",

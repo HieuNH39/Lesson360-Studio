@@ -330,6 +330,19 @@
   Room.Student = Student;
 
   /* ---------- Thống kê ---------- */
+  function hsFeedback(data) {
+    const all = Object.values((data && data.fb) || {}).filter((x) => x && (x.vui || x.hieu));
+    if (!all.length) return null;
+    const vui = [0, 0, 0, 0];
+    const hieu = [0, 0, 0];
+    all.forEach((x) => {
+      if (x.vui >= 1 && x.vui <= 4) vui[x.vui - 1]++;
+      if (x.hieu >= 1 && x.hieu <= 3) hieu[x.hieu - 1]++;
+    });
+    const nv = vui.reduce((a, b) => a + b, 0);
+    const nh = hieu.reduce((a, b) => a + b, 0);
+    return { n: all.length, vui, hieu, thich: nv ? Math.round(((vui[2] + vui[3]) / nv) * 100) : null, hieuBai: nh ? Math.round(((hieu[1] + hieu[2]) / nh) * 100) : null };
+  }
   const Stats = {
     // Danh sách các lượt nộp bài có thể thống kê của một gói bài học.
     keysOf(pack, data) {
@@ -464,9 +477,12 @@
         aiTool: (pack.meta && pack.meta.aiTool) || "",
         madeWithAI: !!(pack.meta && pack.meta.madeWithAI),
         feedback: feedback || null,
+        hs: hsFeedback(data),
         mode: L360.store.mode
       };
     },
+    // Góp ý nhanh của học sinh cuối tiết (thích/hiểu bài) – tổng hợp vào minh chứng tiết học.
+    hsFeedback: (data) => hsFeedback(data),
     // Tệp CSV minh chứng cá nhân.
     csvIndividual(pack, data) {
       const keys = Stats.keysOf(pack, data).filter((k) => !k.type.groupMode && data.pub && data.pub.items && data.pub.items[k.key]);

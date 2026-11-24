@@ -380,19 +380,20 @@
   }
 
   // Nhận xét ý thức học tập: ~30% sĩ số, mỗi em ≤ 100 kí tự, bắt đầu bằng "Con…"; tải Excel (Họ và tên | Nhận xét).
-  function comments() {
+  async function comments() {
     const NX = L360.NhanXet;
     const cls = host.meta.className || "";
+    const uid = (L360.Auth.teacher || {}).uid || "";
     const ms = NX.metrics(host.pack, host.data);
     if (!ms.length) return u.toast("Chưa có học sinh nào vào lớp để nhận xét.", "bad");
-    let names = NX.roster(cls);
-    let chosen = NX.choose(ms, host.meta.classSize, NX.history(cls));
+    let names = await NX.roster(cls, uid);
+    let chosen = NX.choose(ms, host.meta.classSize, await NX.history(cls, uid));
     const text = {};
     chosen.forEach((m) => (text[m.code] = NX.comment(m, host.room)));
     const lvName = { tot: "Tích cực", kha: "Khá", nhac: "Cần cố gắng", roi: "Rời bài" };
     const md = u.modal(`<h2>Nhận xét học sinh sau tiết</h2><p class="small muted" style="margin-top:-4px">Lớp ${u.esc(cls)} · ${u.esc(host.pack.title)}. Hệ thống chọn ${Math.ceil(0.3 * (host.meta.classSize || ms.length))} em (≈30% sĩ số), ưu tiên em chưa được nhận xét ở các tiết gần đây; nhận xét dựa trên số liệu thật của tiết (tham gia, trả lời đúng, rời bài). Thầy cô sửa trực tiếp trước khi tải.</p>
-      <details class="card flat" style="margin:8px 0"><summary class="small"><b>Danh sách lớp ${u.esc(cls)}</b> ${names.length ? `(${names.length} em – đã lưu trên máy này)` : "(chưa có – dán để hiện họ tên thay cho mã số)"}</summary>
-        <p class="tiny muted" style="margin:6px 0">Dán họ tên theo đúng số thứ tự (mã học sinh 01 là dòng 1…), mỗi dòng một em. Chỉ lưu trên máy này.</p><textarea id="dsl" rows="5" placeholder="Nguyễn Văn An&#10;Trần Thị Bình&#10;…">${u.esc(names.join("\n"))}</textarea><button class="btn sm" id="dslSave" style="margin-top:6px">Lưu danh sách</button></details>
+      <details class="card flat" style="margin:8px 0"><summary class="small"><b>Danh sách lớp ${u.esc(cls)}</b> ${names.length ? `(${names.length} em – đã lưu)` : "(chưa có – dán để hiện họ tên thay cho mã số)"}</summary>
+        <p class="tiny muted" style="margin:6px 0">Dán họ tên theo đúng số thứ tự (mã học sinh 01 là dòng 1…), mỗi dòng một em. Lưu theo tài khoản của thầy cô (chỉ thầy cô xem được), dùng được trên mọi máy.</p><textarea id="dsl" rows="5" placeholder="Nguyễn Văn An&#10;Trần Thị Bình&#10;…">${u.esc(names.join("\n"))}</textarea><button class="btn sm" id="dslSave" style="margin-top:6px">Lưu danh sách</button></details>
       <div id="nxList" class="nx-list"></div>
       <div class="row" style="margin-top:12px;gap:8px"><button class="btn ghost" id="nxAll">Chọn thêm / bớt học sinh</button><span class="spacer"></span><button class="btn" data-close>Đóng</button><button class="btn primary" id="nxDl">⬇ Tải Excel nhận xét</button></div>`);
     let showAll = false;
@@ -428,8 +429,8 @@
     u.$("#nxAll", md.el).onclick = () => ((showAll = !showAll), (u.$("#nxAll", md.el).textContent = showAll ? "Chỉ hiện học sinh đã chọn" : "Chọn thêm / bớt học sinh"), draw());
     u.$("#dslSave", md.el).onclick = () => {
       names = u.$("#dsl", md.el).value.split(/\r?\n/).map((x) => x.replace(/^\s*\d+[.)\s-]*/, "").trim()).filter((x, i, a) => x || i < a.length - 1);
-      NX.saveRoster(cls, names);
-      u.toast(`Đã lưu danh sách ${names.filter(Boolean).length} học sinh lớp ${cls}.`, "ok");
+      NX.saveRoster(cls, names, uid);
+      u.toast(`Đã lưu danh sách ${names.filter(Boolean).length} học sinh lớp ${cls} vào tài khoản của thầy cô.`, "ok");
       draw();
     };
     u.$("#nxDl", md.el).onclick = async () => {
@@ -437,7 +438,7 @@
       if (!rows.length) return u.toast("Chưa chọn học sinh nào.", "bad");
       const d = new Date();
       await NX.exportXlsx(`NhanXet_${u.slug(cls || "lop")}_${String(d.getDate()).padStart(2, "0")}${String(d.getMonth() + 1).padStart(2, "0")}${d.getFullYear()}_${host.room}.xlsx`, rows);
-      NX.remember(cls, host.room, chosen.map((m) => m.code));
+      NX.remember(cls, host.room, chosen.map((m) => m.code), uid);
       u.toast(`Đã tải nhận xét của ${rows.length} học sinh.`, "ok");
     };
   }

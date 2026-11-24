@@ -447,11 +447,39 @@
         await S().ready;
         const v = (await S().get(`baogiang/progress/${uid}/${nam}`)) || {};
         const out = {};
-        u.vals(v).forEach((x) => x && x.key && (out[x.key] = x));
+        Object.entries(v).forEach(([k, x]) => k !== "_opts" && x && x.key && (out[x.key] = x));
         return out;
       } catch (e) {
         return {};
       }
+    },
+    // Lựa chọn riêng của giáo viên (vai trò HĐTN, báo tiết TH) – lưu theo tài khoản, có bản dự phòng trên máy.
+    async loadOpts(uid, nam) {
+      let o = null;
+      try {
+        await S().ready;
+        o = await S().get(`baogiang/progress/${uid}/${nam}/_opts`);
+      } catch (e) {}
+      if (!o)
+        try {
+          o = JSON.parse(localStorage.getItem(`l360:bgopts:${uid}:${nam}`) || "null");
+        } catch (e) {}
+      const dec = (m) => {
+        const out = {};
+        Object.values(m || {}).forEach((x) => (x && typeof x === "object" && x.key ? (out[x.key] = x.v) : null));
+        Object.entries(m || {}).forEach(([k, v]) => (typeof v !== "object" ? (out[k] = v) : null));
+        return out;
+      };
+      return { roles: dec(o && o.roles), th: dec(o && o.th) };
+    },
+    async saveOpts(uid, nam, roles, th) {
+      const enc = (m) => Object.fromEntries(Object.entries(m || {}).filter(([, v]) => v != null && v !== false).map(([k, v]) => [fbKey(k), { key: k, v }]));
+      const dec = { roles: {}, th: {} };
+      try {
+        localStorage.setItem(`l360:bgopts:${uid}:${nam}`, JSON.stringify({ roles, th }));
+      } catch (e) {}
+      await S().set(`baogiang/progress/${uid}/${nam}/_opts`, { roles: enc(roles), th: enc(th), at: Date.now() });
+      return dec;
     },
     async saveProgress(uid, nam, tuan, last, rows) {
       const upd = {};

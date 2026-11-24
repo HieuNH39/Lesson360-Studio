@@ -166,6 +166,9 @@
         st.cal = await BG.loadCalendar(st.nam);
         st.idx = await BG.syllabusIndex(st.nam);
         st.prog = await BG.loadProgress(teacher.uid, st.nam);
+        const op = await BG.loadOpts(teacher.uid, st.nam);
+        st.roles = Object.assign({}, op.roles, st.roles);
+        st.th = Object.assign({}, op.th, st.th);
         keys().forEach((k) => {
           const p = st.prog[k.key];
           if (p && p.code && st.last[k.key] == null) (st.last[k.key] = p.code), (st.src[k.key] = `Đã báo đến tuần ${p.tuan || "?"}`);
@@ -236,8 +239,9 @@
     );
     u.$$("[data-offn]").forEach((b) => (b.onchange = () => ((st.off[b.dataset.offn] = b.value.trim() || "Nghỉ lễ"), compute(), render())));
     u.$$("[data-last]").forEach((b) => (b.onchange = () => ((st.last[b.dataset.last] = b.value || undefined), (st.src[b.dataset.last] = "Chọn tay"), compute(), render())));
-    u.$$("[data-role]").forEach((b) => (b.onchange = () => ((st.roles[b.dataset.role] = b.value), compute(), render())));
-    u.$$("[data-th]").forEach((b) => (b.onchange = () => ((st.th[b.dataset.th] = b.checked), compute(), render())));
+    const keepOpts = () => BG.saveOpts(teacher.uid, st.nam, st.roles, st.th).catch(() => {});
+    u.$$("[data-role]").forEach((b) => (b.onchange = () => ((st.roles[b.dataset.role] = b.value), keepOpts(), compute(), render())));
+    u.$$("[data-th]").forEach((b) => (b.onchange = () => ((st.th[b.dataset.th] = b.checked), keepOpts(), compute(), render())));
     u.$$("[data-fix]").forEach(
       (b) =>
         (b.onchange = () => {
@@ -256,10 +260,17 @@
           const blob = await BG.exportXlsx(st.tpl, st.res.rows);
           u.downloadBlob(st.tpl.name.replace(/\.xlsx?$/i, "") + ".xlsx", blob);
           if (BG.lastFallback) u.toast("Đã ghi tệp bằng phương án dự phòng (dữ liệu đủ, định dạng có thể khác mẫu một chút). Thầy cô gửi template cho quản trị để kiểm tra.", "", 6000);
+          let kept = true;
           try {
             await BG.saveProgress(teacher.uid, st.nam, st.tpl.tuan, st.res.last, st.res.rows);
-          } catch (e) {}
-          u.toast("Đã tải tệp báo giảng. Hệ thống đã nhớ tiết đã báo để điền tuần sau.", "ok", 4000);
+            await BG.saveOpts(teacher.uid, st.nam, st.roles, st.th);
+          } catch (e) {
+            kept = false;
+          }
+          if (kept) u.toast("Đã tải tệp báo giảng. Hệ thống đã nhớ tiết đã báo để điền tuần sau.", "ok", 4000);
+          else
+            u.modal(`<h2>Đã tải tệp, nhưng chưa lưu được tiến độ</h2><p>Tệp báo giảng vẫn đúng và dùng được. Tuy nhiên máy chủ chưa cho lưu tiết đã báo của tuần này, nên tuần sau hệ thống chưa tự biết tiết gần nhất.</p>
+              <p class="small muted">Cách khắc phục: báo quản trị viên cập nhật luật bảo mật Firebase (tệp firebase/database.rules.json) rồi tải lại trang. Trong lúc chờ, tuần sau thầy cô nạp lại các tệp báo giảng đã làm ở mục 3 để hệ thống đọc tiết gần nhất.</p><div class="row" style="justify-content:flex-end"><button class="btn primary" data-close>Đã hiểu</button></div>`);
         } catch (e) {
           u.toast("Không tạo được tệp: " + (e.message || e), "bad", 5000);
         }

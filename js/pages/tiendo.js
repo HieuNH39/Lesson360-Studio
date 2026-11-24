@@ -29,7 +29,13 @@
     if (lead) reports = (await S.get("baogiang/reports").catch(() => null)) || {};
     else reports = { [teacher.uid]: (await S.get(`baogiang/reports/${teacher.uid}`).catch(() => null)) || {} };
     const docs = await P.list(st.nam);
-    return { lead, teachers, meta: u.vals(meta).filter((m) => m && m.by), sessions: u.vals(sessions).filter((x) => x && x.startedAt), reports, docs };
+    let survey = {};
+    if (lead) survey = (await S.get("pilot/survey").catch(() => null)) || {};
+    else {
+      const mine = await S.get(`pilot/survey/${teacher.uid}`).catch(() => null);
+      if (mine) survey = { [teacher.uid]: mine };
+    }
+    return { lead, teachers, meta: u.vals(meta).filter((m) => m && m.by), sessions: u.vals(sessions).filter((x) => x && x.startedAt), reports, docs, survey };
   }
 
   async function draw() {
@@ -88,6 +94,7 @@
         <span class="pill">Năm học ${u.esc(nam.replace("-", "–"))}</span></div>
       <div class="grid g4 td-kpi"><div class="card"><b>${tot.soan}</b><span>tiết học trong thư viện</span></div><div class="card"><b>${tot.day}</b><span>tiết đã dạy trên hệ thống</span></div>
         <div class="card"><b>${tot.coverT ? Math.round((tot.cover / tot.coverT) * 100) : 0}%</b><span>bài trong Phụ lục 1 đã có tiết học (${tot.cover}/${tot.coverT})</span></div><div class="card"><b>${tot.gv}/${rows.length}</b><span>giáo viên đã sử dụng</span></div></div>
+      ${pilotCard(d)}
       <section class="card" style="margin-top:16px"><h2>8 tuần gần đây</h2><div class="td-weeks">${byW
         .map((x) => `<div class="td-w" title="${x.day} tiết dạy · ${x.soan} tiết soạn"><div class="td-col"><i class="d" style="height:${(x.day / maxW) * 100}%"></i><i class="s" style="height:${(x.soan / maxW) * 100}%"></i></div><span>${new Date(x.w).getDate()}/${new Date(x.w).getMonth() + 1}</span></div>`)
         .join("")}</div><div class="row small muted" style="gap:14px;margin-top:6px"><span><i class="td-dot d"></i> Tiết dạy trên hệ thống</span><span><i class="td-dot s"></i> Tiết soạn mới</span></div></section>
@@ -106,8 +113,199 @@
         <div class="td-cover">${cover
           .map((c) => `<a class="td-cv" href="ppct.html?nam=${u.esc(nam)}&bang=${u.esc(c.id)}"><div class="row nowrap"><b class="grow ellipsis">${u.esc(c.name)}</b><span class="small">${c.done}/${c.total} bài</span></div>${bar(c.done, c.total, c.done >= c.total ? "ok" : "")}</a>`)
           .join("") || `<p class="muted">Chưa có Phụ lục 1 cho năm học này.</p>`}</div></section>`;
+    bindPilot(d);
+    if (location.hash === "#khaosat") setTimeout(() => surveyForm(d), 300);
     u.$("#fMon").onchange = (e) => ((st.mon = e.target.value), draw());
     u.$("#fLop").onchange = (e) => ((st.lop = e.target.value), draw());
+  }
+
+  /* ---------- Đo thí điểm: 3 nguồn số liệu, không thêm việc cho giáo viên ----------
+     (1) Tự động sau mỗi tiết dạy trên hệ thống: HS tham gia, tỉ lệ đúng, thời gian soạn, GV đánh giá dễ dùng.
+     (2) Học sinh góp ý 2 chạm ở màn hình cuối tiết: thích tiết học? hiểu bài ở mức nào?
+     (3) Giáo viên làm khảo sát 6 câu (2 phút) một lần, sửa lại được trước khi tổng kết. */
+  const FEATS = ["Soạn giáo án (PL4)", "Tiết học tương tác", "Dạy học trên lớp", "Nhận xét học sinh", "Báo giảng", "Thư viện của trường"];
+  const pct = (a, b) => (b ? Math.round((a / b) * 100) : null);
+  const avg1 = (arr) => {
+    const v = arr.filter((x) => x != null && !isNaN(x));
+    return v.length ? Math.round((v.reduce((a, b) => a + Number(b), 0) / v.length) * 10) / 10 : null;
+  };
+  function pilotStats(d, from, to) {
+    const ses = d.sessions.filter((s) => (!from || s.startedAt >= from) && (!to || s.startedAt <= to));
+    let thich = 0,
+      nv = 0,
+      hieu = 0,
+      nh = 0,
+      hsN = 0;
+    ses.forEach((s) => {
+      if (!s.hs) return;
+      hsN += s.hs.n || 0;
+      const v = s.hs.vui || [];
+      const h = s.hs.hieu || [];
+      nv += v.reduce((a, b) => a + (b || 0), 0);
+      thich += (v[2] || 0) + (v[3] || 0);
+      nh += h.reduce((a, b) => a + (b || 0), 0);
+      hieu += (h[1] || 0) + (h[2] || 0);
+    });
+    const sv = u.vals(d.survey).filter((x) => x && x.at);
+    const truoc = avg1(sv.map((x) => x.truoc));
+    const sau = avg1(sv.map((x) => x.sau));
+    return {
+      ses,
+      gv: new Set(ses.map((s) => s.teacherUid)).size,
+      lop: new Set(ses.map((s) => s.className).filter(Boolean)).size,
+      hsLuot: ses.reduce((a, s) => a + (s.joined || 0), 0),
+      part: avg1(ses.map((s) => s.participation)),
+      dung: avg1(ses.map((s) => s.correctRate)),
+      prep: avg1(ses.map((s) => s.prepMinutes)),
+      prepN: ses.filter((s) => s.prepMinutes).length,
+      ease: avg1(ses.map((s) => s.feedback && s.feedback.ease)),
+      engage: avg1(ses.map((s) => s.feedback && s.feedback.engage)),
+      hsN,
+      thich: pct(thich, nv),
+      hieu: pct(hieu, nh),
+      sv,
+      truoc,
+      sau,
+      tietKiem: truoc && sau && truoc > sau ? Math.round(((truoc - sau) / truoc) * 100) : null,
+      de: avg1(sv.map((x) => x.de)),
+      ich: avg1(sv.map((x) => x.ich))
+    };
+  }
+  function pilotCard(d) {
+    const p = pilotStats(d);
+    const mine = d.survey[teacher.uid];
+    const k = (v, unit, label) => `<div class="td-pk"><b>${v == null ? "–" : v + unit}</b><span>${label}</span></div>`;
+    return `<section class="card td-pilot" id="khaosat" style="margin-top:16px"><div class="row" style="align-items:flex-start;gap:12px"><div class="grow"><h2 style="margin:0">Thí điểm Lesson 360°</h2>
+      <p class="small muted" style="margin:4px 0 0">Số liệu tự thu sau mỗi tiết dạy trên hệ thống và từ góp ý 2 chạm của học sinh cuối tiết. Giáo viên chỉ làm thêm một khảo sát 6 câu.</p></div>
+      <div class="row" style="gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="btn ${mine ? "" : "primary"}" id="pvSurvey">${L360.icon(mine ? "check" : "edit")} ${mine ? "Sửa khảo sát của tôi" : "Làm khảo sát (2 phút)"}</button>
+      ${d.lead ? `<button class="btn" id="pvXlsx">${L360.icon("download")} Báo cáo thí điểm (Excel)</button>` : ""}</div></div>
+      <div class="td-pks">${k(p.ses.length, "", "tiết dạy trên hệ thống")}${k(p.hsLuot, "", "lượt học sinh tham gia")}${k(p.thich, "%", `HS thích tiết học (${p.hsN} góp ý)`)}${k(p.hieu, "%", "HS tự đánh giá hiểu bài")}${k(p.prep, " ph", "soạn 1 tiết với Lesson 360° (TB)")}${k(
+      p.tietKiem,
+      "%",
+      `thời gian soạn tiết kiệm (khảo sát ${p.sv.length} GV)`
+    )}</div></section>`;
+  }
+  function bindPilot(d) {
+    if (u.$("#pvSurvey")) u.$("#pvSurvey").onclick = () => surveyForm(d);
+    if (u.$("#pvXlsx")) u.$("#pvXlsx").onclick = () => reportForm(d);
+  }
+  function surveyForm(d) {
+    const o = Object.assign({ dung: [] }, d.survey[teacher.uid] || {});
+    const sc = (id, v) => `<div class="fb-opts">${[1, 2, 3, 4, 5].map((n) => `<button class="fb-o ${Number(v) === n ? "on" : ""}" data-sc="${id}" data-v="${n}">${n}</button>`).join("")}</div>`;
+    const m = u.modal(`<h2>Khảo sát thí điểm (6 câu)</h2><p class="small muted">Trả lời theo trải nghiệm thật của thầy cô. Có thể sửa lại bất cứ lúc nào trước buổi tổng kết.</p>
+      <label class="field">1. Trước đây, soạn một tiết (giáo án + bài giảng trình chiếu) mất khoảng bao nhiêu phút?<input id="q1" type="number" min="0" max="1000" value="${o.truoc || ""}" placeholder="VD: 180"></label>
+      <label class="field" style="margin-top:10px">2. Khi dùng Lesson 360°, soạn một tiết mất khoảng bao nhiêu phút (kể cả thời gian chỉnh sửa)?<input id="q2" type="number" min="0" max="1000" value="${o.sau || ""}" placeholder="VD: 60"></label>
+      <p class="fb-q">3. Lesson 360° dễ dùng ở mức nào? <span class="tiny muted">(1 = rất khó · 5 = rất dễ)</span></p>${sc("de", o.de)}
+      <p class="fb-q">4. Lesson 360° hữu ích cho công việc ở mức nào? <span class="tiny muted">(1 = không hữu ích · 5 = rất hữu ích)</span></p>${sc("ich", o.ich)}
+      <p class="fb-q">5. Thầy cô dùng những tính năng nào? <span class="tiny muted">(chọn nhiều)</span></p><div class="chips">${FEATS.map((f) => `<button class="chip ${o.dung.includes(f) ? "sel" : ""}" data-ft="${u.esc(f)}">${u.esc(f)}</button>`).join("")}</div>
+      <label class="field" style="margin-top:12px">6. Điều cần cải tiến / góp ý khác<textarea id="q6" rows="3">${u.esc(o.gopy || "")}</textarea></label>
+      <div class="row" style="justify-content:flex-end;margin-top:16px;gap:8px"><button class="btn" data-close>Đóng</button><button class="btn primary" id="sv">Gửi khảo sát</button></div>`);
+    u.$$("[data-sc]", m.el).forEach(
+      (b) =>
+        (b.onclick = () => {
+          o[b.dataset.sc] = Number(b.dataset.v);
+          u.$$(`[data-sc="${b.dataset.sc}"]`, m.el).forEach((x) => x.classList.toggle("on", x === b));
+        })
+    );
+    u.$$("[data-ft]", m.el).forEach(
+      (b) =>
+        (b.onclick = () => {
+          const f = b.dataset.ft;
+          o.dung = o.dung.includes(f) ? o.dung.filter((x) => x !== f) : o.dung.concat(f);
+          b.classList.toggle("sel", o.dung.includes(f));
+        })
+    );
+    u.$("#sv", m.el).onclick = async () => {
+      const rec = {
+        name: teacher.name || "",
+        truoc: Number(u.$("#q1", m.el).value) || null,
+        sau: Number(u.$("#q2", m.el).value) || null,
+        de: o.de || null,
+        ich: o.ich || null,
+        dung: o.dung,
+        gopy: u.$("#q6", m.el).value.trim().slice(0, 1000),
+        at: Date.now()
+      };
+      if (!rec.truoc || !rec.sau || !rec.de || !rec.ich) return u.toast("Thầy cô trả lời giúp câu 1–4 nhé.", "bad", 3000);
+      try {
+        await S.set(`pilot/survey/${teacher.uid}`, rec);
+        m.close();
+        u.toast("Cảm ơn thầy cô đã góp ý!", "ok", 3000);
+        draw();
+      } catch (e) {
+        u.toast("Chưa gửi được: " + ((e && (e.code || e.message)) || e), "bad", 5000);
+      }
+    };
+  }
+  function reportForm(d) {
+    const first = d.sessions.reduce((a, s) => Math.min(a, s.startedAt), Date.now());
+    const m = u.modal(`<h2>Báo cáo thí điểm</h2><p class="small muted">Tệp Excel 3 trang: Tổng hợp · Từng tiết học · Khảo sát giáo viên. Mọi con số lấy thẳng từ hệ thống – dùng làm minh chứng.</p>
+      <div class="grid g2"><label class="field">Từ ngày<input id="rf" type="date" value="${u.isoDay(first)}"></label><label class="field">Đến ngày<input id="rt" type="date" value="${u.isoDay(Date.now())}"></label></div>
+      <div class="row" style="justify-content:flex-end;margin-top:16px;gap:8px"><button class="btn" data-close>Huỷ</button><button class="btn primary" id="go">${L360.icon("download")} Tải báo cáo</button></div>`);
+    u.$("#go", m.el).onclick = async () => {
+      const from = new Date(u.$("#rf", m.el).value + "T00:00:00").getTime() || 0;
+      const to = new Date(u.$("#rt", m.el).value + "T23:59:59").getTime() || Date.now();
+      await exportPilot(d, from, to);
+      m.close();
+    };
+  }
+  async function exportPilot(d, from, to) {
+    await u.loadScript("js/vendor/xlsx.full.min.js");
+    const X = window.XLSX;
+    const p = pilotStats(d, from, to);
+    const nm = (uid) => (d.teachers[uid] && d.teachers[uid].name) || "";
+    const soan = d.meta.filter((x) => (x.up || 0) >= from && (x.up || 0) <= to);
+    const bg = Object.values(d.reports || {}).reduce((a, r) => a + u.vals(r && r[st.nam]).filter(Boolean).length, 0);
+    const f = (v, unit = "") => (v == null ? "Chưa có số liệu" : v + unit);
+    const sum = [
+      ["BÁO CÁO THÍ ĐIỂM LESSON 360° STUDIO"],
+      [`${L360.cfg.school || ""} – ${L360.cfg.unit || ""}`],
+      [`Thời gian: ${u.fmtDate(from)} – ${u.fmtDate(to)} · Xuất ngày ${u.fmtDate(Date.now())}`],
+      [],
+      ["Chỉ số", "Giá trị", "Nguồn số liệu"],
+      ["Giáo viên dạy trên hệ thống", p.gv, "Tổng kết tự động sau mỗi tiết"],
+      ["Tiết học mới soạn trong thư viện", soan.length, "Thư viện của trường"],
+      ["Tiết dạy trên hệ thống", p.ses.length, "Tổng kết tự động sau mỗi tiết"],
+      ["Số lớp", p.lop, "Tổng kết tự động sau mỗi tiết"],
+      ["Lượt học sinh tham gia", p.hsLuot, "Tổng kết tự động sau mỗi tiết"],
+      ["Tỉ lệ học sinh trả lời các hoạt động (TB)", f(p.part, "%"), "Tổng kết tự động sau mỗi tiết"],
+      ["Tỉ lệ trả lời đúng (TB)", f(p.dung, "%"), "Tổng kết tự động sau mỗi tiết"],
+      ["Học sinh thích tiết học (Rất thích + Thích)", f(p.thich, "%"), `Góp ý 2 chạm cuối tiết – ${p.hsN} lượt`],
+      ["Học sinh tự đánh giá hiểu bài (Hiểu hết + Hiểu phần lớn)", f(p.hieu, "%"), `Góp ý 2 chạm cuối tiết – ${p.hsN} lượt`],
+      ["Thời gian soạn 1 tiết với Lesson 360° (TB, phút)", f(p.prep), `Ghi nhận khi kết thúc tiết – ${p.prepN} tiết`],
+      ["GV đánh giá dễ dùng sau tiết dạy (1–5)", f(p.ease), "Phiếu kết thúc tiết của giáo viên"],
+      ["GV đánh giá học sinh hứng thú (1–5)", f(p.engage), "Phiếu kết thúc tiết của giáo viên"],
+      ["Số giáo viên trả lời khảo sát", p.sv.length, "Khảo sát thí điểm 6 câu"],
+      ["Thời gian soạn 1 tiết trước đây (TB, phút)", f(p.truoc), "Khảo sát thí điểm – câu 1"],
+      ["Thời gian soạn 1 tiết khi dùng Lesson 360° (TB, phút)", f(p.sau), "Khảo sát thí điểm – câu 2"],
+      ["Thời gian soạn tiết kiệm được", f(p.tietKiem, "%"), "Tính từ câu 1 và câu 2"],
+      ["Mức dễ dùng (1–5)", f(p.de), "Khảo sát thí điểm – câu 3"],
+      ["Mức hữu ích (1–5)", f(p.ich), "Khảo sát thí điểm – câu 4"],
+      [`Số tuần báo giảng tạo trên hệ thống (năm học ${st.nam})`, bg, "Báo giảng CSDL"]
+    ];
+    const ws1 = X.utils.aoa_to_sheet(sum);
+    ws1["!cols"] = [{ wch: 58 }, { wch: 18 }, { wch: 44 }];
+    const head2 = ["Ngày", "Giáo viên", "Lớp", "Môn", "Bài / tiết", "HS tham gia", "Tham gia (%)", "Đúng (%)", "HS góp ý", "HS thích (%)", "HS hiểu bài (%)", "Phút soạn", "GV: dễ dùng", "GV: HS hứng thú", "Ghi chú"];
+    const rows2 = p.ses
+      .slice()
+      .sort((a, b) => a.startedAt - b.startedAt)
+      .map((s) => [u.fmtDate(s.startedAt), s.teacherName || nm(s.teacherUid), s.className || "", s.subject || "", s.title || s.label || "", s.joined || 0, s.participation, s.correctRate, s.hs ? s.hs.n : "", s.hs ? s.hs.thich : "", s.hs ? s.hs.hieuBai : "", s.prepMinutes || "", s.feedback ? s.feedback.ease : "", s.feedback ? s.feedback.engage : "", (s.feedback && s.feedback.note) || ""]);
+    const ws2 = X.utils.aoa_to_sheet([head2].concat(rows2));
+    ws2["!cols"] = [10, 24, 8, 14, 40, 10, 11, 9, 9, 11, 13, 9, 10, 13, 40].map((w) => ({ wch: w }));
+    const head3 = ["Giáo viên", "Trước đây (phút/tiết)", "Với Lesson 360° (phút/tiết)", "Tiết kiệm (%)", "Dễ dùng (1–5)", "Hữu ích (1–5)", "Tính năng đã dùng", "Góp ý", "Thời điểm"];
+    const rows3 = Object.entries(d.survey)
+      .filter(([, x]) => x && x.at)
+      .map(([uid, x]) => [x.name || nm(uid), x.truoc, x.sau, x.truoc && x.sau ? Math.round(((x.truoc - x.sau) / x.truoc) * 100) : "", x.de, x.ich, (x.dung || []).join(", "), x.gopy || "", u.fmtDate(x.at)]);
+    const ws3 = X.utils.aoa_to_sheet([head3].concat(rows3));
+    ws3["!cols"] = [24, 18, 22, 12, 12, 12, 46, 50, 12].map((w) => ({ wch: w }));
+    const wb = X.utils.book_new();
+    X.utils.book_append_sheet(wb, ws1, "Tổng hợp");
+    X.utils.book_append_sheet(wb, ws2, "Từng tiết học");
+    X.utils.book_append_sheet(wb, ws3, "Khảo sát GV");
+    const out = X.write(wb, { bookType: "xlsx", type: "array" });
+    const dd = (t) => u.isoDay(t).split("-").reverse().join("");
+    u.downloadBlob(`BaoCao_ThiDiem_Lesson360_${dd(from)}-${dd(to)}.xlsx`, new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+    u.toast("Đã tải báo cáo thí điểm.", "ok");
   }
 
   (async function init() {

@@ -99,28 +99,46 @@
     comment(m, seed) {
       return clip(pick(T[NX.level(m)], (seed || "") + m.code));
     },
-    // Danh sách lớp (STT → họ tên) lưu trên máy giáo viên.
-    roster(cls) {
+    // Danh sách lớp (STT → họ tên) và lượt nhận xét: lưu theo tài khoản giáo viên (chỉ chính giáo viên đọc được),
+    // kèm bản trên máy để dùng được cả khi mất mạng.
+    _k: (cls) => String(cls || "").toUpperCase().replace(/[.#$/[\]\s]+/g, "_") || "LOP",
+    _local(kind, cls, v) {
+      const key = `l360:${kind}:${String(cls || "").toUpperCase()}`;
       try {
-        return JSON.parse(localStorage.getItem("l360:dsl:" + String(cls || "").toUpperCase()) || "[]");
+        if (v === undefined) return JSON.parse(localStorage.getItem(key) || "[]");
+        localStorage.setItem(key, JSON.stringify(v));
+      } catch (e) {}
+      return v;
+    },
+    async _remote(uid, path) {
+      if (!uid || L360.isLocal) return null;
+      try {
+        await L360.store.ready;
+        return await L360.store.get(`mine/${uid}/${path}`);
       } catch (e) {
-        return [];
+        return null;
       }
     },
-    saveRoster(cls, list) {
-      localStorage.setItem("l360:dsl:" + String(cls || "").toUpperCase(), JSON.stringify(list));
+    async roster(cls, uid) {
+      const r = await NX._remote(uid, `lop/${NX._k(cls)}`);
+      if (r && Array.isArray(r.names)) return NX._local("dsl", cls, r.names);
+      return NX._local("dsl", cls);
     },
-    history(cls) {
-      try {
-        return JSON.parse(localStorage.getItem("l360:nx:" + String(cls || "").toUpperCase()) || "[]");
-      } catch (e) {
-        return [];
-      }
+    async saveRoster(cls, list, uid) {
+      NX._local("dsl", cls, list);
+      if (uid && !L360.isLocal) await L360.store.set(`mine/${uid}/lop/${NX._k(cls)}`, { cls, names: list, at: Date.now() }).catch(() => {});
     },
-    remember(cls, room, codes) {
-      const h = NX.history(cls).filter((x) => x.room !== room);
+    async history(cls, uid) {
+      const r = await NX._remote(uid, `nx/${NX._k(cls)}`);
+      if (r && Array.isArray(r.h)) return NX._local("nx", cls, r.h);
+      return NX._local("nx", cls);
+    },
+    async remember(cls, room, codes, uid) {
+      const h = (await NX.history(cls, uid)).filter((x) => x.room !== room);
       h.push({ room, at: Date.now(), codes });
-      localStorage.setItem("l360:nx:" + String(cls || "").toUpperCase(), JSON.stringify(h.slice(-12)));
+      const keep = h.slice(-12);
+      NX._local("nx", cls, keep);
+      if (uid && !L360.isLocal) await L360.store.set(`mine/${uid}/nx/${NX._k(cls)}`, { cls, h: keep, at: Date.now() }).catch(() => {});
     },
     nameOf(code, names, m) {
       const i = Number(String(code).replace(/\D/g, ""));
