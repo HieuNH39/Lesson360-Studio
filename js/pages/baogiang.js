@@ -252,8 +252,10 @@
       dl.onclick = async () => {
         dl.disabled = true;
         try {
+          BG.lastFallback = false;
           const blob = await BG.exportXlsx(st.tpl, st.res.rows);
           u.downloadBlob(st.tpl.name.replace(/\.xlsx?$/i, "") + ".xlsx", blob);
+          if (BG.lastFallback) u.toast("Đã ghi tệp bằng phương án dự phòng (dữ liệu đủ, định dạng có thể khác mẫu một chút). Thầy cô gửi template cho quản trị để kiểm tra.", "", 6000);
           try {
             await BG.saveProgress(teacher.uid, st.nam, st.tpl.tuan, st.res.last, st.res.rows);
           } catch (e) {}

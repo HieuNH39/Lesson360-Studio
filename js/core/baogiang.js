@@ -139,33 +139,57 @@
     /* ---------- Template tuần ---------- */
     async readTemplate(file) {
       await u.loadScript("js/vendor/xlsx.full.min.js");
+      const X = window.XLSX;
       const buf = await file.arrayBuffer();
-      const wb = window.XLSX.read(buf, { type: "array" });
-      const name = wb.SheetNames[0];
-      const sh = wb.Sheets[name];
-      const rng = window.XLSX.utils.decode_range(sh["!ref"] || "A1:A1");
-      const rows = window.XLSX.utils.sheet_to_json(sh, { header: 1, raw: false, defval: "", blankrows: true });
-      const hi = rows.findIndex((r) => r.some((c) => /^tiết theo ppct$/i.test(String(c).trim())));
-      if (hi < 0) throw new Error("Không thấy cột \"Tiết theo PPCT\" – hãy tải đúng template báo giảng tuần xuất từ CSDL.");
-      const h = rows[hi].map((c) => norm(c));
-      const ci = (re) => h.findIndex((x) => re.test(x));
-      const C = { stt: ci(/^stt$/), thu: ci(/^thu$/), buoi: ci(/^buoi/), tkb: ci(/^tiet hoc tkb|^tiet tkb/), kieu: ci(/^kieu giang day/), mon: ci(/^mon hoc/), lop: ci(/^lop hoc|^lop$/), ppct: ci(/^tiet theo ppct/), note: ci(/^ghi chu/) };
-      const letter = (i) => window.XLSX.utils.encode_col(i);
-      const top = rows.slice(0, hi).map((r) => r.filter(Boolean).join(" ")).join("\n");
-      const wk = top.match(/Tuần\s*(\d+)\s*\((\d{1,2})\/(\d{1,2})\/(\d{4})\s*-\s*(\d{1,2})\/(\d{1,2})\/(\d{4})\)/i);
-      const gv = top.match(/giáo viên:\s*([^\n(]+?)\s*(?:\((\w+)\))?\s*(?:\n|$)/i);
+      const wb = X.read(buf, { type: "array" });
+      // Trang tính có cột "Tiết theo PPCT" (template có thể kèm các trang danh mục).
+      const val = (sh, r, c) => {
+        const cell = sh[X.utils.encode_cell({ r, c })];
+        return cell == null ? "" : String(cell.w != null ? cell.w : cell.v != null ? cell.v : "").trim();
+      };
+      let name = null, sh = null, rng = null, hr = -1;
+      for (const n of wb.SheetNames) {
+        const s0 = wb.Sheets[n];
+        if (!s0 || !s0["!ref"]) continue;
+        const g = X.utils.decode_range(s0["!ref"]);
+        for (let r = g.s.r; r <= Math.min(g.e.r, g.s.r + 30) && hr < 0; r++)
+          for (let c = g.s.c; c <= g.e.c; c++)
+            if (/^tiết theo ppct$/i.test(val(s0, r, c).replace(/\s+/g, " "))) {
+              (name = n), (sh = s0), (rng = g), (hr = r);
+              break;
+            }
+        if (hr >= 0) break;
+      }
+      if (hr < 0) throw new Error("Không thấy cột \"Tiết theo PPCT\" – hãy tải đúng template báo giảng tuần xuất từ CSDL.");
+      const col = {};
+      for (let c = rng.s.c; c <= rng.e.c; c++) {
+        const h = norm(val(sh, hr, c));
+        const k = /^stt$/.test(h) ? "stt" : /^thu$/.test(h) ? "thu" : /^buoi/.test(h) ? "buoi" : /^tiet hoc tkb|^tiet tkb/.test(h) ? "tkb" : /^kieu giang day/.test(h) ? "kieu" : /^mon hoc/.test(h) ? "mon" : /^lop hoc|^lop$/.test(h) ? "lop" : /^tiet theo ppct/.test(h) ? "ppct" : /^ghi chu/.test(h) ? "note" : null;
+        if (k && col[k] == null) col[k] = c;
+      }
+      const letter = (c) => X.utils.encode_col(c);
+      const top = [];
+      for (let r = rng.s.r; r < hr; r++) {
+        const line = [];
+        for (let c = rng.s.c; c <= rng.e.c; c++) val(sh, r, c) && line.push(val(sh, r, c));
+        top.push(line.join(" "));
+      }
+      const head = top.join("\n");
+      const wk = head.match(/Tuần\s*(\d+)\s*\((\d{1,2})\/(\d{1,2})\/(\d{4})\s*-\s*(\d{1,2})\/(\d{1,2})\/(\d{4})\)/i);
+      const gv = head.match(/giáo viên:\s*([^\n(]+?)\s*(?:\((\w+)\))?\s*(?:\n|$)/i);
       const list = [];
-      rows.slice(hi + 1).forEach((r, j) => {
-        const g = (k) => (C[k] >= 0 ? String(r[C[k]] == null ? "" : r[C[k]]).trim() : "");
-        if (!g("thu") && !g("mon") && !g("stt")) return;
-        list.push({ r: rng.s.r + hi + 2 + j, stt: g("stt"), thu: g("thu"), buoi: g("buoi"), tkb: g("tkb"), kieu: g("kieu"), mon: g("mon"), lop: g("lop"), ppct: g("ppct"), note: g("note") });
-      });
+      for (let r = hr + 1; r <= rng.e.r; r++) {
+        const g = (k) => (col[k] != null ? val(sh, r, col[k]) : "");
+        if (!g("thu") && !g("mon") && !g("stt")) continue;
+        list.push({ r: r + 1, stt: g("stt"), thu: g("thu"), buoi: g("buoi"), tkb: g("tkb"), kieu: g("kieu"), mon: g("mon"), lop: g("lop"), ppct: g("ppct"), note: g("note") });
+      }
       const from = wk ? new Date(Number(wk[4]), Number(wk[3]) - 1, Number(wk[2])) : null;
       return {
         name: file.name,
         buf,
+        xls: !/^PK/.test(String.fromCharCode(...new Uint8Array(buf.slice(0, 2)))),
         sheet: name,
-        cols: { ppct: letter(C.ppct), kieu: C.kieu >= 0 ? letter(C.kieu) : null, note: C.note >= 0 ? letter(C.note) : null },
+        cols: { ppct: letter(col.ppct), kieu: col.kieu != null ? letter(col.kieu) : null, note: col.note != null ? letter(col.note) : null },
         tuan: wk ? Number(wk[1]) : 0,
         from,
         to: wk ? new Date(Number(wk[7]), Number(wk[6]) - 1, Number(wk[5])) : null,
@@ -275,69 +299,146 @@
     },
 
     /* ---------- Xuất Excel: giữ nguyên template, chỉ ghi các ô thay đổi ---------- */
+    // Ghi thẳng vào XML của template bằng trình phân tích XML (giữ nguyên mọi định dạng, kiểu ô, tiền tố
+    // không gian tên của tệp do CSDL sinh ra); sau khi ghi đọc lại để kiểm tra từng ô. Nếu không ghi được
+    // (ví dụ tệp .xls cũ) thì xuất bằng thư viện bảng tính.
     async exportXlsx(tpl, rows) {
+      const changes = [];
+      rows.forEach((o) => {
+        if (o.out !== o.ppct) changes.push([`${tpl.cols.ppct}${o.r}`, o.out || "", true]);
+        if (tpl.cols.kieu && o.kieuOut !== o.kieu) changes.push([`${tpl.cols.kieu}${o.r}`, o.kieuOut || "", false]);
+        if (tpl.cols.note && o.noteOut !== o.note) changes.push([`${tpl.cols.note}${o.r}`, o.noteOut || "", false]);
+      });
+      let blob = null;
+      if (!tpl.xls)
+        try {
+          blob = await BG.patchXml(tpl, changes);
+        } catch (e) {
+          console.warn("Ghi trực tiếp template không được:", e);
+        }
+      if (blob) {
+        const bad = await BG.check(blob, tpl, changes);
+        if (!bad.length) return blob;
+        console.warn("Ô chưa ghi đúng:", bad);
+      }
+      return BG.writeWithLib(tpl, changes);
+    },
+    async patchXml(tpl, changes) {
       await u.loadScript("js/vendor/jszip.min.js");
       const zip = await window.JSZip.loadAsync(tpl.buf);
-      const wbx = await zip.file("xl/workbook.xml").async("string");
-      const rels = await zip.file("xl/_rels/workbook.xml.rels").async("string");
-      const esc = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-      const sm = wbx.match(new RegExp(`<sheet\\b[^>]*name="${tpl.sheet.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"[^>]*r:id="([^"]+)"`)) || wbx.match(/<sheet\b[^>]*r:id="([^"]+)"/);
-      const rm = sm && rels.match(new RegExp(`<Relationship\\b[^>]*Id="${sm[1]}"[^>]*Target="([^"]+)"`)) ;
-      const rm2 = sm && !rm && rels.match(new RegExp(`<Relationship\\b[^>]*Target="([^"]+)"[^>]*Id="${sm[1]}"`));
-      const target = ((rm || rm2) && (rm || rm2)[1]) || "worksheets/sheet1.xml";
-      const path = target.startsWith("/") ? target.slice(1) : "xl/" + target.replace(/^\.\//, "");
-      let xml = await zip.file(path).async("string");
-      // Kiểu ô của cột "Tiết theo PPCT" khi đã có giá trị (định dạng văn bản) – dùng lại cho ô mới điền.
-      const stylesXml = zip.file("xl/styles.xml") ? await zip.file("xl/styles.xml").async("string") : "";
-      const xfs = ((stylesXml.match(/<cellXfs[^>]*>([\s\S]*?)<\/cellXfs>/) || [])[1] || "").match(/<xf\b[^>]*\/>|<xf\b[^>]*>[\s\S]*?<\/xf>/g) || [];
-      const minR = Math.min(...tpl.rows.map((o) => o.r));
-      const filledStyle = (() => {
-        const re = new RegExp(`<c r="${tpl.cols.ppct}(\\d+)"[^>]*?\\ss="(\\d+)"[^>]*t="inlineStr"><is><t>[^<]+</t>`, "g");
-        let m;
-        while ((m = re.exec(xml))) if (Number(m[1]) >= minR) return m[2];
-        return null;
-      })();
-      // Ô "Tiết theo PPCT" là văn bản: dùng kiểu ô cùng dạng nhưng định dạng Text (@) nếu template có sẵn.
+      const P = new DOMParser();
+      const read = async (p) => (zip.file(p) ? P.parseFromString(await zip.file(p).async("string"), "application/xml") : null);
+      const wbx = await read("xl/workbook.xml");
+      const rels = await read("xl/_rels/workbook.xml.rels");
+      if (!wbx || !rels) throw new Error("Thiếu workbook.xml");
+      const RNS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+      const sheets = [...wbx.getElementsByTagNameNS("*", "sheet")];
+      const se = sheets.find((x) => x.getAttribute("name") === tpl.sheet) || sheets[0];
+      const rid = se.getAttributeNS(RNS, "id") || se.getAttribute("r:id");
+      const rel = [...rels.getElementsByTagNameNS("*", "Relationship")].find((x) => x.getAttribute("Id") === rid);
+      let target = rel ? rel.getAttribute("Target") : "worksheets/sheet1.xml";
+      const path = target.startsWith("/") ? target.slice(1) : ("xl/" + target).replace(/\/\.\//g, "/");
+      const doc = await read(path);
+      if (!doc || doc.getElementsByTagName("parsererror").length) throw new Error("Không đọc được trang tính");
+      const root = doc.documentElement;
+      const NS = root.namespaceURI;
+      const pre = root.prefix;
+      const mk = (tag) => doc.createElementNS(NS, pre ? `${pre}:${tag}` : tag);
+      const sd = root.getElementsByTagNameNS(NS, "sheetData")[0];
+      const colNum = (ref) => ref.replace(/\d+/g, "").split("").reduce((a, c) => a * 26 + c.charCodeAt(0) - 64, 0);
+      const rowsBy = {};
+      [...sd.getElementsByTagNameNS(NS, "row")].forEach((r) => (rowsBy[r.getAttribute("r")] = r));
+      // Kiểu ô đã điền sẵn trong cột PPCT (dòng dữ liệu) hoặc kiểu cùng dạng định dạng Văn bản.
+      const ss = await read("xl/styles.xml");
+      const xfs = ss ? [...((ss.getElementsByTagNameNS(NS, "cellXfs")[0] || { children: [] }).children)] : [];
+      const sig = (x, nf) => [nf, "fontId", "fillId", "borderId", "xfId"].map((a, i) => (i === 0 ? nf : x.getAttribute(a) || "0")).join("|") + "|" + (x.getElementsByTagNameNS(NS, "alignment")[0] ? new XMLSerializer().serializeToString(x.getElementsByTagNameNS(NS, "alignment")[0]) : "");
       const textStyle = (s) => {
         const x = xfs[Number(s)];
-        if (!x || /numFmtId="49"/.test(x)) return s;
-        const want = x.replace(/numFmtId="\d+"/, 'numFmtId="49"');
-        const i = xfs.indexOf(want);
+        if (!x || x.getAttribute("numFmtId") === "49") return s;
+        const want = sig(x, "49");
+        const i = xfs.findIndex((y) => sig(y, y.getAttribute("numFmtId") || "0") === want);
         return i >= 0 ? String(i) : s;
       };
-      const colNum = (ref) => ref.replace(/\d+/g, "").split("").reduce((a, c) => a * 26 + c.charCodeAt(0) - 64, 0);
-      const setCell = (ref, val, style) => {
-        const rowN = ref.replace(/\D/g, "");
-        const cellRe = new RegExp(`<c r="${ref}"(\\s[^>]*?)?(?:/>|>[\\s\\S]*?</c>)`);
-        const m = xml.match(cellRe);
-        let s = style;
-        if (m && !s) {
-          const sm2 = (m[1] || "").match(/\ss="(\d+)"/);
-          s = sm2 ? sm2[1] : null;
+      const minR = Math.min(...tpl.rows.map((o) => o.r));
+      let filledStyle = null;
+      for (const [k, r] of Object.entries(rowsBy)) {
+        if (Number(k) < minR) continue;
+        const c = [...r.getElementsByTagNameNS(NS, "c")].find((c) => c.getAttribute("r") === `${tpl.cols.ppct}${k}`);
+        if (c && c.textContent.trim() && c.getAttribute("s")) {
+          filledStyle = c.getAttribute("s");
+          break;
         }
-        const cell = val === "" ? `<c r="${ref}"${s ? ` s="${s}"` : ""}/>` : `<c r="${ref}"${s ? ` s="${s}"` : ""} t="inlineStr"><is><t>${esc(val)}</t></is></c>`;
-        if (m) return (xml = xml.replace(cellRe, cell));
-        const rowRe = new RegExp(`(<row\\b[^>]*\\br="${rowN}"[^>]*>)([\\s\\S]*?)(</row>)`);
-        const rm3 = xml.match(rowRe);
-        if (!rm3) return;
-        // Chèn ô đúng thứ tự cột.
-        const cells = rm3[2].match(/<c r="[A-Z]+\d+"[\s\S]*?(?:\/>|<\/c>)/g) || [];
-        const n = colNum(ref);
-        const at = cells.findIndex((c) => colNum(c.match(/r="([A-Z]+)/)[1]) > n);
-        const inner = at < 0 ? rm3[2] + cell : rm3[2].replace(cells[at], cell + cells[at]);
-        xml = xml.replace(rowRe, `$1${inner}$3`);
-      };
-      rows.forEach((o) => {
-        if (o.out !== o.ppct) {
-          const ref = `${tpl.cols.ppct}${o.r}`;
-          const cur = (xml.match(new RegExp(`<c r="${ref}"[^>]*\\ss="(\\d+)"`)) || [])[1];
-          setCell(ref, o.out || "", o.out ? filledStyle || (cur ? textStyle(cur) : null) : null);
+      }
+      for (const [ref, v, isPpct] of changes) {
+        const rn = ref.replace(/\D/g, "");
+        let row = rowsBy[rn];
+        if (!row) {
+          row = mk("row");
+          row.setAttribute("r", rn);
+          const after = Object.keys(rowsBy).map(Number).filter((x) => x > Number(rn)).sort((a, b) => a - b)[0];
+          sd.insertBefore(row, after ? rowsBy[after] : null);
+          rowsBy[rn] = row;
         }
-        if (tpl.cols.kieu && o.kieuOut !== o.kieu) setCell(`${tpl.cols.kieu}${o.r}`, o.kieuOut || "");
-        if (tpl.cols.note && o.noteOut !== o.note) setCell(`${tpl.cols.note}${o.r}`, o.noteOut || "");
-      });
+        const cells = [...row.getElementsByTagNameNS(NS, "c")];
+        let c = cells.find((x) => x.getAttribute("r") === ref);
+        if (!c) {
+          c = mk("c");
+          c.setAttribute("r", ref);
+          const nx = cells.find((x) => colNum(x.getAttribute("r") || "A") > colNum(ref));
+          // Kiểu ô lấy theo ô liền trái cùng dòng (cùng khung viền, phông chữ).
+          const st0 = cells.filter((x) => colNum(x.getAttribute("r") || "A") < colNum(ref) && x.getAttribute("s")).pop() || cells.find((x) => x.getAttribute("s"));
+          if (st0) c.setAttribute("s", st0.getAttribute("s"));
+          row.insertBefore(c, nx || null);
+        }
+        while (c.firstChild) c.removeChild(c.firstChild);
+        c.removeAttribute("t");
+        if (isPpct && v) c.setAttribute("s", filledStyle || textStyle(c.getAttribute("s") || "0"));
+        if (v !== "") {
+          c.setAttribute("t", "inlineStr");
+          const is = mk("is");
+          const t = mk("t");
+          t.textContent = v;
+          is.appendChild(t);
+          c.appendChild(is);
+        }
+      }
+      let xml = new XMLSerializer().serializeToString(doc);
+      if (!/^<\?xml/.test(xml)) xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' + xml;
       zip.file(path, xml);
+      // Bỏ chuỗi tính toán cũ (nếu có) để Excel tự tính lại, tránh cảnh báo sửa tệp.
+      if (zip.file("xl/calcChain.xml")) {
+        zip.remove("xl/calcChain.xml");
+        const ct = await zip.file("[Content_Types].xml").async("string");
+        zip.file("[Content_Types].xml", ct.replace(/<Override[^>]*PartName="\/xl\/calcChain\.xml"[^>]*\/>/, ""));
+        const wr = await zip.file("xl/_rels/workbook.xml.rels").async("string");
+        zip.file("xl/_rels/workbook.xml.rels", wr.replace(/<Relationship[^>]*calcChain[^>]*\/>/, ""));
+      }
       return zip.generateAsync({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", compression: "DEFLATE" });
+    },
+    // Đọc lại tệp vừa tạo, đối chiếu từng ô cần điền.
+    async check(blob, tpl, changes) {
+      const X = window.XLSX;
+      const wb = X.read(await blob.arrayBuffer(), { type: "array" });
+      const sh = wb.Sheets[tpl.sheet] || wb.Sheets[wb.SheetNames[0]];
+      return changes.filter(([ref, v]) => String((sh[ref] && (sh[ref].w != null ? sh[ref].w : sh[ref].v)) || "").trim() !== String(v).trim());
+    },
+    // Phương án dự phòng: ghi bằng thư viện bảng tính (giữ dữ liệu, có thể mất một phần định dạng).
+    async writeWithLib(tpl, changes) {
+      const X = window.XLSX;
+      const wb = X.read(tpl.buf, { type: "array", cellStyles: true });
+      const sh = wb.Sheets[tpl.sheet] || wb.Sheets[wb.SheetNames[0]];
+      changes.forEach(([ref, v]) => {
+        if (v === "") return delete sh[ref];
+        sh[ref] = Object.assign({}, sh[ref] || {}, { t: "s", v, w: v, z: "@" });
+        const g = X.utils.decode_range(sh["!ref"]);
+        const a = X.utils.decode_cell(ref);
+        if (a.r > g.e.r || a.c > g.e.c) (g.e.r = Math.max(g.e.r, a.r)), (g.e.c = Math.max(g.e.c, a.c)), (sh["!ref"] = X.utils.encode_range(g));
+      });
+      // Bỏ thuộc tính "level" thư viện đọc từ .xls (không hợp lệ trong .xlsx, Excel sẽ đòi sửa tệp).
+      wb.SheetNames.forEach((n) => (wb.Sheets[n]["!cols"] || []).forEach((c) => c && delete c.level));
+      const out = X.write(wb, { bookType: "xlsx", type: "array", cellStyles: true });
+      BG.lastFallback = true;
+      return new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
     },
 
     /* ---------- Lưu tiến độ ---------- */
