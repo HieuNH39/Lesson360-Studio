@@ -576,7 +576,8 @@
     const tu = nums(o.tuan);
     const ti = nums(o.tiet);
     const tiet = ti.length ? `Tiet${Math.min(...ti)}${ti.length > 1 && Math.max(...ti) !== Math.min(...ti) ? "-" + Math.max(...ti) : ""}` : "Tiet";
-    const bai = squash(String(o.tenBai || "").replace(/^(Bài|Chuyên đề|Chủ đề|CĐ)\s*[\d.]+\s*[.:–-]?\s*/i, ""));
+    let tb = String(o.tenBai || "").replace(/^(Bài|Chuyên đề|Chủ đề|CĐ)\s*[\d.]+\s*[.:–-]*\s*/i, "");
+    const bai = squash(tb);
     return [cap, `K${lop || ""}`, `${to}-${mon}`, "KHBD", `${tu.length ? "T" + tu[0] : "T"}-${tiet}`, bai, squash(o.gv), `v${Number(o.v) || 1}`].join("_");
   }
   // Bản PDF: mở bản xem in của giáo án (đúng mẫu, có bảng ký xác nhận) để "Lưu thành PDF".
@@ -1045,11 +1046,19 @@ ${A.QUESTIONS || '- {"kind":"mcq","q":"…","options":["…","…","…","…"],
       return /mo-dau|khoi-dong/.test(sl) ? "khoi-dong" : /luyen-tap/.test(sl) ? "luyen-tap" : /van-dung/.test(sl) ? "van-dung" : "hinh-thanh";
     };
     // Tên hoạt động viết hoa toàn bộ (theo mẫu giáo án) → viết thường đầu câu cho tiêu đề trang chiếu.
-    const sentence = (t) => (!/\p{L}/u.test(t) || t !== t.toLocaleUpperCase("vi") ? t : t.toLocaleLowerCase("vi").replace(/\p{L}/u, (c) => c.toLocaleUpperCase("vi")));
+    // Chỉ viết thường các tên hoạt động chuẩn (MỞ ĐẦU, LUYỆN TẬP…); tên có danh từ riêng giữ nguyên để không sai chính tả.
+    const STD = new Set("mở đầu khởi động hình thành kiến thức mới luyện tập vận dụng củng cố rộng tổng kết và hoạt".split(" "));
+    const sentence = (t) => {
+      if (!/\p{L}/u.test(t) || t !== t.toLocaleUpperCase("vi")) return t;
+      const low = t.toLocaleLowerCase("vi");
+      if (!low.split(/[^\p{L}]+/u).filter(Boolean).every((w) => STD.has(w))) return t;
+      return low.replace(/\p{L}/u, (c) => c.toLocaleUpperCase("vi"));
+    };
     const clean = (t) => sentence(md(t).replace(/^HOẠT ĐỘNG\s*\d+\s*[.:–-]?\s*/i, "").replace(/^Nhiệm vụ\s*\d+\s*[.:–-]\s*/i, ""));
     const mucSo = (t, j) => (md(t).match(/^(\d+(?:\.\d+)*)/) || [])[1] || String(j + 1);
     const mucTen = (t) => md(t).replace(/^\d+(?:\.\d+)*\.?\s*/, "").replace(/^[a-zđ]\)\s*/i, "");
-    const tenBai = (o.bai && o.bai.ten) || md(k.tenBai).replace(/^(BÀI|CHỦ ĐỀ|CHUYÊN ĐỀ)\s*[\dIVX.]+\s*[.:–-]?\s*/i, "");
+    // Tên bài không lặp lại "Bài 5:" (số bài đã hiện riêng trên trang chiếu); tên viết hoa toàn bộ → viết thường đầu câu.
+    const tenBai = md((o.bai && o.bai.ten) || k.tenBai).replace(/^(BÀI|CHỦ ĐỀ|CHUYÊN ĐỀ)\s*[\dIVX.]+\s*[.:–-]*\s*/i, "");
     const gaId = o.gaId || `ga-${u.slug(tenBai).slice(0, 40)}-${u.uid(4).toLowerCase()}`;
     const tong = k.tiet.length || 1;
     const chotPage = (c, title) => {
@@ -1109,6 +1118,8 @@ ${A.QUESTIONS || '- {"kind":"mcq","q":"…","options":["…","…","…","…"],
             if (cp) links.push({ id: st.id, target: m.chot, off: [pages.length - 1, pages.length - 1] });
             m.nhiemVu.forEach((x) => {
               const q = quiz(x, phase, "Củng cố – " + clean(x.ten));
+              // Thời gian câu hỏi nằm trong thời gian của nhiệm vụ: không cộng thêm vào tiết.
+              if (q) st.minutes = Math.max(1, st.minutes - q.minutes);
               q && links.push({ id: q.id, target: x, extend: true });
             });
           });
@@ -1117,24 +1128,28 @@ ${A.QUESTIONS || '- {"kind":"mcq","q":"…","options":["…","…","…","…"],
             const pages = pagesOf(x, clean(x.ten));
             const cp = x.chot && chotPage(x.chot, clean(x.ten));
             if (cp) pages.push(cp);
+            let st = null;
             if (pages.length) {
-              const st = { id: sid(), type: "slide", phase, title: clean(x.ten) || clean(h.ten), minutes: Number(x.phut) || 5, pages };
+              st = { id: sid(), type: "slide", phase, title: clean(x.ten) || clean(h.ten), minutes: Number(x.phut) || 5, pages };
               steps.push(st);
               links.push({ id: st.id, target: x });
             }
             const q = quiz(x, phase, pages.length ? "Câu hỏi – " + (clean(x.ten) || clean(h.ten)) : clean(x.ten) || clean(h.ten));
+            if (q && st) st.minutes = Math.max(1, st.minutes - q.minutes);
             q && links.push({ id: q.id, target: x, extend: pages.length > 0 });
           });
         } else {
           const pages = pagesOf(h, clean(h.ten));
           const cp = h.chot && chotPage(h.chot, clean(h.ten));
           if (cp) pages.push(cp);
+          let st = null;
           if (pages.length) {
-            const st = { id: sid(), type: "slide", phase, title: clean(h.ten), minutes: Number(h.phut) || 5, pages };
+            st = { id: sid(), type: "slide", phase, title: clean(h.ten), minutes: Number(h.phut) || 5, pages };
             steps.push(st);
             links.push({ id: st.id, target: h });
           }
           const q = quiz(h, phase, pages.length ? "Câu hỏi – " + clean(h.ten) : clean(h.ten));
+          if (q && st) st.minutes = Math.max(1, st.minutes - q.minutes);
           q && links.push({ id: q.id, target: h, extend: pages.length > 0 });
         }
       });
@@ -1145,7 +1160,7 @@ ${A.QUESTIONS || '- {"kind":"mcq","q":"…","options":["…","…","…","…"],
         subject: o.subject || k.mon,
         subjectId: o.subjectId || "",
         grade: String(o.grade || k.lop || ""),
-        bai: Object.assign({ key: "", so: "", ten: tenBai }, o.bai || {}),
+        bai: Object.assign({ key: "", so: "" }, o.bai || {}, { ten: tenBai }),
         tiet: { so: i + 1, tong },
         duration: 45,
         objectives: k.mucTieu.kienThuc.slice(0, 5),

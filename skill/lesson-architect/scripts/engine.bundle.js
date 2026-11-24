@@ -12,13 +12,19 @@ window.L360_CONFIG = {
   school: "Trường TH, THCS & THPT FPT Bắc Giang",
   unit: "Tổ Khoa học xã hội",
   author: "Nguyễn Hữu Hiệu",
+  // Ký xác nhận ở cuối giáo án (Edoc) và đặt tên tệp theo quy định của trường.
+  toTruong: "Nguyễn Ngọc Đức",
+  diaDanh: "Bắc Giang",
+  toMa: "XaHoi",
+  // Giáo viên chỉ đăng nhập được bằng email công ty (quản trị viên được dùng email riêng).
+  emailDomain: "fpt.edu.vn",
 
   firebase: {
-    apiKey: "",
-    authDomain: "",
-    databaseURL: "",
-    projectId: "",
-    appId: ""
+    apiKey: "AIzaSyC8ipSHqxF6i5_u23O9OzLJaXHsD-lQiYU",
+    authDomain: "lesson360-studio.firebaseapp.com",
+    databaseURL: "https://lesson360-studio-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "lesson360-studio",
+    appId: "1:353741355347:web:631d6bd9392334c2d009a6"
   },
   dbRoot: "l360",
 
@@ -166,6 +172,31 @@ window.L360_CONFIG = {
       a.remove();
     }, 500);
   };
+  u.downloadBlob = (name, blob) => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      URL.revokeObjectURL(a.href);
+      a.remove();
+    }, 1500);
+  };
+  // Tải thư viện lớn (docx, pptxgenjs) khi cần.
+  const loaded = {};
+  u.loadScript = (src) =>
+    loaded[src] ||
+    (loaded[src] = new Promise((res, rej) => {
+      const s = document.createElement("script");
+      s.src = src;
+      s.onload = () => res();
+      s.onerror = () => {
+        delete loaded[src];
+        rej(new Error("Không tải được " + src));
+      };
+      document.head.appendChild(s);
+    }));
   u.copy = async (text) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -196,15 +227,25 @@ window.L360_CONFIG = {
     box.appendChild(el);
     setTimeout(() => el.remove(), ms);
   };
-  u.modal = (innerHtml, { onClose } = {}) => {
-    const bg = u.html(`<div class="modal-bg"><div class="modal">${innerHtml}</div></div>`);
+  u.modal = (innerHtml, { onClose, wide } = {}) => {
+    const bg = u.html(`<div class="modal-bg"><div class="modal ${wide ? "wide" : ""}">${innerHtml}</div></div>`);
+    const onKey = (e) => {
+      if (e.key === "Escape" && document.body.lastElementChild === bg) close();
+    };
     const close = () => {
+      if (!bg.isConnected) return;
       bg.remove();
+      document.removeEventListener("keydown", onKey);
       onClose && onClose();
     };
+    document.addEventListener("keydown", onKey);
     bg.addEventListener("click", (e) => {
       if (e.target === bg) close();
     });
+    if (!bg.querySelector("[data-close]")) {
+      const x = u.html(`<button class="modal-x" data-close title="Đóng (Esc)" aria-label="Đóng">×</button>`);
+      bg.firstElementChild.prepend(x);
+    }
     u.$$("[data-close]", bg).forEach((b) => b.addEventListener("click", close));
     document.body.appendChild(bg);
     return { el: bg.firstElementChild, close };
@@ -270,8 +311,9 @@ window.L360_CONFIG = {
 })();
 
 /* js/core/pack.js */
-/* Gói bài học (lesson pack) – định dạng chung giữa trợ lý AI, Studio và lớp học.
-   Mỗi bước (step) có một "type" lấy từ thư viện mẫu hoạt động (L360.types). */
+/* Gói bài học (lesson pack) – định dạng chung giữa trợ lý AI, Studio, thư viện và lớp học.
+   Bản 2 (l360-pack/2): mỗi gói là MỘT TIẾT của một bài SGK (Bài X – Tiết Y/Z), có phong cách thiết kế,
+   mỗi bước gắn một pha: khởi động – hình thành kiến thức – luyện tập – vận dụng. */
 (function () {
   const L360 = window.L360;
   const u = L360.u;
@@ -281,31 +323,68 @@ window.L360_CONFIG = {
     L360.types[def.type] = def;
     if (!L360.typeOrder.includes(def.type)) L360.typeOrder.push(def.type);
   };
-  L360.packs = L360.packs || []; // gói mẫu đăng kí từ thư mục packs/
+  L360.packs = L360.packs || []; // bài mẫu đăng kí từ thư mục packs/
 
   const DEFAULT_GROUP_NAMES = ["Nhóm 1", "Nhóm 2", "Nhóm 3", "Nhóm 4", "Nhóm 5", "Nhóm 6"];
-  const GROUP_COLORS = ["#2A62B0", "#C98A12", "#3E7A3B", "#B4552D", "#1F8A8A", "#8A5A2B"];
+  const GROUP_COLORS = ["#2F6FDB", "#E8930C", "#1E8E5A", "#D2453B", "#0C9A9A", "#8A5A2B"];
 
-  // Khoá bài nộp cho từng lượt (câu quiz, vòng 2, nhóm triển lãm...).
+  // Bốn pha của tiến trình dạy học (CV 5512).
+  const PHASES = [
+    { id: "khoi-dong", name: "Khởi động", short: "KĐ" },
+    { id: "hinh-thanh", name: "Hình thành kiến thức", short: "HT" },
+    { id: "luyen-tap", name: "Luyện tập", short: "LT" },
+    { id: "van-dung", name: "Vận dụng", short: "VD" }
+  ];
+  const PH_IDX = Object.fromEntries(PHASES.map((p, i) => [p.id, i]));
+  const PH_ALIAS = { "mo-dau": "khoi-dong", "khoi-dong": "khoi-dong", kd: "khoi-dong", "hinh-thanh-kien-thuc": "hinh-thanh", "hinh-thanh": "hinh-thanh", ht: "hinh-thanh", "luyen-tap": "luyen-tap", lt: "luyen-tap", "van-dung": "van-dung", vd: "van-dung" };
+  L360.PHASES = PHASES;
+  L360.phase = (id) => PHASES.find((p) => p.id === id) || PHASES[1];
+
   L360.subKey = (step, state) => {
     const t = L360.types[step.type];
     return t && t.subKey ? t.subKey(step, state || {}) : step.id;
   };
+  // Bước là "một hoạt động" (khác trình chiếu thuần) – dùng cho quy tắc 1 khởi động / 1 luyện tập / 1 vận dụng.
+  const isActivity = (s) => {
+    const t = L360.types[s.type] || {};
+    return !t.noSubmit || !!t.activity;
+  };
 
   const Pack = {
-    SCHEMA: "l360-pack/1",
+    SCHEMA: "l360-pack/2",
+    PHASES,
     normalize(raw) {
       const p = u.clone(raw) || {};
       p.schema = Pack.SCHEMA;
       p.title = String(p.title || "Bài học chưa đặt tên").trim();
-      p.subject = p.subject || "";
+      // Môn – lớp – bài – tiết
+      p.subjectId = p.subjectId || (L360.Curr && L360.Curr.subjects.find((s) => s.name === p.subject) || {}).id || p.subjectId || "";
       p.grade = p.grade != null ? String(p.grade) : "";
-      p.id = p.id || u.slug(`${p.subject}-${p.grade}-${p.title}`) || "bai-" + u.uid(6);
+      if (!p.subject && p.subjectId && L360.Curr) p.subject = L360.Curr.subjectName(p.subjectId, p.grade);
+      p.subject = p.subject || "";
+      const b = Object.assign({ key: "", so: "", ten: "" }, p.bai || {});
+      if (!b.so && p.lessonRef) {
+        const m = String(p.lessonRef).match(/Bài\s*(\d+[a-zA-Z]?)/i);
+        if (m) b.so = m[1];
+      }
+      p.bai = b;
+      const t = Object.assign({ so: 1, tong: 1 }, p.tiet || {});
+      t.so = Math.max(1, Number(t.so) || 1);
+      t.tong = Math.max(t.so, Number(t.tong) || 1);
+      p.tiet = t;
+      p.id = p.id || u.slug(`${p.subjectId || p.subject}-${p.grade}-${b.so ? "bai" + b.so + "-" : ""}tiet${t.so}-${p.title}`).slice(0, 80) || "bai-" + u.uid(6);
       p.duration = Number(p.duration) || 45;
       p.objectives = Array.isArray(p.objectives) ? p.objectives : p.objectives ? [String(p.objectives)] : [];
-      p.theme = Object.assign({ accent: "", bg: "", font: "" }, p.theme || {});
+      p.design = Object.assign({}, p.design || {});
+      if (L360.Design) {
+        const r = L360.Design.resolve(p);
+        p.design.style = r.id;
+        p.design.palette = r.paletteId;
+        p.theme = { accent: r.palette.accent, accent2: r.palette.accent2, bg: r.palette.bg };
+      } else p.theme = Object.assign({ accent: "", bg: "" }, p.theme || {});
       if (!Array.isArray(p.groups) || !p.groups.length) p.groups = null;
       const seen = new Set();
+      const n = (p.steps || []).length;
       p.steps = (Array.isArray(p.steps) ? p.steps : []).map((s, i) => {
         s = Object.assign({}, s);
         let id = String(s.id || `s${i + 1}`).replace(/[^A-Za-z0-9-]/g, "");
@@ -315,12 +394,86 @@ window.L360_CONFIG = {
         s.type = s.type || "slide";
         s.title = String(s.title || `Hoạt động ${i + 1}`);
         s.minutes = Number(s.minutes) || 0;
-        const t = L360.types[s.type];
-        if (t && t.normalize) t.normalize(s);
+        const ph = PH_ALIAS[u.slug(s.phase || "")];
+        // Gói cũ không có pha: bước đầu là khởi động, hai bước cuối là luyện tập / vận dụng.
+        s.phase = ph || (raw && raw.schema === "l360-pack/2" ? "hinh-thanh" : i === 0 ? "khoi-dong" : i === n - 1 ? "van-dung" : "hinh-thanh");
+        if (s.ghiBai != null) s.ghiBai = String(s.ghiBai);
+        const T = L360.types[s.type];
+        if (T && T.normalize) T.normalize(s);
         return s;
       });
       p.meta = Object.assign({}, p.meta || {});
       return p;
+    },
+    // Nhãn ngắn "Bài 4 · Tiết 1/2".
+    label(p) {
+      const b = p.bai || {};
+      const t = p.tiet || {};
+      const bs = b.so ? (/^(CĐ|Chủ đề)/i.test(b.so) ? b.so : `Bài ${b.so}`) : "";
+      return [bs, t.tong > 1 ? `Tiết ${t.so}/${t.tong}` : t.so ? `Tiết ${t.so}` : ""].filter(Boolean).join(" · ");
+    },
+    // Nhiệm vụ về nhà và chuẩn bị bài sau. Ưu tiên nội dung giáo viên/AI soạn (p.homework);
+    // thiếu thì tự gợi ý từ hoạt động vận dụng và tiết kế tiếp trong Phụ lục 1.
+    homework(p) {
+      const h = p.homework && typeof p.homework === "object" ? p.homework : typeof p.homework === "string" ? { tasks: [p.homework] } : {};
+      const clip = (t, n) => {
+        t = String(t || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+        return t.length > n ? t.slice(0, n - 1).replace(/\s+\S*$/, "") + "…" : t;
+      };
+      const tasks = (Array.isArray(h.tasks) ? h.tasks : h.tasks ? [h.tasks] : []).map((x) => clip(x, 220)).filter(Boolean);
+      let prepare = clip(h.prepare, 240);
+      const auto = !tasks.length;
+      if (auto) {
+        tasks.push(p.steps.some((s) => s.ghiBai) ? "Học thuộc phần ghi vở; tự vẽ lại sơ đồ khái quát của tiết học bằng trí nhớ." : "Ôn lại các nội dung chính của tiết học.");
+        const vd = p.steps.find((s) => s.phase === "van-dung" && isActivity(s));
+        if (vd) {
+          const what = clip(vd.instructions || vd.question || vd.prompt || "", 150);
+          tasks.push(`Hoàn thành nhiệm vụ vận dụng “${clip(vd.title, 60)}”${what ? ": " + what : ""}.`.replace(/\.\.$/, "."));
+        }
+      }
+      if (!prepare) {
+        const sau = p.ppct && p.ppct.sau;
+        const t = p.tiet || {};
+        if (sau && sau.cungBai) prepare = `Đọc trước nội dung tiết sau của bài “${clip(sau.ten, 80)}”${sau.noiDung ? ": " + clip(sau.noiDung, 120) : ""}; ghi lại 1 câu hỏi em muốn hỏi.`;
+        else if (sau) prepare = `Đọc trước bài “${clip(sau.ten, 90)}” trong SGK; ghi lại 1–2 điều em muốn tìm hiểu.`;
+        else if (t.so < t.tong) prepare = `Đọc trước phần tiếp theo của bài “${clip((p.bai && p.bai.ten) || p.title, 90)}” (tiết ${t.so + 1}); ghi lại 1 câu hỏi em muốn hỏi.`;
+        else prepare = "Đọc trước bài học tiếp theo trong SGK; ghi lại 1–2 điều em muốn tìm hiểu.";
+      }
+      return { tasks, prepare, sheet: clip(h.sheet, 200), auto };
+    },
+    // Thêm trang đề mục: trang "tên mục" trước mỗi bước bài giảng của phần hình thành kiến thức;
+    // tiết 1 thêm trang "tên bài" (và trang "chủ đề" nếu là bài mở đầu chủ đề). Không thêm trùng.
+    addHeadings(p, o = {}) {
+      const has = (k) => p.steps.some((s) => (s.pages || []).some((pg) => (pg.blocks || []).some((b) => b.kind === k)));
+      const ht = p.steps.filter((s) => s.phase === "hinh-thanh" && s.type === "slide");
+      if (!ht.length) return 0;
+      let added = 0;
+      ht.forEach((s, i) => {
+        s.pages = Array.isArray(s.pages) ? s.pages : [];
+        if (s.pages.some((pg) => (pg.blocks || []).some((b) => b.kind === "muc"))) return;
+        s.pages.unshift({ title: "", blocks: [{ kind: "muc", so: String(i + 1), ten: String(s.title || "").replace(/^\s*\d+[.)]\s*/, "") }] });
+        added++;
+      });
+      const t = p.tiet || {};
+      if ((Number(t.so) || 1) === 1 && !has("tenbai")) {
+        const b = p.bai || {};
+        ht[0].pages.unshift({
+          title: "",
+          blocks: [{ kind: "tenbai", so: b.so ? (/^(CĐ|Chủ đề)/i.test(b.so) ? b.so : "Bài " + b.so) : "", ten: b.ten || p.title, chude: o.chude || "", muc: ht.map((s) => String(s.title || "").replace(/^\s*\d+[.)]\s*/, "")) }]
+        });
+        added++;
+        if (o.chude && !has("chude")) {
+          const m = String(o.chude).match(/^((?:Chủ đề|Chương|Phần)\s*[\dIVX]+)[.:\s–-]*(.*)$/i);
+          ht[0].pages.unshift({ title: "", blocks: [{ kind: "chude", so: m ? m[1] : "Chủ đề", ten: m ? m[2] || o.chude : o.chude }] });
+          added++;
+        }
+      }
+      return added;
+    },
+    phaseCount(p) {
+      const c = { "khoi-dong": 0, "hinh-thanh": 0, "luyen-tap": 0, "van-dung": 0 };
+      p.steps.forEach((s) => isActivity(s) && (c[s.phase] = (c[s.phase] || 0) + 1));
+      return c;
     },
     validate(raw) {
       const errors = [];
@@ -340,9 +493,37 @@ window.L360_CONFIG = {
         total += s.minutes || 0;
         if (t.validate) t.validate(s, (m) => errors.push(`${where}: ${m}`), (m) => warnings.push(`${where}: ${m}`), p);
       });
+      // Thứ tự pha và quy tắc "mỗi bài 1 khởi động, 1 luyện tập, 1 vận dụng".
+      let last = 0;
+      p.steps.forEach((s, i) => {
+        const k = PH_IDX[s.phase];
+        if (k < last) warnings.push(`Bước ${i + 1} (${s.title}) thuộc pha "${L360.phase(s.phase).name}" nhưng đứng sau pha muộn hơn – nên sắp lại theo thứ tự Khởi động → Hình thành → Luyện tập → Vận dụng.`);
+        last = Math.max(last, k);
+      });
+      const c = Pack.phaseCount(p);
+      ["khoi-dong", "luyen-tap", "van-dung"].forEach((ph) => {
+        if (c[ph] > 1) errors.push(`Có ${c[ph]} hoạt động ${L360.phase(ph).name.toLowerCase()} – mỗi bài chỉ có 1 hoạt động ${L360.phase(ph).name.toLowerCase()} (có thể gộp thành một hoạt động nhiều câu).`);
+      });
+      const { so, tong } = p.tiet;
+      if (tong > 1) {
+        if (so > 1 && c["khoi-dong"]) errors.push(`Tiết ${so}/${tong}: hoạt động khởi động chỉ đặt ở tiết 1 của bài.`);
+        if (so < tong && (c["luyen-tap"] || c["van-dung"])) errors.push(`Tiết ${so}/${tong}: luyện tập và vận dụng đặt ở tiết cuối (tiết ${tong}) của bài.`);
+        if (so === tong && !c["luyen-tap"]) warnings.push(`Tiết cuối của bài nên có hoạt động luyện tập.`);
+        if (so === tong && !c["van-dung"]) warnings.push(`Tiết cuối của bài nên có hoạt động vận dụng (có thể giao về nhà).`);
+        if (so === 1 && !c["khoi-dong"]) warnings.push(`Tiết 1 của bài nên có hoạt động khởi động.`);
+      } else {
+        PHASES.forEach((ph) => !c[ph.id] && ph.id !== "hinh-thanh" && warnings.push(`Chưa có hoạt động ${ph.name.toLowerCase()}.`));
+      }
+      if (!p.steps.some((s) => s.phase === "hinh-thanh")) warnings.push("Chưa có phần hình thành kiến thức.");
+      const visual = p.steps.filter((s) => s.phase === "hinh-thanh" && s.type === "slide");
+      visual.forEach((s) => {
+        const kinds = (s.pages || []).flatMap((pg) => (pg.blocks || []).map((b) => b.kind));
+        if (!kinds.some((k) => ["image", "gallery", "map", "timeline", "mindmap", "compare", "flow", "cycle", "stats", "video"].includes(k)))
+          warnings.push(`"${s.title}": phần hình thành kiến thức nên có hình ảnh hoặc sơ đồ trực quan.`);
+        if (!kinds.includes("note") && !kinds.includes("conclusion")) warnings.push(`"${s.title}": nên có khung Kết luận hoặc Ghi vào vở.`);
+      });
       if (total && total > p.duration + 2) warnings.push(`Tổng thời lượng các bước là ${total} phút, vượt ${p.duration} phút của tiết học.`);
-      if (p.steps.filter((s) => s.type === "groupwork").length > 1)
-        warnings.push("Có hơn 1 nhiệm vụ nhóm trong bài – nên giữ tối đa 1 nhiệm vụ nhóm mỗi tiết.");
+      if (p.steps.filter((s) => s.type === "groupwork").length > 1) warnings.push("Có hơn 1 nhiệm vụ nhóm – nên giữ tối đa 1 nhiệm vụ nhóm mỗi bài.");
       return { errors, warnings, pack: p, totalMinutes: total };
     },
     // Đọc chuỗi JSON (chấp nhận cả khối ```json ... ``` do trợ lý AI trả về).
@@ -370,20 +551,28 @@ window.L360_CONFIG = {
       return {
         title: p.title,
         subject: p.subject,
+        subjectId: p.subjectId || "",
         grade: p.grade,
+        bai: p.bai || {},
+        tiet: p.tiet || {},
+        label: Pack.label(p),
         lessonRef: p.lessonRef || "",
         theme: p.theme,
+        design: p.design || {},
         steps: p.steps.map((s) => {
           const t = L360.types[s.type] || {};
           return {
             id: s.id,
             type: s.type,
             title: s.title,
+            phase: s.phase,
             minutes: s.minutes || 0,
             instructions: s.instructions || "",
             count: t.count ? t.count(s) : 1,
+            pages: s.type === "slide" ? (s.pages || []).length : 0,
             noSubmit: !!t.noSubmit,
-            groupMode: !!t.groupMode
+            groupMode: !!t.groupMode,
+            ghiBai: !!(s.ghiBai || (s.pages || []).some((pg) => L360.blocks && L360.blocks.hasNote(pg)))
           };
         })
       };
@@ -396,7 +585,6 @@ window.L360_CONFIG = {
       const t = L360.types[step.type];
       return t && t.answerPayload ? t.answerPayload(step, state || {}) : null;
     },
-    // Thống kê ngắn cho phần mô tả gói bài học.
     summary(p) {
       const byType = {};
       p.steps.forEach((s) => (byType[s.type] = (byType[s.type] || 0) + 1));
@@ -409,40 +597,41 @@ window.L360_CONFIG = {
   };
   L360.Pack = Pack;
 
-  /* Thư viện gói bài học trên máy này (localStorage) + gói mẫu. */
+  /* Bản nháp trên máy này (localStorage) + bài mẫu. Thư viện dùng chung ở js/core/library.js. */
   const LIB_KEY = "l360:library";
-  L360.Library = {
+  L360.Local = {
     list() {
-      let mine = [];
       try {
-        mine = JSON.parse(localStorage.getItem(LIB_KEY) || "[]");
-      } catch (e) {}
-      return mine;
+        return JSON.parse(localStorage.getItem(LIB_KEY) || "[]");
+      } catch (e) {
+        return [];
+      }
     },
     samples() {
-      return (L360.packs || []).map((p) => Pack.normalize(p));
+      return (L360.packs || []).map((p) => Object.assign(Pack.normalize(p), { _sample: true }));
     },
     all() {
-      const mine = L360.Library.list();
+      const mine = L360.Local.list();
       const ids = new Set(mine.map((p) => p.id));
-      return mine.concat(L360.Library.samples().filter((p) => !ids.has(p.id)).map((p) => Object.assign(p, { _sample: true })));
+      return mine.concat(L360.Local.samples().filter((p) => !ids.has(p.id)));
     },
     get(id) {
-      return L360.Library.all().find((p) => p.id === id) || null;
+      return L360.Local.all().find((p) => p.id === id) || null;
     },
     save(pack) {
       const p = Pack.normalize(pack);
       delete p._sample;
       p.meta.updatedAt = Date.now();
-      const list = L360.Library.list().filter((x) => x.id !== p.id);
+      const list = L360.Local.list().filter((x) => x.id !== p.id);
       list.unshift(p);
       localStorage.setItem(LIB_KEY, JSON.stringify(list));
       return p;
     },
     remove(id) {
-      localStorage.setItem(LIB_KEY, JSON.stringify(L360.Library.list().filter((x) => x.id !== id)));
+      localStorage.setItem(LIB_KEY, JSON.stringify(L360.Local.list().filter((x) => x.id !== id)));
     }
   };
+  L360.Library = L360.Local; // tương thích mã cũ
 })();
 
 /* js/core/ui.js */
@@ -478,8 +667,8 @@ window.L360_CONFIG = {
       })
       .join("")}</div>`;
 
-  ui.options = (options, { selected, answer, disabled, multi, name = "opt", mine } = {}) =>
-    `<div class="opts">${options
+  ui.options = (options, { selected, answer, disabled, multi, name = "opt", mine, cls = "" } = {}) =>
+    `<div class="opts ${cls}">${options
       .map((o, i) => {
         const sel = multi ? (selected || []).includes(i) : selected === i;
         let cls = sel ? "sel" : "";
@@ -495,7 +684,7 @@ window.L360_CONFIG = {
     if (!m) return "";
     let out = "";
     if (m.image)
-      out += `<figure style="margin:0 0 12px"><img src="${u.esc(m.image)}" alt="${u.esc(m.caption || "")}" loading="lazy" style="width:100%;max-height:${big ? "52vh" : "320px"};object-fit:contain;border-radius:12px;background:#EFE7D8">${
+      out += `<figure style="margin:0 0 12px"><img src="${u.esc(m.image)}" alt="${u.esc(m.caption || "")}" loading="lazy" style="width:100%;max-height:${big ? "52vh" : "320px"};object-fit:contain;border-radius:12px;background:#fff">${
         m.caption || m.credit
           ? `<figcaption class="tiny muted" style="margin-top:4px">${u.esc(m.caption || "")}${m.credit ? ` <i>Nguồn: ${u.esc(m.credit)}</i>` : ""}</figcaption>`
           : ""
@@ -549,30 +738,121 @@ window.L360_CONFIG = {
 
   // Đồng hồ: mọi phần tử [data-timer] tự cập nhật theo trạng thái hiện tại.
   ui.timerState = null;
+  ui.timerPlan = null; // { steps:[{minutes, phase}], step } – để tính giờ hoạt động và tiến độ cả tiết
   ui.timer = () => `<span class="timer" data-timer>–:–</span>`;
+  let hgN = 0;
+  // Đồng hồ cát: cát chảy theo thời gian còn lại của hoạt động (thời gian làm bài, hoặc thời lượng dự kiến của bước).
+  ui.hourglass = (size) => {
+    const id = "hg" + ++hgN;
+    const top = "M22 14 H98 C98 58 68 76 62.5 90 H57.5 C52 76 22 58 22 14Z";
+    const bot = "M57.5 90 H62.5 C68 104 98 122 98 166 H22 C22 122 52 104 57.5 90Z";
+    return `<div class="hg ${size || ""}" data-hg><svg viewBox="0 0 120 180" aria-hidden="true"><defs><clipPath id="${id}t"><path d="${top}"/></clipPath><clipPath id="${id}b"><path d="${bot}"/></clipPath></defs>
+      <path class="hg-glass" d="M22 14 H98 C98 58 68 76 62.5 90 C68 104 98 122 98 166 H22 C22 122 52 104 57.5 90 C52 76 22 58 22 14Z"/>
+      <rect class="hg-sand" data-hgt clip-path="url(#${id}t)" x="18" y="14" width="84" height="76"/>
+      <rect class="hg-sand" data-hgb clip-path="url(#${id}b)" x="18" y="166" width="84" height="0"/>
+      <line class="hg-stream" data-hgs x1="60" y1="89" x2="60" y2="165"/>
+      <rect class="hg-cap" x="12" y="5" width="96" height="11" rx="5"/><rect class="hg-cap" x="12" y="164" width="96" height="11" rx="5"/></svg>
+      <div class="hg-txt"><b data-hgnum>–:–</b><small data-hglbl></small></div></div>`;
+  };
+  // Thời gian còn lại của hoạt động hiện tại: {rem, total, kind:"open"|"plan"} hoặc null.
+  ui.activityTime = (st) => {
+    if (!st) return null;
+    const rem = L360.Room ? L360.Room.remaining(st) : null;
+    if (rem != null) return { rem, total: st.dur, kind: "open" };
+    const pl = ui.timerPlan;
+    const s = pl && st.step >= 0 && pl.steps[st.step];
+    const plan = s ? (Number(s.minutes) || 0) * 60 : 0;
+    if (!plan || !st.stepAt) return null;
+    return { rem: plan - (L360.store.now() - st.stepAt) / 1000, total: plan, kind: "plan" };
+  };
+  const fmtSigned = (r) => (r < 0 ? "+" + u.fmtSec(-r) : u.fmtSec(r));
   setInterval(() => {
     const st = ui.timerState;
-    const els = document.querySelectorAll("[data-timer]");
-    if (!els.length) return;
     const rem = L360.Room ? L360.Room.remaining(st) : null;
-    els.forEach((el) => {
+    document.querySelectorAll("[data-timer]").forEach((el) => {
       if (rem == null) {
         el.textContent = st && st.phase === "open" ? "∞" : "–:–";
         el.classList.remove("low");
       } else {
-        el.textContent = u.fmtSec(rem);
+        el.textContent = u.fmtSec(Math.max(0, rem));
         el.classList.toggle("low", rem <= 10);
       }
     });
-    document.querySelectorAll("[data-clock]").forEach((el) => {
-      const s0 = st && st.startedAt;
-      el.textContent = s0 ? u.fmtSec((L360.store.now() - s0) / 1000) : "0:00";
+    const at = ui.activityTime(st);
+    document.querySelectorAll("[data-hg]").forEach((el) => {
+      const f = at ? Math.max(0, Math.min(1, at.rem / Math.max(1, at.total))) : 1;
+      const set = (sel, a, v) => {
+        const x = el.querySelector(sel);
+        if (x) x.setAttribute(a, v);
+      };
+      set("[data-hgt]", "y", (90 - 76 * f).toFixed(1));
+      set("[data-hgt]", "height", (76 * f).toFixed(1));
+      set("[data-hgb]", "y", (166 - 76 * (1 - f)).toFixed(1));
+      set("[data-hgb]", "height", (76 * (1 - f)).toFixed(1));
+      const running = !!(at && at.rem > 0);
+      el.classList.toggle("run", running);
+      el.classList.toggle("low", !!(at && at.rem > 0 && at.rem <= (at.kind === "open" ? 10 : 30)));
+      el.classList.toggle("over", !!(at && at.rem <= 0));
+      el.classList.toggle("idle", !at);
+      const n = el.querySelector("[data-hgnum]");
+      if (n) n.textContent = at ? (at.kind === "open" ? u.fmtSec(Math.max(0, at.rem)) : fmtSigned(Math.ceil(at.rem))) : "–:–";
+      const l = el.querySelector("[data-hglbl]");
+      if (l) l.textContent = !at ? "Chưa tính giờ" : at.kind === "open" ? (at.rem > 0 ? "Thời gian làm bài" : "Hết giờ!") : at.rem > 0 ? "Thời lượng hoạt động" : "Quá giờ dự kiến";
+    });
+    const s0 = st && st.startedAt;
+    const el0 = s0 ? (L360.store.now() - s0) / 1000 : 0;
+    document.querySelectorAll("[data-clock]").forEach((el) => (el.textContent = u.fmtSec(el0)));
+    // Dải tiến trình cả tiết: phần đã học tô đậm theo thời gian thực, bước hiện tại tô dần theo số phút dự kiến.
+    const pl = ui.timerPlan;
+    const total = pl ? pl.steps.reduce((a, s) => a + (Number(s.minutes) || 0) * 60, 0) || 2700 : 2700;
+    document.querySelectorAll("[data-left]").forEach((el) => {
+      if (!s0) return (el.textContent = u.fmtSec(total), el.classList.remove("over"));
+      const left = total - el0;
+      el.textContent = left >= 0 ? u.fmtSec(left) : "+" + u.fmtSec(-left);
+      el.classList.toggle("over", left < 0);
+      el.classList.toggle("low", left >= 0 && left <= 300);
+    });
+    document.querySelectorAll("[data-ribbon]").forEach((el) => {
+      if (!pl) return;
+      const head = el.querySelector(".rb-head");
+      if (head) {
+        head.style.left = Math.min(100, (el0 / total) * 100).toFixed(2) + "%";
+        head.hidden = !s0;
+      }
+      const pace = el.querySelector("[data-pace]");
+      const curSeg = el.querySelector(".rb-seg.cur");
+      if (!s0 || !st || st.step < 0) {
+        if (curSeg) curSeg.style.setProperty("--p", "0");
+        if (pace) (pace.textContent = "Chưa bắt đầu"), (pace.className = "rb-pace");
+        return;
+      }
+      const before = pl.steps.slice(0, Math.min(st.step, pl.steps.length)).reduce((a, s) => a + (Number(s.minutes) || 0) * 60, 0);
+      const cur = st.step < pl.steps.length ? (Number(pl.steps[st.step].minutes) || 0) * 60 : 0;
+      const spent = st.stepAt ? Math.max(0, (L360.store.now() - st.stepAt) / 1000) : 0;
+      if (curSeg) {
+        curSeg.style.setProperty("--p", cur ? Math.min(1, spent / cur).toFixed(3) : "1");
+        curSeg.classList.toggle("over", !!cur && spent > cur + 30);
+      }
+      if (!pace) return;
+      const diff = el0 - (before + Math.min(cur, spent));
+      const m = Math.round(Math.abs(diff) / 60);
+      pace.textContent = Math.abs(diff) < 60 ? "Đúng tiến độ" : diff > 0 ? `Chậm ${m} phút` : `Nhanh ${m} phút`;
+      pace.className = "rb-pace " + (Math.abs(diff) < 60 ? "ok" : diff > 0 ? "late" : "early");
     });
   }, 250);
 
+  // Dải tiến trình tiết học (màn chiếu): mỗi bước một đoạn dài theo số phút, màu theo pha;
+  // bước đã xong tô đậm, bước đang dạy tô dần theo thời gian, bước sau để nhạt; kim tròn chỉ thời điểm hiện tại.
+  ui.ribbon = (steps, cur) => {
+    const total = steps.reduce((a, s) => a + (Number(s.minutes) || 0), 0) || 45;
+    return `<div class="rb" data-ribbon><div class="rb-track">${steps
+      .map((s, i) => `<span class="rb-seg ph-${s.phase} ${i < cur ? "done" : i === cur ? "cur" : ""}" style="flex:${Math.max(0.6, Number(s.minutes) || 1)}" title="${u.esc(s.title || "")} · ${s.minutes || 0} phút"></span>`)
+      .join("")}<span class="rb-head" hidden></span></div><div class="rb-info"><span class="rb-k">Đã học</span><b data-clock>0:00</b><span class="rb-sep">·</span><span class="rb-k">Còn</span><b class="rb-left" data-left>${total}:00</b><span class="rb-pace" data-pace></span></div></div>`;
+  };
+
   ui.phaseLabel = (st, step) => {
     if (!step) return "";
-    if (step.noSubmit) return "Trình chiếu";
+    if (step.noSubmit) return step.type === "video" ? "Video" : "Trình chiếu";
     return { observe: "Quan sát", open: "Đang nhận bài", locked: "Đã khoá", revealed: "Đã công bố" }[st.phase] || "";
   };
 
@@ -594,14 +874,17 @@ window.L360_CONFIG = {
     async exists(room) {
       return !!(await S().get(R(room, "meta")));
     },
-    async create({ pack, room, className, classSize, groupCount, teacher }) {
+    async create({ pack, room, className, classSize, groupCount, teacher, lock }) {
       const p = Pack.normalize(pack);
       const groups = Pack.groups(p, groupCount);
       const meta = {
         title: p.title,
         subject: p.subject || "",
+        subjectId: p.subjectId || "",
         grade: p.grade || "",
         lessonRef: p.lessonRef || "",
+        label: Pack.label(p),
+        baiKey: (p.bai && p.bai.key) || "",
         className: className || "",
         classSize: Math.max(1, Math.min(L360.cfg.maxClassSize || 45, Number(classSize) || L360.cfg.defaultClassSize || 30)),
         groups,
@@ -610,7 +893,9 @@ window.L360_CONFIG = {
         packId: p.id,
         createdAt: S().TS,
         status: "open",
-        mode: S().mode
+        mode: S().mode,
+        lock: lock !== false,
+        ppct: p.ppct ? { doc: p.ppct.doc, bai: p.ppct.bai, so: p.ppct.so } : null
       };
       await S().set(R(room, "meta"), meta);
       await S().set(`priv/${room}`, { pack: p });
@@ -692,13 +977,16 @@ window.L360_CONFIG = {
     async goto(i) {
       const n = this.pack.steps.length;
       i = Math.max(-1, Math.min(n, i));
-      const st = { step: i, phase: "observe", q: 0, round: 1, screen: "content", openedAt: null, dur: 0 };
+      const st = { step: i, phase: "observe", q: 0, round: 1, page: 0, screen: "content", openedAt: null, dur: 0, vcmd: null, stepAt: S().TS };
       if (i >= 0 && !this.state.startedAt) st.startedAt = S().TS;
       await this.patchState(st);
+      // Hết tiết: công bố nhiệm vụ về nhà – chuẩn bị bài sau cho màn chiếu và học sinh.
+      if (i >= n) await S().set(R(this.room, "pub/homework"), Pack.homework(this.pack));
       const step = this.pack.steps[i];
       if (step) {
         const t = L360.types[step.type] || {};
         if (t.releaseOnEnter) await S().set(R(this.room, `pub/items/${L360.subKey(step, st)}`), Pack.publicItem(step, st));
+        if (t.noSubmit && step.ghiBai) await S().set(R(this.room, `pub/notes/${step.id}`), { t: step.title, x: step.ghiBai });
         if (t.onEnter) await t.onEnter(this, step);
       }
     }
@@ -731,6 +1019,8 @@ window.L360_CONFIG = {
       if (!step) return;
       const ans = Pack.answerItem(step, this.state);
       if (ans != null) await S().set(R(this.room, `pub/answers/${this.key()}`), ans);
+      const note = (ans && ans.ghiBai) || (step.ghiBai && !step.questions ? step.ghiBai : "");
+      if (note) await S().set(R(this.room, `pub/notes/${this.key()}`), { t: step.title, x: note });
       // Với hoạt động hai vòng: công bố cho cả vòng 1.
       if (step.type === "poll2" && ans != null) await S().set(R(this.room, `pub/answers/${L360.subKey(step, { round: 1 })}`), ans);
       await this.patchState({ phase: "revealed", screen: "content" });
@@ -760,6 +1050,55 @@ window.L360_CONFIG = {
     }
     setScreen(mode) {
       return this.patchState({ screen: mode });
+    }
+    // Bài giảng nhiều trang.
+    setPage(p) {
+      const n = this.step && this.step.pages ? this.step.pages.length : 1;
+      return this.patchState({ page: Math.max(0, Math.min(n - 1, p)) });
+    }
+    // Điều khiển video trên màn chiếu.
+    videoCmd(c, t) {
+      return this.patchState({ vcmd: { c, t: t == null ? null : Number(t), n: Date.now() } });
+    }
+    async askAt(i, t) {
+      const st = Object.assign({}, this.state, { q: i });
+      await S().set(R(this.room, `pub/items/${L360.subKey(this.step, st)}`), Pack.publicItem(this.step, st));
+      const dur = this.type && this.type.timerFor ? this.type.timerFor(this.step, st) : 25;
+      await this.patchState({ q: i, phase: "open", openedAt: S().TS, dur, screen: "content", vcmd: { c: "pause", t: Number(t) || 0, n: Date.now() } });
+    }
+    async videoResume(nextQ) {
+      const st = Object.assign({}, this.state, { q: nextQ });
+      await S().set(R(this.room, `pub/items/${L360.subKey(this.step, st)}`), Object.assign(Pack.publicItem(this.step, st), { text: "" }));
+      await this.patchState({ q: nextQ, phase: "observe", openedAt: null, dur: 0, vcmd: { c: "play", t: null, n: Date.now() } });
+    }
+    // Gọi tên ngẫu nhiên (ưu tiên bạn chưa được gọi).
+    async pick() {
+      const roster = this.data.roster || {};
+      const online = this.joinedCodes().filter((c) => Room.online(this.data, c));
+      const pool = online.length ? online : this.joinedCodes();
+      if (!pool.length) return null;
+      this._picked = this._picked || [];
+      let cand = pool.filter((c) => !this._picked.includes(c));
+      if (!cand.length) {
+        this._picked = [];
+        cand = pool;
+      }
+      const code = cand[Math.floor(Math.random() * cand.length)];
+      this._picked.push(code);
+      const r = roster[code] || {};
+      const g = (this.meta.groups || []).find((x) => x.id === r.group);
+      await S().set(R(this.room, "pub/overlay"), { kind: "pick", code, name: r.name || "", group: g ? g.name : "", color: g ? g.color : "", pool: pool.slice(0, 40), n: Date.now() });
+      return code;
+    }
+    // Chiếu nội dung ghi vở cỡ chữ lớn (toàn màn chiếu) để học sinh chép.
+    showNote(title, text) {
+      return S().set(R(this.room, "pub/overlay"), { kind: "note", title: title || "Ghi vào vở", text: String(text || ""), n: Date.now() });
+    }
+    closeOverlay() {
+      return S().set(R(this.room, "pub/overlay"), null);
+    }
+    setSound(on) {
+      return this.patchState({ sound: !!on });
     }
     async feature(key, code, text) {
       const path = R(this.room, `pub/featured/${key}/${code}`);
@@ -853,6 +1192,19 @@ window.L360_CONFIG = {
   Room.Student = Student;
 
   /* ---------- Thống kê ---------- */
+  function hsFeedback(data) {
+    const all = Object.values((data && data.fb) || {}).filter((x) => x && (x.vui || x.hieu));
+    if (!all.length) return null;
+    const vui = [0, 0, 0, 0];
+    const hieu = [0, 0, 0];
+    all.forEach((x) => {
+      if (x.vui >= 1 && x.vui <= 4) vui[x.vui - 1]++;
+      if (x.hieu >= 1 && x.hieu <= 3) hieu[x.hieu - 1]++;
+    });
+    const nv = vui.reduce((a, b) => a + b, 0);
+    const nh = hieu.reduce((a, b) => a + b, 0);
+    return { n: all.length, vui, hieu, thich: nv ? Math.round(((vui[2] + vui[3]) / nv) * 100) : null, hieuBai: nh ? Math.round(((hieu[1] + hieu[2]) / nh) * 100) : null };
+  }
   const Stats = {
     // Danh sách các lượt nộp bài có thể thống kê của một gói bài học.
     keysOf(pack, data) {
@@ -905,7 +1257,9 @@ window.L360_CONFIG = {
         if (!k.type.points) return;
         const ans = data.pub && data.pub.answers && data.pub.answers[k.key];
         const sub = data.subs && data.subs[k.key] && data.subs[k.key][code];
-        if (ans != null && sub && k.type.isCorrect(k.step, k.key, sub.v)) pts += k.type.points(k.step);
+        if (ans == null || !sub) return;
+        if (k.type.points && k.type.points.length >= 3) pts += Number(k.type.points(k.step, k.key, sub.v)) || 0;
+        else if (k.type.isCorrect(k.step, k.key, sub.v)) pts += k.type.points(k.step);
       });
       return pts;
     },
@@ -953,7 +1307,13 @@ window.L360_CONFIG = {
         teacherUid: meta.teacherUid || "",
         teacherName: meta.teacherName || "",
         subject: pack.subject || meta.subject || "",
+        subjectId: pack.subjectId || meta.subjectId || "",
         grade: pack.grade || meta.grade || "",
+        label: Pack.label(pack),
+        baiKey: (pack.bai && pack.bai.key) || "",
+        tiet: pack.tiet || null,
+        design: pack.design || null,
+        phases: Pack.phaseCount(pack),
         className: meta.className || "",
         title: pack.title,
         packId: pack.id,
@@ -979,9 +1339,12 @@ window.L360_CONFIG = {
         aiTool: (pack.meta && pack.meta.aiTool) || "",
         madeWithAI: !!(pack.meta && pack.meta.madeWithAI),
         feedback: feedback || null,
+        hs: hsFeedback(data),
         mode: L360.store.mode
       };
     },
+    // Góp ý nhanh của học sinh cuối tiết (thích/hiểu bài) – tổng hợp vào minh chứng tiết học.
+    hsFeedback: (data) => hsFeedback(data),
     // Tệp CSV minh chứng cá nhân.
     csvIndividual(pack, data) {
       const keys = Stats.keysOf(pack, data).filter((k) => !k.type.groupMode && data.pub && data.pub.items && data.pub.items[k.key]);
@@ -1038,11 +1401,12 @@ window.L360_CONFIG = {
 })();
 
 /* js/core/architect.js */
-/* ENGINE – Lesson Architect: tạo lời nhắc (prompt) để trợ lý AI (Claude, ChatGPT, Gemini…) chuyển
-   giáo án KHBD thành gói bài học Lesson 360°. Danh mục mẫu hoạt động được sinh tự động từ mã nguồn,
-   nên lời nhắc luôn khớp với những gì nền tảng chạy được. */
+/* ENGINE – Lesson Architect: sinh lời nhắc (prompt) cho trợ lý AI (Claude, ChatGPT, Gemini…) chuyển KHBD
+   thành gói bài học Lesson 360° (l360-pack/2). Lời nhắc thay đổi theo các hoạt động giáo viên tích chọn ở Bước 1;
+   danh mục mẫu hoạt động và khối trực quan được sinh từ mã nguồn nên luôn khớp với những gì nền tảng chạy được. */
 (function () {
   const L360 = window.L360;
+  const u = L360.u;
 
   const KIND_DESC = {
     text: "chuỗi",
@@ -1053,12 +1417,44 @@ window.L360_CONFIG = {
     options: "mảng chuỗi (các phương án)",
     list: "mảng chuỗi",
     pair: "mảng 2 số",
-    questions: 'mảng {"q","options":[4 chuỗi],"answer": số thứ tự 0–3,"explain"}',
+    questions: "mảng câu hỏi (xem DẠNG CÂU HỎI)",
     pairs: 'mảng {"left","right"} – cặp ĐÚNG, hệ thống tự xáo cột phải',
     fieldsList: 'mảng {"key":"A","label","hint"}',
     json: "mảng đối tượng (xem ví dụ)",
-    site: "mã di tích Heritage Lens"
+    site: "mã di tích Heritage Lens",
+    pages: 'mảng trang {"title","blocks":[khối…]} (xem KHỐI TRỰC QUAN)',
+    cwrows: 'mảng {"answer","clue"} – mỗi hàng chứa đúng 1 chữ của từ khoá theo thứ tự',
+    video: '{"edu":"mã video EduHistory"} hoặc {"url":"đường dẫn YouTube/mp4","start":giây,"end":giây}',
+    image: "đường dẫn ảnh"
   };
+
+  // 15 lựa chọn hoạt động ở Bước 1, nhóm theo pha.
+  const ACTS = [
+    { id: "o-chu", phase: "khoi-dong", type: "crossword", label: "Ô chữ khởi động", hint: "Hàng ngang – từ khoá hàng dọc, lật chữ trên màn chiếu", ask: 'MỘT trò chơi ô chữ (type "crossword") 4–7 hàng ngang, đáp án viết hoa không dấu, từ khoá hàng dọc gợi mở vấn đề của bài' },
+    { id: "binh-chon", phase: "khoi-dong", type: "poll2", label: "Bình chọn – dự đoán nhanh", hint: "Cả lớp chọn ý kiến, màn chiếu hiện tỉ lệ", ask: 'MỘT câu hỏi dự đoán/ý kiến (type "poll2", "answer": null nếu là câu hỏi ý kiến) gây tò mò về bài mới' },
+    { id: "video-kd", phase: "khoi-dong", type: "video", label: "Video mở đầu có câu hỏi", hint: "Video EduHistory/YouTube dừng lại hỏi", ask: 'MỘT video ngắn (type "video") có 1–2 câu hỏi xen giữa để khởi động' },
+    { id: "chon-the", phase: "khoi-dong", type: "cards", label: "Chọn thẻ – đoán nhanh", hint: "Học sinh chọn thẻ phù hợp, nêu giả thuyết", ask: 'MỘT hoạt động chọn thẻ (type "cards") để học sinh đoán/nêu giả thuyết' },
+    { id: "web-kd", phase: "khoi-dong", type: "web", label: "Trò chơi web (Wordwall, Blooket…)", hint: "Vòng quay, mở hộp bí mật, lật thẻ – nhúng lên màn chiếu", ask: 'MỘT trò chơi web khởi động (type "web") – xem mục TRÒ CHƠI WEB' },
+    { id: "bai-giang", phase: "hinh-thanh", type: "slide", label: "Bài giảng trực quan", hint: "Ảnh, dòng thời gian, sơ đồ, bảng so sánh, kết luận, ghi vở", always: true, ask: 'các bước bài giảng trực quan (type "slide", 2–4 trang mỗi bước) cho TỪNG nội dung kiến thức' },
+    { id: "hoc-tu-ban", phase: "hinh-thanh", type: "poll2", label: "Học từ bạn – hai vòng", hint: "Tự chọn → trao đổi → chọn lại; thấy tiến bộ ngay", ask: '1–2 hoạt động hai vòng học từ bạn (type "poll2") cho khái niệm dễ nhầm' },
+    { id: "nhom", phase: "hinh-thanh", type: "groupwork", label: "Nhiệm vụ nhóm + triển lãm", hint: "Tối đa 1 lần/bài; nhóm nộp hồ sơ, cả lớp chấm chéo", ask: 'ĐÚNG 1 nhiệm vụ nhóm (type "groupwork") và ngay sau là triển lãm (type "expo")' },
+    { id: "tu-lieu", phase: "hinh-thanh", type: "text", label: "Phân tích tư liệu / nguồn", hint: "Đọc tư liệu SGK, trả lời ngắn có dẫn chứng", ask: 'MỘT hoạt động phân tích tư liệu (type "text" có trường "source" là đoạn tư liệu trích SGK, ghi rõ trang)' },
+    { id: "di-san", phase: "hinh-thanh", type: "explore", label: "Khám phá di sản Heritage Lens", hint: "Học sinh mở di tích 360° trên máy, trả lời câu hỏi", ask: 'MỘT nhiệm vụ khám phá di sản (type "explore") với di tích Heritage Lens phù hợp' },
+    { id: "video-ht", phase: "hinh-thanh", type: "video", label: "Video có câu hỏi xen giữa", hint: "EduHistory Studio (Lịch sử 6–9) hoặc YouTube", ask: 'MỘT video (type "video") có 2–3 câu hỏi tại các mốc thời gian' },
+    { id: "trac-nghiem", phase: "luyen-tap", type: "quiz", label: "Trắc nghiệm tổng hợp", hint: "4 lựa chọn · Đúng/Sai 4 ý · Trả lời ngắn; bảng xếp hạng", kinds: true, ask: 'MỘT bước trắc nghiệm (type "quiz") 6–10 câu' },
+    { id: "ghep-sap", phase: "luyen-tap", type: "match", label: "Ghép nối / Sắp xếp", hint: "Ghép khái niệm – nội dung hoặc sắp xếp tiến trình", ask: 'MỘT hoạt động ghép nối (type "match") hoặc sắp xếp (type "order") – chọn dạng hợp nội dung hơn' },
+    { id: "dau-gia", phase: "luyen-tap", type: "auction", label: "Đấu giá kiến thức (nhóm)", hint: "Nhóm chọn phương án và lí do, giáo viên trao giải", ask: 'MỘT hoạt động đấu giá/lựa chọn của nhóm (type "auction")' },
+    { id: "web-lt", phase: "luyen-tap", type: "web", label: "Trò chơi web luyện tập", hint: "Wordwall, LearningApps, Quizizz, Kahoot, Blooket – HS chơi trên máy", ask: 'MỘT trò chơi web luyện tập (type "web") – xem mục TRÒ CHƠI WEB' },
+    { id: "phieu-thoat", phase: "van-dung", type: "text", label: "Phiếu thoát + tự đánh giá", hint: "Viết ngắn, tự đánh giá 3 mức, hỏi điều băn khoăn", ask: 'MỘT phiếu thoát (type "text", selfAssess: true, askDoubt: true) yêu cầu vận dụng vào thực tế' },
+    { id: "ve-nha", phase: "van-dung", type: "text", label: "Vận dụng – giao về nhà", hint: "Nhiệm vụ vận dụng thực tế, học sinh nộp trên máy", ask: 'MỘT nhiệm vụ vận dụng giao về nhà (type "text", maxWords 120, có "sample" gợi ý)' }
+  ];
+  const QKINDS = [
+    ["mcq", "4 lựa chọn"],
+    ["tf", "Đúng/Sai 4 ý"],
+    ["short", "Trả lời ngắn"],
+    ["fill", "Điền khuyết"],
+    ["sort", "Kéo thả phân loại"]
+  ];
 
   function catalog(only) {
     return L360.typeOrder
@@ -1070,51 +1466,149 @@ window.L360_CONFIG = {
           .map((f) => `    - ${f.key}: ${KIND_DESC[f.kind] || f.kind} – ${f.label}${f.hint ? ` (${f.hint})` : ""}`)
           .join("\n");
         const ex = Object.assign({ id: "vi-du" }, T.template());
-        return `• type "${t}" – ${T.label}: ${T.desc}\n${fields}${t === "poll2" || t === "explore" ? '\n    - answer: số thứ tự phương án đúng (0 = A); poll2 có thể để null nếu là câu hỏi ý kiến' : ""}\n  Ví dụ: ${JSON.stringify(ex)}`;
+        return `• type "${t}" – ${T.label}: ${T.desc}\n${fields}${t === "poll2" || t === "explore" ? '\n    - answer: số thứ tự phương án đúng (0 = A); poll2 để null nếu là câu hỏi ý kiến' : ""}\n  Ví dụ: ${JSON.stringify(ex)}`;
       })
       .join("\n\n");
   }
-
+  const BLOCKS = `KHỐI TRỰC QUAN (dùng trong "pages"[].blocks của type "slide"; mỗi khối có "kind"):
+- {"kind":"text","md":"đoạn ngắn; dòng bắt đầu bằng - là gạch đầu dòng; **đậm**"}
+- {"kind":"list","items":["ý 1","ý 2"]}
+- {"kind":"image","src":"https://upload.wikimedia.org/…(đường dẫn TRỰC TIẾP tới tệp ảnh thật)","commons":"File:Tên_tệp_chính_xác.jpg","alt":"mô tả chính xác ảnh phải thể hiện gì","query":"từ khoá tiếng Anh dự phòng","caption":"chú thích tiếng Việt","credit":"tác giả, giấy phép"}  ← xem mục ẢNH
+- {"kind":"gallery","images":[khối image…]} (2–4 ảnh)
+- {"kind":"timeline","items":[{"time":"mốc","label":"sự kiện","desc":"ngắn"}]} (3–7 mốc, đúng SGK)
+- {"kind":"mindmap","center":"tên bài/mục","icon":"🏛","branches":[{"label":"nhánh","icon":"📜","items":["ý","ý"]}]}  ← theo QUY ƯỚC SƠ ĐỒ TƯ DUY bên dưới
+- {"kind":"compare","columns":["Tiêu chí","A","B"],"rows":[["…","…","…"]]}
+- {"kind":"flow","steps":[{"label":"bước","desc":"ngắn"}]} (quy trình, diễn biến, nguyên nhân – kết quả)
+- {"kind":"cycle","center":"…","items":["…","…"]} (vòng tuần hoàn)
+- {"kind":"venn","left":"A","leftItems":["điểm riêng"],"right":"B","rightItems":["điểm riêng"],"bothLabel":"Giống nhau","both":["điểm chung"]} (so sánh giống – khác)
+- {"kind":"pyramid","items":[{"label":"tầng trên cùng","desc":"ngắn"},…]} (thứ bậc, tầng lớp, mức độ – từ trên xuống)
+- {"kind":"stats","items":[{"value":"số liệu","label":"ý nghĩa"}]} (CHỈ số liệu có trong SGK)
+- {"kind":"quote","text":"tư liệu trích SGK","source":"SGK … trang …"}
+- {"kind":"map","query":"từ khoá bản đồ","pins":[{"x":40,"y":55,"label":"địa danh"}],"caption":"…"} (x, y là % theo chiều ngang/dọc)
+- {"kind":"keyterms","items":[{"term":"thuật ngữ","def":"giải thích"}]}
+- {"kind":"question","text":"câu hỏi gợi mở cho cả lớp"}
+- {"kind":"conclusion","text":"- kết luận ngắn gọn"}
+- {"kind":"note","text":"- nội dung học sinh GHI VÀO VỞ (ngắn, cô đọng)"}
+- {"kind":"chude","so":"Chủ đề 2","ten":"TÊN CHỦ ĐỀ","mota":"1 câu dẫn","bai":["Bài 4. …","Bài 5. …"]} (trang mở đầu chủ đề – đứng MỘT MÌNH trên trang)
+- {"kind":"tenbai","chude":"Chủ đề 2. …","so":"Bài 4","ten":"Tên bài đúng SGK","muc":["tên mục 1","tên mục 2"]} (trang tên bài – đứng một mình)
+- {"kind":"muc","so":"1","ten":"Tên mục đúng SGK","y":["a) ý nhỏ","b) ý nhỏ"]} (trang tên mục – đứng một mình, đặt TRƯỚC nội dung mỗi mục mới)
+- {"kind":"video","edu":"mã video EduHistory"} hoặc {"kind":"video","url":"https://www.youtube.com/watch?v=…","start":giây bắt đầu,"end":giây kết thúc,"caption":"tên video – kênh"}  ← xem mục VIDEO`;
+  const MAPRULES = `QUY ƯỚC SƠ ĐỒ TƯ DUY (thống nhất mọi bài để học sinh dễ vẽ lại vào vở):
+- Trung tâm: tên bài hoặc tên mục, tối đa 6 chữ; có thể thêm 1 biểu tượng "icon" (emoji) hợp nội dung.
+- 3–6 nhánh cấp 1; tên nhánh là danh từ/cụm danh từ ≤ 5 chữ (ví dụ "Điều kiện tự nhiên", "Thành tựu"); thứ tự nhánh theo logic nội dung (nguyên nhân → diễn biến → kết quả → ý nghĩa…). Màn chiếu tự tô mỗi nhánh một màu, đánh số 1, 2, 3… theo chiều kim đồng hồ từ góc trên bên phải.
+- Mỗi nhánh 1–3 ý con, mỗi ý là TỪ KHOÁ ≤ 8 chữ, không viết câu dài, không lặp lại tên nhánh; có thể thêm "icon" cho nhánh.
+- Không dùng sơ đồ tư duy cho nội dung chỉ có 1–2 ý; khi đó dùng flow/compare/keyterms.`;
+  const MEDIA = `ẢNH (quan trọng nhất là ĐÚNG NỘI DUNG):
+- Tìm ảnh THẬT trên Wikimedia Commons (ưu tiên), Wikipedia, website bảo tàng/cơ quan nhà nước có giấy phép mở. Mở trang ảnh để kiểm tra đúng hiện vật, địa danh, nhân vật, sự kiện, thời kì của bài; không dùng ảnh minh hoạ chung chung.
+- Ảnh chụp/tư liệu gốc rõ nét, cạnh ngang từ 1200 px, không logo, không chữ chèn, không watermark; bản đồ ghi rõ là bản đồ. Khi không có ảnh chụp phù hợp (khái niệm, quá trình, công trình đã mất…), dùng TRANH VẼ, SƠ ĐỒ, ẢNH MÔ PHỎNG/PHỤC DỰNG có giấy phép mở (Wikimedia Commons) – sắc nét, đúng nội dung.
+- "caption" CHỈ LÀ TÊN ẢNH, ngắn gọn ≤ 8 chữ (ví dụ "Kim tự tháp Kê-ốp", "Lược đồ Ai Cập cổ đại"); không viết câu giải thích trong caption, nguồn ghi riêng ở "credit".
+- Ghi "commons" = tên tệp chính xác (File:…), "src" = đường dẫn trực tiếp tệp ảnh (https://upload.wikimedia.org/…), "alt" = ảnh phải thể hiện gì, "credit" = tác giả, giấy phép.
+- Không chắc ảnh có thật → để "src" rỗng nhưng vẫn ghi "alt" và "query" (tiếng Anh, tên riêng + loại ảnh, ví dụ "Great Pyramid of Giza aerial photo"). Studio kiểm tra từng ảnh: ảnh không tồn tại, mờ hoặc sai sẽ bị thay.
+VIDEO:
+- Môn có video EduHistory Studio thì dùng "edu". Môn khác: tìm video THẬT trên YouTube của kênh uy tín (VTV, VTV7, Truyền hình Quốc phòng Việt Nam, Bảo tàng Lịch sử Quốc gia, NXB Giáo dục Việt Nam, kênh của trường/sở GD, kênh khoa học chính thống); mở video kiểm tra nội dung đúng bài, phù hợp học sinh, tiếng Việt hoặc có phụ đề.
+- Ghi "url" đầy đủ, chọn đoạn ngắn 1–4 phút bằng "start"/"end" (giây). Không chắc video có thật → không đưa vào, thay bằng ảnh/tư liệu. Học sinh xem trên màn chiếu và mở lại được trên máy.
+TRÒ CHƠI WEB (type "web"):
+- Chọn "tool" hợp nội dung: wordwall (vòng quay, ghép đôi, đố vui, mở hộp, lật thẻ, phân loại), learningapps (ghép cặp, sắp xếp, điền khuyết, trục thời gian), quizizz, kahoot, blooket (thi trắc nghiệm), genially (phòng thoát hiểm), padlet (bảng ý kiến), mentimeter (đám mây từ); ghi "template" = dạng trò chơi.
+- "content" = nội dung soạn sẵn để giáo viên dán vào công cụ: mỗi dòng một mục; cặp ghép viết "vế trái | vế phải"; câu hỏi viết "Câu hỏi | Đáp án đúng | nhiễu 1 | nhiễu 2 | nhiễu 3"; phân loại viết "Nhóm | mục".
+- Nếu tìm được trò chơi CÓ SẴN, công khai, đúng nội dung bài thì ghi "url" (đường dẫn chia sẻ); không thì để "url" rỗng – giáo viên tự tạo từ "content".`;
+  const QUESTIONS = `DẠNG CÂU HỎI (trong "questions" của quiz/video; mỗi câu có "kind"):
+- 4 lựa chọn: {"kind":"mcq","q":"…","options":["A","B","C","D"],"answer":0-3,"explain":"…"}
+- Đúng/Sai 4 ý (như đề thi tốt nghiệp THPT): {"kind":"tf","q":"đoạn tư liệu/dẫn","statements":[{"text":"a) …","answer":true},{"text":"b) …","answer":false},{"text":"c) …","answer":true},{"text":"d) …","answer":false}],"explain":"…"}
+- Trả lời ngắn: {"kind":"short","q":"…","answer":"đáp án","accept":["cách viết khác"],"explain":"…"} (đáp án ngắn: số, năm, tên riêng, 1–4 từ)
+- Điền khuyết: {"kind":"fill","q":"Chọn từ/cụm từ thích hợp điền vào chỗ trống.","text":"Đoạn văn bám SGK, mỗi chỗ trống ghi đáp án trong [[ ]], ví dụ: Năm [[938]], [[Ngô Quyền]] đánh tan quân Nam Hán trên sông [[Bạch Đằng]].","bank":["2–3 từ nhiễu cùng loại"],"explain":"…"} (2–6 chỗ trống; [[A|B]] nếu chấp nhận nhiều cách viết)
+- Kéo thả phân loại: {"kind":"sort","q":"Kéo mỗi ý vào đúng nhóm.","groups":["Nhóm 1","Nhóm 2"],"items":[{"text":"ý ngắn ≤ 10 chữ","group":0},{"text":"…","group":1}],"explain":"…"} (2–4 nhóm, 4–8 mục, mỗi nhóm ≥ 1 mục)
+YÊU CẦU CHẤT LƯỢNG CÂU 4 LỰA CHỌN: đúng nội dung SGK; câu dẫn rõ, trọn nghĩa; CHỈ MỘT phương án đúng; 3 phương án nhiễu hợp lí, cùng loại, cùng cấu trúc ngữ pháp với đáp án; 4 phương án DÀI TƯƠNG ĐƯƠNG (chênh lệch không quá vài chữ); không dùng "Tất cả đều đúng/sai", "Cả A và B"; không lặp từ khoá của câu dẫn trong riêng đáp án đúng.
+- Với type "video" thêm "t": số giây video dừng để hỏi.`;
   const SITES = () => (window.L360_HERITAGE || []).map((s) => `${s.id} (${s.name})`).join("; ");
 
   L360.Architect = {
+    ACTS,
+    QKINDS,
+    // Hoạt động được phép theo vị trí tiết trong bài (tiết đầu có khởi động, tiết cuối có luyện tập + vận dụng).
+    allowedPhases(tiet) {
+      const so = Number(tiet && tiet.so) || 1;
+      const tong = Number(tiet && tiet.tong) || 1;
+      if (tong <= 1) return ["khoi-dong", "hinh-thanh", "luyen-tap", "van-dung"];
+      if (so === 1) return ["khoi-dong", "hinh-thanh"];
+      if (so === tong) return ["hinh-thanh", "luyen-tap", "van-dung"];
+      return ["hinh-thanh"];
+    },
     prompt(o = {}) {
-      const want = [];
-      if (o.group) want.push("có đúng 1 nhiệm vụ nhóm (groupwork) và ngay sau đó là triển lãm (expo)");
-      if (o.quiz) want.push("có trò chơi trắc nghiệm nhanh (quiz) 4–6 câu ở phần luyện tập");
-      if (o.peer) want.push("có ít nhất 1 hoạt động hai vòng học từ bạn (poll2) cho khái niệm dễ nhầm");
-      if (o.explore) want.push(`có 1 hoạt động khám phá di sản (explore) với di tích ${o.site || "phù hợp nhất với bài"}`);
+      const tiet = o.tiet || { so: 1, tong: 1 };
+      const allowed = L360.Architect.allowedPhases(tiet);
+      const acts = ACTS.filter((a) => (a.always || (o.acts || []).includes(a.id)) && allowed.includes(a.phase));
+      const kinds = (o.qkinds && o.qkinds.length ? o.qkinds : ["mcq"]).map((k) => (QKINDS.find((x) => x[0] === k) || [k, k])[1]);
+      const types = [...new Set(acts.flatMap((a) => (a.id === "ghep-sap" ? ["match", "order"] : a.id === "nhom" ? ["groupwork", "expo"] : [a.type])))];
+      const plan = L360.PHASES.filter((p) => allowed.includes(p.id))
+        .map((p) => {
+          const list = acts.filter((a) => a.phase === p.id);
+          const line = list.length
+            ? list.map((a) => a.ask + (a.kinds ? ` gồm các dạng: ${kinds.join(", ")}` : "")).join("; ")
+            : p.id === "hinh-thanh"
+            ? "bài giảng trực quan"
+            : "tự chọn hoạt động phù hợp nhất trong thư viện";
+          return `- ${p.name} ("phase":"${p.id}"): ${line}.`;
+        })
+        .join("\n");
+      const b = o.bai || {};
+      const vids = (o.videos || []).map((v) => `${v.ma} – ${v.ten} (${u.fmtSec(v.sec)})`).join("\n  ");
+      const design = o.design || {};
       return `Bạn là "Lesson Architect" – trợ lý thiết kế tiết học tương tác cho nền tảng Lesson 360° Studio (${L360.cfg.school}).
 
 NHIỆM VỤ
-Đọc giáo án (kế hoạch bài dạy – KHBD) tôi gửi kèm và chuyển thành MỘT gói bài học JSON định dạng "l360-pack/1". Gói này chạy trực tiếp trên lớp: giáo viên điều khiển từng bước, học sinh làm trên điện thoại/laptop, màn chiếu hiện kết quả cả lớp.
+Dựa trên giáo án (KHBD) và SGK, thiết kế MỘT TIẾT học dưới dạng gói JSON "l360-pack/2". Gói chạy trực tiếp trên lớp: giáo viên điều khiển, học sinh làm trên laptop/iPad, màn chiếu hiện nội dung và kết quả cả lớp.
 
 THÔNG TIN TIẾT HỌC
-- Môn: ${o.subject || "(theo giáo án)"}; lớp: ${o.grade || "(theo giáo án)"}; thời lượng: ${o.duration || 45} phút; số nhóm: ${o.groups || 4}; sĩ số khoảng ${o.size || 30}.
-${want.length ? "- Yêu cầu thêm: " + want.join("; ") + "." : ""}
+- Môn: ${o.subject || "(theo giáo án)"}; lớp ${o.grade || "(theo giáo án)"}; sách: ${o.book || "Bộ SGK thống nhất"}.
+- Bài: ${b.so ? (/^(CĐ|Chủ đề)/.test(b.so) ? b.so : "Bài " + b.so) + ". " : ""}${b.ten || "(theo giáo án)"}${b.trang ? ` – SGK trang ${b.trang}` : ""}${b.chuong ? ` (${b.chuong})` : ""}.
+- Đây là TIẾT ${tiet.so}/${tiet.tong} của bài; thời lượng ${o.duration || 45} phút; ${o.groups || 4} nhóm; sĩ số khoảng ${o.size || 30}.
+${o.content ? `- Nội dung tiết này: ${o.content}\n` : ""}${
+        o.ppct
+          ? `- Theo Phụ lục 1 (Kế hoạch dạy học môn) năm học ${String(o.ppct.nam).replace("-", "–")} của tổ: bài này dạy ${o.ppct.tong} tiết (tiết PPCT ${o.ppct.cacTiet.join(", ")}); tiết đang soạn là tiết PPCT ${o.ppct.so}${o.ppct.tuan ? `, tuần ${o.ppct.tuan}` : ""}. CHỈ soạn đúng nội dung của tiết này.\n${
+              (o.ppct.khac || []).length ? `- Nội dung các tiết khác của bài (KHÔNG đưa vào tiết này): ${o.ppct.khac.map((x) => `tiết ${x.thu}: ${x.noiDung || "…"}`).join("; ")}.\n` : ""
+            }`
+          : ""
+      }
+TIẾN TRÌNH YÊU CẦU (theo các hoạt động giáo viên đã chọn)
+${plan}
+Quy tắc của trường: MỖI BÀI chỉ có 1 hoạt động khởi động, 1 hoạt động luyện tập và 1 hoạt động vận dụng. ${
+        tiet.tong > 1 ? `Bài này có ${tiet.tong} tiết: khởi động chỉ ở tiết 1; luyện tập và vận dụng chỉ ở tiết ${tiet.tong}; tiết này (tiết ${tiet.so}) chỉ dùng các pha nêu trên.` : "Tiết này có đủ 4 pha."
+      }
 
-QUY TẮC
-1. Bám sát mục tiêu, nội dung, tiến trình của KHBD (khởi động – hình thành kiến thức – luyện tập – vận dụng). Không thêm kiến thức ngoài chương trình.
-2. TUYỆT ĐỐI không bịa số liệu, năm tháng, tên riêng, trích dẫn. Chỉ dùng thông tin có trong giáo án/SGK. Chỗ nào chưa chắc, ghi "[GV kiểm tra]" ngay trong câu chữ.
-3. 6–9 bước (steps); tổng "minutes" xấp xỉ thời lượng tiết. Tối đa 1 nhiệm vụ nhóm (groupwork).
-4. Ưu tiên hoạt động mà MỌI học sinh đều trả lời (poll2, quiz, cards, match, order, text); hạn chế trình chiếu (slide) dài.
-5. Trắc nghiệm: 4 phương án, 1 đáp án đúng, phương án nhiễu hợp lí, đáp án đúng rải đều A/B/C/D, mỗi câu có "explain" ngắn.
-6. Bước cuối là phiếu thoát (type "text", selfAssess: true).
-7. "script" = lời dẫn ngắn cho giáo viên (1–3 câu); "instructions" = nhiệm vụ cho học sinh (1 câu).
-8. Tiếng Việt chuẩn, câu ngắn, phù hợp lứa tuổi; tên riêng nước ngoài phiên âm theo SGK.
-9. Chỉ thêm ảnh ("media.image" hoặc "image") khi có đường dẫn ảnh giấy phép mở và ghi "credit"; không chắc thì bỏ trống.
-10. Nội dung chính xác, khách quan, phù hợp chủ trương của Đảng, pháp luật Nhà nước Việt Nam và Chương trình GDPT 2018.
-11. Không để lộ đáp án trong câu chữ: mục cần sắp xếp (order) không ghi năm hay số thứ tự; vế ghép (match) không lặp từ khoá của vế kia.
+QUY TẮC NỘI DUNG
+1. Bám sát yêu cầu cần đạt, nội dung SGK và KHBD; không thêm kiến thức ngoài chương trình.
+2. TUYỆT ĐỐI không bịa số liệu, năm tháng, tên riêng, trích dẫn. Chỗ nào chưa chắc, ghi "[GV kiểm tra]" ngay trong câu chữ.
+3. Mỗi bước có "phase" (khoi-dong | hinh-thanh | luyen-tap | van-dung), sắp đúng thứ tự; tổng "minutes" ≈ ${o.duration || 45} phút; 6–10 bước.
+4. PHẦN HÌNH THÀNH KIẾN THỨC PHẢI TRỰC QUAN: mỗi nội dung là một bước "slide" 2–4 trang; mỗi trang ghép 2–4 khối, có ít nhất 1 khối hình ảnh hoặc sơ đồ (image/gallery/map/timeline/mindmap/compare/flow/cycle/venn/pyramid/stats); trang cuối của mỗi nội dung có khối "conclusion" và khối "note" (ghi vào vở). Tránh khối chữ dài: tối đa 60 chữ mỗi khối text.
+5. GHI VỞ: khối "note" (hoặc trường "ghiBai") NGẮN, CÔ ĐỌNG: tối đa 4 ý, mỗi ý ≤ 25 chữ, để chữ trên màn chiếu đủ lớn; nhiều hơn thì tách sang trang sau. Màn chiếu hiện biểu tượng ghi vở và tự đưa vào Vở ghi của học sinh.
+6. KHÁI QUÁT KIẾN THỨC đa dạng, sáng tạo, không lặp một kiểu: dùng xen kẽ sơ đồ tư duy (mindmap), sơ đồ nhân quả/diễn biến (flow), trục thời gian (timeline), bảng so sánh (compare), giống – khác (venn), tháp phân tầng (pyramid), vòng tuần hoàn (cycle), thẻ thuật ngữ (keyterms), số liệu nổi bật (stats) – chọn dạng hợp bản chất nội dung; mỗi tiết ít nhất 2 dạng khác nhau. Ảnh, video, trò chơi web: theo các mục ẢNH, VIDEO, TRÒ CHƠI WEB bên dưới.
+7. Trắc nghiệm: theo YÊU CẦU CHẤT LƯỢNG CÂU 4 LỰA CHỌN ở mục DẠNG CÂU HỎI; đáp án đúng rải đều A/B/C/D; mọi câu có "explain" ngắn. Đúng/Sai có đúng 4 ý a–d, xen kẽ đúng – sai. Mỗi hoạt động luyện tập nên phối hợp ít nhất 2 dạng câu (4 lựa chọn, Đúng/Sai, trả lời ngắn, điền khuyết, kéo thả phân loại).
+8. Ô chữ: số hàng = số chữ của từ khoá; hàng thứ i chứa chữ thứ i của từ khoá; đáp án viết hoa không dấu, không khoảng trắng, tối đa 12 chữ cái; gợi ý ghi rõ số chữ cái.
+9. Không để lộ đáp án trong câu chữ: mục cần sắp xếp (order) không ghi năm hay số thứ tự; vế ghép (match) không lặp từ khoá của vế kia.
+10. "script" = lời dẫn ngắn cho giáo viên (1–3 câu); "instructions" = nhiệm vụ cho học sinh (1 câu).
+11. Tiếng Việt chuẩn, câu ngắn, hợp lứa tuổi; tên riêng nước ngoài phiên âm theo SGK.
+12. Nội dung chính xác, khách quan, phù hợp chủ trương của Đảng, pháp luật Nhà nước Việt Nam và Chương trình GDPT 2018.
+13. CẤU TRÚC TRANG ĐỀ MỤC (để học sinh ghi vở đúng đề mục): ${
+        tiet.so === 1 ? `tiết này là TIẾT ĐẦU của bài – bước "slide" đầu tiên của phần hình thành kiến thức (hoặc ngay sau khởi động) có trang "tenbai"${o.firstOfTopic ? ` và TRƯỚC ĐÓ một trang "chude" (đây là bài đầu tiên của chủ đề "${o.firstOfTopic}")` : ""}; ` : ""
+      }trước nội dung của MỖI MỤC MỚI (1, 2, 3… theo SGK) đặt một trang "muc" riêng. Các trang đề mục đứng một mình, không ghép khối khác.
+14. BIỂU TƯỢNG: khối mindmap, keyterms, stats có thể thêm "icon" (1 emoji đơn giản, đúng nghĩa) cho trực quan; không lạm dụng.
+15. NHIỆM VỤ VỀ NHÀ: thêm trường gốc "homework": {"tasks":["1–3 nhiệm vụ cụ thể, đo được (học thuộc gì, làm bài tập gì, hoàn thành phiếu nào)"],"prepare":"chuẩn bị cho tiết sau: đọc trước mục … SGK trang …, câu hỏi định hướng, sản phẩm cần mang"}.
+${vids ? `\nVIDEO EDUHISTORY STUDIO CÓ SẴN CHO BÀI NÀY (dùng "edu":"mã"):\n  ${vids}\n` : ""}${types.includes("explore") ? `\nMã di tích Heritage Lens (type "explore"): ${SITES()}\n` : ""}
+THƯ VIỆN MẪU HOẠT ĐỘNG (chỉ dùng các "type" dưới đây; mỗi bước luôn có: id, type, phase, title, minutes, instructions, script)
+${catalog(types.concat(["slide"]).filter((v, i, a) => a.indexOf(v) === i))}
 
-THƯ VIỆN MẪU HOẠT ĐỘNG (chỉ dùng các "type" dưới đây; mỗi bước luôn có: id, type, title, minutes, instructions, script)
-${catalog()}
+${BLOCKS}
 
-Mã di tích Heritage Lens (dùng cho type "explore"): ${SITES()}
+${MAPRULES}
+
+${MEDIA}
+
+${QUESTIONS}
 
 ĐỊNH DẠNG TRẢ LỜI
 - Trả về DUY NHẤT một khối \`\`\`json … \`\`\` hợp lệ: không chú thích, không dấu phẩy thừa, dùng dấu nháy kép.
-- Cấu trúc gốc: {"schema":"l360-pack/1","title","subject","grade","lessonRef","duration","objectives":[…],"theme":{"accent":"#mã màu đậm"},"steps":[…]}
-- Sau khối JSON, viết mục "Ghi chú cho giáo viên" (3–5 gạch đầu dòng): chỗ cần kiểm tra lại, gợi ý ảnh/tư liệu nên bổ sung.
+- Cấu trúc gốc: {"schema":"l360-pack/2","title","subjectId":"${o.subjectId || ""}","subject":"${o.subject || ""}","grade":"${o.grade || ""}","bai":{"key":"${b.key || ""}","so":"${b.so || ""}","ten":"${(b.ten || "").replace(/"/g, "'")}"},"tiet":{"so":${tiet.so},"tong":${tiet.tong}},"duration":${o.duration || 45},"objectives":[…],"design":{"style":"${design.style || ""}","palette":"${design.palette || ""}"},"homework":{"tasks":[…],"prepare":"…"},"steps":[…]}
+- Sau khối JSON, viết mục "Ghi chú cho giáo viên" (3–5 gạch đầu dòng): chỗ cần kiểm tra lại, gợi ý tư liệu nên bổ sung.
 
 GIÁO ÁN: (tôi đính kèm tệp KHBD hoặc dán nội dung ngay bên dưới)
 `;
@@ -1123,7 +1617,11 @@ GIÁO ÁN: (tôi đính kèm tệp KHBD hoặc dán nội dung ngay bên dưới
       return `Gói bài học JSON bạn vừa tạo chưa chạy được trên Lesson 360° Studio. Hãy sửa đúng các lỗi sau, giữ nguyên phần còn lại, và trả về lại TOÀN BỘ khối \`\`\`json\`\`\`:
 ${errors.map((e) => "- LỖI: " + e).join("\n")}${warnings && warnings.length ? "\n" + warnings.map((w) => "- Lưu ý: " + w).join("\n") : ""}`;
     },
-    catalog
+    catalog,
+    BLOCKS,
+    MAPRULES,
+    MEDIA,
+    QUESTIONS
   };
 })();
 
@@ -1319,7 +1817,8 @@ window.L360_HERITAGE = [
 ];
 
 /* js/activities/basic.js */
-/* Mẫu hoạt động cơ bản: Trình chiếu, Trắc nghiệm nhanh, Hai vòng (học từ bạn), Trả lời ngắn / Phiếu thoát.
+/* Mẫu hoạt động cơ bản: Bài giảng trực quan (nhiều trang, khối hình ảnh – sơ đồ – kết luận – ghi vở),
+   Trắc nghiệm (4 lựa chọn · Đúng/Sai 4 ý · Trả lời ngắn), Hai vòng (học từ bạn), Trả lời ngắn / Phiếu thoát.
 
    Hợp đồng chung của một mẫu hoạt động (L360.registerType):
    - type, label, desc, icon, fields (cho trình soạn), template() – bước mẫu
@@ -1327,41 +1826,13 @@ window.L360_HERITAGE = [
    - subKey(step, state), keys(step, meta), count(step), timerFor(step, state)
    - publicPayload(step, state)  -> nội dung phát cho học sinh (không có đáp án)
    - answerPayload(step, state)  -> đáp án, công bố khi giáo viên bấm "Công bố"
-   - isCorrect(step, key, value), points(step), describe(step, key, value)
-   - student.input(el, ctx) / student.result(el, ctx) / student.render(el, ctx)
-   - screen(el, ctx), host(el, ctx), controls(ctx)
-   ctx học sinh: {code, me, group, groups, step, state, key, item, answer, sub, submit(v), gsub, gsubmit(v), featured, awards, gwork, gworkSet, gworkPush, expo, myScore}
-   ctx màn chiếu: {data, state, step, key, item, answer, subs, gsubs, joined, groups, featured, mode}
-   ctx giáo viên: {host, data, step (đầy đủ, có đáp án), state, key, subs, gsubs, joined, groups} */
+   - isCorrect(step, key, value), points(step, key, value), describe(step, key, value)
+   - student.input/result/render/update, screen(el, ctx), host(el, ctx), controls(ctx) */
 (function () {
   const L360 = window.L360;
   const u = L360.u;
   const ui = L360.ui;
-
-  // Văn bản ngắn có gạch đầu dòng "- " và **đậm**.
-  ui.md = (text) => {
-    const lines = String(text || "").split(/\r?\n/);
-    let out = "";
-    let inList = false;
-    lines.forEach((ln) => {
-      const m = ln.match(/^\s*[-•*]\s+(.*)$/);
-      if (m) {
-        if (!inList) {
-          out += "<ul>";
-          inList = true;
-        }
-        out += `<li>${u.rich(m[1])}</li>`;
-      } else {
-        if (inList) {
-          out += "</ul>";
-          inList = false;
-        }
-        if (ln.trim()) out += `<p>${u.rich(ln)}</p>`;
-      }
-    });
-    if (inList) out += "</ul>";
-    return out;
-  };
+  const B = L360.blocks;
 
   const countBy = (subs, n, pick) => {
     const arr = Array(n).fill(0);
@@ -1371,125 +1842,503 @@ window.L360_HERITAGE = [
     });
     return arr;
   };
+  L360.countBy = countBy;
   const mediaFields = [
-    { key: "media.image", label: "Ảnh (đường dẫn)", kind: "text", hint: "Ảnh có giấy phép mở, ví dụ Wikimedia Commons" },
+    { key: "media.image", label: "Ảnh (đường dẫn)", kind: "image", hint: "Ảnh có giấy phép mở, ví dụ Wikimedia Commons" },
     { key: "media.caption", label: "Chú thích ảnh", kind: "text" },
-    { key: "media.credit", label: "Nguồn ảnh", kind: "text" },
-    { key: "media.video", label: "Video (đường dẫn)", kind: "text" },
-    { key: "media.link", label: "Đường dẫn mở rộng", kind: "text" }
+    { key: "media.credit", label: "Nguồn ảnh", kind: "text" }
   ];
   L360.mediaFields = mediaFields;
 
-  /* ---------------- Trình chiếu ---------------- */
+  /* ---------------- Bài giảng trực quan ---------------- */
+  const pagesOf = (s) => (Array.isArray(s.pages) && s.pages.length ? s.pages : [{ title: "", blocks: [] }]);
   L360.registerType({
     type: "slide",
-    label: "Trình chiếu nội dung",
+    label: "Bài giảng trực quan",
     icon: "▤",
-    desc: "Chiếu khái niệm, tư liệu, ghi nhớ; học sinh xem cùng trên máy. Không nộp bài.",
+    desc: "Nội dung chính chiếu cho cả lớp: nhiều trang, mỗi trang ghép các khối ảnh, dòng thời gian, sơ đồ tư duy, bảng so sánh, tư liệu, kết luận, ghi vào vở. Học sinh xem cùng trên máy và tự có vở ghi.",
     noSubmit: true,
     releaseOnEnter: true,
-    fields: [{ key: "body", label: "Nội dung", kind: "textarea", hint: "Mỗi ý một dòng; dòng bắt đầu bằng - là gạch đầu dòng; **chữ đậm**" }].concat(mediaFields),
-    template: () => ({ type: "slide", title: "Ghi nhớ", minutes: 2, body: "- Ý chính thứ nhất\n- Ý chính thứ hai", script: "" }),
-    validate(s, err) {
-      if (!s.body && !(s.media && s.media.image)) err("Trình chiếu cần nội dung hoặc ảnh.");
+    fields: [{ key: "pages", label: "Các trang bài giảng", kind: "pages" }],
+    template: () => ({
+      type: "slide",
+      phase: "hinh-thanh",
+      title: "Tìm hiểu kiến thức mới",
+      minutes: 6,
+      pages: [
+        {
+          title: "Nội dung 1",
+          blocks: [
+            { kind: "image", src: "", query: "từ khoá tìm ảnh", caption: "Chú thích", credit: "" },
+            { kind: "list", items: ["Ý chính thứ nhất", "Ý chính thứ hai"] },
+            { kind: "note", text: "- Điều học sinh cần ghi vào vở" }
+          ]
+        }
+      ],
+      script: ""
+    }),
+    normalize(s) {
+      if (!Array.isArray(s.pages) || !s.pages.length) {
+        const blocks = [];
+        if (s.media && s.media.image) blocks.push({ kind: "image", src: s.media.image, caption: s.media.caption || "", credit: s.media.credit || "" });
+        if (s.body) blocks.push({ kind: "text", md: s.body });
+        if (s.media && s.media.video) blocks.push({ kind: "video", src: s.media.video, caption: s.media.videoTitle || "" });
+        if (s.media && s.media.link) blocks.push({ kind: "text", md: `Tư liệu mở rộng: ${s.media.link}` });
+        s.pages = [{ title: "", blocks }];
+      }
+      s.pages = s.pages.map((pg) => Object.assign({ title: "", blocks: [] }, pg, { blocks: (pg.blocks || []).filter((b) => b && b.kind) }));
     },
-    publicPayload: (s) => ({ title: s.title, body: s.body || "", media: s.media || null }),
+    validate(s, err, warn) {
+      const pg = pagesOf(s);
+      if (!pg.some((p) => (p.blocks || []).length)) err("Bài giảng chưa có nội dung (pages[].blocks).");
+      pg.forEach((p, i) =>
+        (p.blocks || []).forEach((b) => {
+          if (!B || !B.kinds.some(([k]) => k === b.kind)) warn(`Trang ${i + 1}: khối "${b.kind}" không có trong thư viện khối.`);
+          if (b.kind === "image" && !b.src) warn(`Trang ${i + 1}: ảnh "${b.query || b.caption || ""}" chưa có đường dẫn – tìm ảnh trong Studio.`);
+        })
+      );
+      if (pg.length > 6) warn("Nhiều hơn 6 trang trong một bước – cân nhắc tách bước.");
+    },
+    count: (s) => pagesOf(s).length,
+    publicPayload: (s) => ({ title: s.title, pages: pagesOf(s) }),
     student: {
       render(el, ctx) {
-        const it = ctx.item || {};
-        el.innerHTML = `<div class="card"><h2>${u.esc(ctx.step.title)}</h2>${ui.media(it.media)}<div class="md">${ui.md(it.body)}</div></div>`;
+        const pages = (ctx.item && ctx.item.pages) || [];
+        const i = Math.min(pages.length - 1, Math.max(0, ctx.state.page || 0));
+        const pg = pages[i] || {};
+        el.innerHTML = `<div class="card lesson-card">${pages.length > 1 ? `<div class="row" style="margin-bottom:10px"><span class="pill accent">Trang ${i + 1}/${pages.length}</span>${B.hasNote(pg) ? `<span class="ghi-badge">${L360.icon("ghiBai")} Có nội dung ghi vở</span>` : ""}</div>` : ""}${B.page(pg, { mode: "student" })}</div>`;
       }
     },
     screen(el, ctx) {
-      const it = ctx.item || {};
-      const hasImg = it.media && it.media.image;
-      el.innerHTML = `<div class="${hasImg ? "grid g2" : ""}" style="align-items:center;height:100%">
-        <div class="md scr-text">${ui.md(it.body)}</div>${hasImg ? `<div>${ui.media(it.media, { big: true })}</div>` : ""}</div>`;
+      const pages = (ctx.item && ctx.item.pages) || [];
+      const i = Math.min(pages.length - 1, Math.max(0, ctx.state.page || 0));
+      el.innerHTML = B.page(pages[i] || {}, { mode: "screen" });
     },
     host(el, ctx) {
-      el.innerHTML = `<div class="md small">${ui.md(ctx.step.body)}</div>${ui.media(ctx.step.media)}`;
+      const pages = pagesOf(ctx.step);
+      const cur = Math.min(pages.length - 1, ctx.state.page || 0);
+      el.innerHTML = `<div class="row" style="gap:6px;margin-bottom:10px">${pages
+        .map((p, i) => `<button class="btn sm ${i === cur ? "primary" : ""}" data-pg="${i}">${i + 1}. ${u.esc((p.title || "Trang").slice(0, 28))}${B.hasNote(p) ? " ✎" : ""}</button>`)
+        .join("")}</div><div class="host-prev">${B.page(pages[cur] || {}, { mode: "host" })}</div>`;
+      u.$$("[data-pg]", el).forEach((b) => (b.onclick = () => ctx.host.setPage(Number(b.dataset.pg))));
+    },
+    controls(ctx) {
+      const n = pagesOf(ctx.step).length;
+      const p = ctx.state.page || 0;
+      const c = [];
+      if (n > 1) {
+        if (p > 0) c.push({ label: "‹ Trang trước", fn: () => ctx.host.setPage(p - 1) });
+        if (p < n - 1) c.push({ label: `Trang ${p + 2}/${n} ›`, cls: "primary", fn: () => ctx.host.setPage(p + 1) });
+      }
+      return c;
     }
   });
 
-  /* ---------------- Trắc nghiệm nhanh ---------------- */
+  /* ---------------- Trắc nghiệm: 4 lựa chọn · Đúng/Sai 4 ý · Trả lời ngắn ---------------- */
+  const KIND_LABEL = { mcq: "4 lựa chọn", tf: "Đúng/Sai", short: "Trả lời ngắn", fill: "Điền khuyết", sort: "Kéo thả phân loại" };
+  /* --- Điền khuyết: đáp án đặt trong [[ ]] ngay trong đoạn văn; [[A|B]] = chấp nhận A hoặc B. --- */
+  const fillParse = (text) => {
+    const parts = [];
+    const blanks = [];
+    let last = 0;
+    String(text || "").replace(/\[\[([^\]]+?)\]\]/g, (m, a, at) => {
+      parts.push(String(text).slice(last, at));
+      const alts = a.split("|").map((x) => x.trim()).filter(Boolean);
+      blanks.push({ answer: alts[0] || "", accept: alts.slice(1) });
+      last = at + m.length;
+      return m;
+    });
+    parts.push(String(text || "").slice(last));
+    return { parts, blanks };
+  };
+  // Xáo trộn cố định theo hạt giống (mọi máy thấy cùng một thứ tự).
+  const shuf = (list, seed) => {
+    let h = 2166136261;
+    String(seed).split("").forEach((c) => (h = Math.imul(h ^ c.charCodeAt(0), 16777619)));
+    const a = list.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      h = Math.imul(h ^ (h >>> 13), 1274126177);
+      const j = Math.abs(h) % (i + 1);
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+  L360.fillParse = fillParse;
+  // Kéo – thả bằng ngón tay/chuột (chạy trên iPad, laptop): chạm chọn rồi chạm đích, hoặc kéo thẳng vào đích.
+  function dragChips(root, chipSel, dropSel, onDrop) {
+    u.$$(chipSel, root).forEach((chip) => {
+      chip.onpointerdown = (e) => {
+        if (e.button > 0) return;
+        const sx = e.clientX, sy = e.clientY;
+        let ghost = null;
+        const move = (ev) => {
+          if (!ghost && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 8) return;
+          if (!ghost) {
+            ghost = chip.cloneNode(true);
+            ghost.classList.add("dd-ghost");
+            document.body.appendChild(ghost);
+            chip.classList.add("dd-src");
+          }
+          ghost.style.left = ev.clientX + "px";
+          ghost.style.top = ev.clientY + "px";
+          u.$$(dropSel, root).forEach((d) => d.classList.remove("dd-over"));
+          const t = document.elementFromPoint(ev.clientX, ev.clientY);
+          const d = t && t.closest(dropSel);
+          if (d && root.contains(d)) d.classList.add("dd-over");
+        };
+        const up = (ev) => {
+          window.removeEventListener("pointermove", move);
+          window.removeEventListener("pointerup", up);
+          window.removeEventListener("pointercancel", up);
+          if (!ghost) return;
+          ghost.remove();
+          chip.classList.remove("dd-src");
+          const t = document.elementFromPoint(ev.clientX, ev.clientY);
+          const d = t && t.closest(dropSel);
+          chip.dataset.dragged = "1";
+          setTimeout(() => delete chip.dataset.dragged, 50);
+          if (d && root.contains(d)) onDrop(chip, d);
+        };
+        window.addEventListener("pointermove", move);
+        window.addEventListener("pointerup", up);
+        window.addEventListener("pointercancel", up);
+      };
+    });
+  }
+  const TF_PTS = [0, 10, 25, 50, 100]; // thang điểm phần Đúng/Sai của đề thi tốt nghiệp THPT (×100)
+  const normAns = (s) =>
+    String(s == null ? "" : s)
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .replace(/[.;:!?]+$/, "");
+  const asNum = (s) => {
+    const x = String(s == null ? "" : s).trim().replace(/\s/g, "").replace(",", ".");
+    return /^-?\d+(\.\d+)?$/.test(x) ? Number(x) : null;
+  };
+  const shortOk = (ans, v) => {
+    const cands = [ans.answer].concat(ans.accept || []).filter((x) => x != null && x !== "");
+    const nv = asNum(v);
+    return cands.some((c) => {
+      const nc = asNum(c);
+      if (nv != null && nc != null) return Math.abs(nv - nc) <= (Number(ans.tol) || 1e-9);
+      return normAns(c) === normAns(v);
+    });
+  };
+  // Điểm từ đáp án đã công bố (dùng chung cho máy học sinh, màn chiếu, thống kê).
+  L360.quizPoints = (ans, v) => {
+    if (!ans || v == null) return 0;
+    const k = ans.kind || "mcq";
+    if (k === "tf") {
+      const n = (ans.answers || []).filter((a, i) => Array.isArray(v) && v[i] === a).length;
+      return TF_PTS[n] || 0;
+    }
+    if (k === "short") return shortOk(ans, v) ? 100 : 0;
+    if (k === "fill" || k === "sort") {
+      const n = (ans.answers || []).length;
+      if (!n || !Array.isArray(v)) return 0;
+      const ok = ans.answers.filter((a, i) => (k === "fill" ? shortOk({ answer: a, accept: (ans.accept || [])[i] || [] }, v[i] == null ? "" : v[i]) : v[i] === a)).length;
+      return Math.round((100 * ok) / n);
+    }
+    return v === ans.answer ? 100 : 0;
+  };
+  // Số ô/mục đúng (dùng cho thống kê theo từng chỗ trống, từng mục phân loại).
+  const partOk = (ans, v, i) =>
+    Array.isArray(v) && (ans.kind === "fill" ? v[i] != null && shortOk({ answer: ans.answers[i], accept: (ans.accept || [])[i] || [] }, v[i]) : v[i] === ans.answers[i]);
+  const qKind = (q) => (["tf", "short", "fill", "sort"].includes(q.kind) ? q.kind : "mcq");
   L360.registerType({
     type: "quiz",
-    label: "Trắc nghiệm nhanh",
+    label: "Trắc nghiệm",
     icon: "✓",
-    desc: "Chuỗi câu hỏi 4 lựa chọn, mỗi câu có giờ; tự khoá khi hết giờ hoặc cả lớp đã nộp; có bảng xếp hạng. Không tính tốc độ.",
+    desc: "Chuỗi câu hỏi có giờ: 4 lựa chọn, Đúng/Sai 4 ý (chấm như đề thi tốt nghiệp), trả lời ngắn. Tự khoá khi hết giờ hoặc cả lớp đã nộp; có bảng xếp hạng. Không tính tốc độ.",
     autoLockWhenAll: true,
     fields: [
-      { key: "timer", label: "Giây cho mỗi câu", kind: "number", hint: "Mặc định 20" },
+      { key: "timer", label: "Giây cho mỗi câu", kind: "number", hint: "Mặc định 20 (Đúng/Sai nên 45–60)" },
       { key: "questions", label: "Câu hỏi", kind: "questions" }
     ],
     template: () => ({
       type: "quiz",
+      phase: "luyen-tap",
       title: "Thử thách nhanh",
-      minutes: 5,
+      minutes: 6,
       timer: 20,
-      questions: [{ q: "Câu hỏi?", options: ["Phương án A", "Phương án B", "Phương án C", "Phương án D"], answer: 0, explain: "Giải thích ngắn." }]
+      questions: [
+        { kind: "mcq", q: "Câu hỏi?", options: ["Phương án A", "Phương án B", "Phương án C", "Phương án D"], answer: 0, explain: "Giải thích ngắn." },
+        { kind: "tf", q: "Đọc tư liệu và cho biết mỗi nhận định đúng hay sai.", statements: [{ text: "a) ...", answer: true }, { text: "b) ...", answer: false }, { text: "c) ...", answer: true }, { text: "d) ...", answer: false }], explain: "" },
+        { kind: "short", q: "Câu hỏi trả lời ngắn?", answer: "đáp án", accept: [], explain: "" },
+        { kind: "fill", q: "Chọn từ thích hợp điền vào chỗ trống.", text: "Câu có [[đáp án 1]] và [[đáp án 2]].", bank: ["từ nhiễu"], explain: "" },
+        { kind: "sort", q: "Xếp các mục vào đúng nhóm.", groups: ["Nhóm A", "Nhóm B"], items: [{ text: "mục 1", group: 0 }, { text: "mục 2", group: 1 }, { text: "mục 3", group: 0 }], explain: "" }
+      ]
     }),
     normalize(s) {
-      s.questions = (s.questions || []).map((q) => Object.assign({ options: [], answer: 0, explain: "" }, q));
+      s.questions = (s.questions || []).map((q) => {
+        q = Object.assign({ explain: "" }, q);
+        q.kind = qKind(q);
+        if (q.kind === "mcq") q = Object.assign({ options: [], answer: 0 }, q);
+        if (q.kind === "tf") q.statements = (q.statements || []).slice(0, 4).map((x) => (typeof x === "string" ? { text: x, answer: true } : { text: String(x.text || ""), answer: !!x.answer }));
+        if (q.kind === "short") q.accept = Array.isArray(q.accept) ? q.accept : q.accept ? [q.accept] : [];
+        if (q.kind === "fill") {
+          q.text = String(q.text || "");
+          q.bank = (Array.isArray(q.bank) ? q.bank : q.bank ? String(q.bank).split(/[;,]/) : []).map((x) => String(x).trim()).filter(Boolean);
+        }
+        if (q.kind === "sort") {
+          q.groups = (q.groups || []).map((g) => String(g || "")).slice(0, 4);
+          q.items = (q.items || []).map((x) => (typeof x === "string" ? { text: x, group: 0 } : { text: String(x.text || ""), group: Math.max(0, Math.min(q.groups.length - 1, Number(x.group) || 0)) }));
+        }
+        return q;
+      });
       s.timer = Number(s.timer) || 20;
     },
     validate(s, err, warn) {
       if (!s.questions || !s.questions.length) err("Chưa có câu hỏi.");
       (s.questions || []).forEach((q, i) => {
-        if (!q.q) err(`Câu ${i + 1} chưa có nội dung.`);
-        if (!Array.isArray(q.options) || q.options.length < 2) err(`Câu ${i + 1} cần ít nhất 2 phương án.`);
-        else if (!(q.answer >= 0 && q.answer < q.options.length)) err(`Câu ${i + 1}: đáp án (answer) phải là số thứ tự 0–${q.options.length - 1}.`);
-        if (!q.explain) warn(`Câu ${i + 1} chưa có giải thích đáp án.`);
+        const w = `Câu ${i + 1}`;
+        if (!q.q) err(`${w} chưa có nội dung.`);
+        if (q.kind === "mcq") {
+          if (!Array.isArray(q.options) || q.options.length < 2) err(`${w} cần ít nhất 2 phương án.`);
+          else if (!(q.answer >= 0 && q.answer < q.options.length)) err(`${w}: đáp án (answer) phải là số thứ tự 0–${q.options.length - 1}.`);
+        }
+        if (q.kind === "tf" && (q.statements || []).length !== 4) err(`${w} (Đúng/Sai) cần đúng 4 ý a, b, c, d.`);
+        if (q.kind === "short" && (q.answer == null || q.answer === "")) err(`${w} (trả lời ngắn) chưa có đáp án.`);
+        if (q.kind === "fill") {
+          const n = fillParse(q.text).blanks.length;
+          if (!n) err(`${w} (điền khuyết): đặt đáp án trong dấu [[ ]] ngay trong đoạn văn "text".`);
+          else if (n > 8) warn(`${w} (điền khuyết) có ${n} chỗ trống – nên tối đa 6.`);
+        }
+        if (q.kind === "sort") {
+          if ((q.groups || []).filter(Boolean).length < 2) err(`${w} (phân loại) cần 2–4 nhóm ("groups").`);
+          if ((q.items || []).length < 3) err(`${w} (phân loại) cần ít nhất 3 mục ("items").`);
+          else if ((q.items || []).length > 10) warn(`${w} (phân loại) có hơn 10 mục – màn hình nhỏ sẽ chật.`);
+        }
+        if (q.kind === "mcq" && Array.isArray(q.options) && q.options.length === 4) {
+          const ls = q.options.map((o) => String(o || "").trim().length);
+          if (new Set(q.options.map((o) => String(o).trim().toLowerCase())).size < 4) err(`${w}: có hai phương án trùng nhau.`);
+          if (Math.max(...ls) > 2.2 * Math.max(8, Math.min(...ls))) warn(`${w}: độ dài 4 phương án chênh lệch nhiều – học sinh dễ đoán đáp án; nên viết các phương án dài tương đương.`);
+          if (q.options.some((o) => /tất cả (các )?(đáp án|phương án|ý) (trên )?(đều )?(đúng|sai)|cả [abcd], [abcd]/i.test(String(o)))) warn(`${w}: tránh phương án "Tất cả đều đúng/sai" – mỗi câu chỉ có MỘT đáp án đúng.`);
+        }
+        if (!q.explain) warn(`${w} chưa có giải thích đáp án.`);
       });
-      if ((s.questions || []).length > 10) warn("Nhiều hơn 10 câu – cân nhắc tách thành 2 hoạt động.");
+      if ((s.questions || []).length > 12) warn("Nhiều hơn 12 câu – cân nhắc tách thành 2 hoạt động.");
     },
     count: (s) => (s.questions || []).length,
     subKey: (s, st) => `${s.id}__q${st.q || 0}`,
-    keys: (s) => (s.questions || []).map((q, i) => ({ key: `${s.id}__q${i}`, label: `${s.title} – Câu ${i + 1}` })),
-    timerFor: (s) => Number(s.timer) || 20,
+    keys: (s) => (s.questions || []).map((q, i) => ({ key: `${s.id}__q${i}`, label: `${s.title} – Câu ${i + 1}${q.kind !== "mcq" ? ` (${KIND_LABEL[q.kind]})` : ""}` })),
+    timerFor: (s, st) => {
+      const q = (s.questions || [])[st.q || 0] || {};
+      if (q.timer) return Number(q.timer);
+      const base = Number(s.timer) || 20;
+      return q.kind === "tf" ? Math.max(base, 45) : q.kind === "short" ? Math.max(base, 30) : q.kind === "fill" || q.kind === "sort" ? Math.max(base, 60) : base;
+    },
     publicPayload(s, st) {
       const i = st.q || 0;
       const q = s.questions[i] || {};
-      return { q: i, total: s.questions.length, text: q.q || "", options: q.options || [], image: q.image || "" };
+      const o = { q: i, total: s.questions.length, kind: q.kind, text: q.q || "", image: q.image || "", source: q.source || "" };
+      if (q.kind === "mcq") o.options = q.options || [];
+      if (q.kind === "tf") o.statements = (q.statements || []).map((x) => x.text);
+      if (q.kind === "short") o.unit = q.unit || "";
+      if (q.kind === "fill") {
+        const f = fillParse(q.text);
+        o.parts = f.parts;
+        o.bank = shuf(f.blanks.map((b) => b.answer).concat(q.bank || []), s.id + i);
+      }
+      if (q.kind === "sort") {
+        o.groups = q.groups || [];
+        o.items = shuf((q.items || []).map((x, j) => ({ i: j, text: x.text })), s.id + i);
+      }
+      return o;
     },
     answerPayload(s, st) {
       const q = s.questions[st.q || 0] || {};
-      return { answer: q.answer, explain: q.explain || "" };
+      const base = { kind: q.kind, explain: q.explain || "", ghiBai: q.ghiBai || "" };
+      if (q.kind === "tf") return Object.assign(base, { answers: (q.statements || []).map((x) => !!x.answer) });
+      if (q.kind === "short") return Object.assign(base, { answer: q.answer, accept: q.accept || [], tol: q.tol || 0 });
+      if (q.kind === "fill") {
+        const f = fillParse(q.text);
+        return Object.assign(base, { answers: f.blanks.map((b) => b.answer), accept: f.blanks.map((b) => b.accept) });
+      }
+      if (q.kind === "sort") return Object.assign(base, { answers: (q.items || []).map((x) => x.group) });
+      return Object.assign(base, { answer: q.answer });
     },
     isCorrect(s, key, v) {
       const i = Number(String(key).split("__q")[1]);
       const q = s.questions[i];
-      return q ? v === q.answer : null;
+      if (!q) return null;
+      const ans = this.answerPayload(s, { q: i });
+      return q.kind === "tf" ? L360.quizPoints(ans, v) === 100 : L360.quizPoints(ans, v) === 100;
     },
-    points: () => 100,
+    points(s, key, v) {
+      const i = Number(String(key).split("__q")[1]);
+      return L360.quizPoints(this.answerPayload(s, { q: i }), v);
+    },
     describe(s, key, v) {
-      return typeof v === "number" ? u.letter(v) : "";
+      const q = s.questions[Number(String(key).split("__q")[1])] || {};
+      if (q.kind === "fill" && Array.isArray(v)) return v.map((x, i) => `(${i + 1}) ${x == null ? "–" : x}`).join("; ");
+      if (q.kind === "sort" && Array.isArray(v)) return (q.items || []).map((x, i) => `${x.text} → ${v[i] == null ? "–" : (q.groups || [])[v[i]] || ""}`).join("; ");
+      if (Array.isArray(v)) return v.map((x, i) => `${"abcd"[i]}:${x === true ? "Đ" : x === false ? "S" : "-"}`).join(" ");
+      return typeof v === "number" ? u.letter(v) : v == null ? "" : String(v);
     },
     student: {
       input(el, ctx) {
         const it = ctx.item || {};
-        let sel = null;
+        const kind = it.kind || "mcq";
+        let sel = kind === "tf" ? [null, null, null, null] : kind === "fill" ? (it.parts || []).slice(1).map(() => null) : kind === "sort" ? Array((it.items || []).length).fill(null) : null;
+        let act = 0; // ô trống / mục đang chọn
+        if (kind === "sort") act = null;
+        const head = `<div class="row"><span class="pill accent">Câu ${it.q + 1}/${it.total}</span>${kind !== "mcq" ? `<span class="pill">${KIND_LABEL[kind]}</span>` : ""}<span class="spacer"></span>${ui.timer()}</div>
+          <h2 style="margin-top:12px">${u.rich(it.text)}</h2>${it.source ? B.one({ kind: "quote", text: it.source }) : ""}${it.image ? ui.media({ image: it.image }) : ""}`;
         const draw = () => {
-          el.innerHTML = `<div class="card"><div class="row"><span class="pill accent">Câu ${it.q + 1}/${it.total}</span><span class="spacer"></span>${ui.timer()}</div>
-          <h2 style="margin-top:12px">${u.rich(it.text)}</h2>${it.image ? ui.media({ image: it.image }) : ""}
-          ${ui.options(it.options || [], { selected: sel })}
-          <button class="btn primary lg block" style="margin-top:16px" data-send ${sel == null ? "disabled" : ""}>Gửi đáp án</button>
-          <p class="small muted center" style="margin-top:8px">Đây là cơ hội kiểm tra điều mình hiểu, không phải chạy đua tốc độ.</p></div>`;
+          let body = "";
+          let ready = false;
+          if (kind === "mcq") {
+            body = ui.options(it.options || [], { selected: sel, cls: "two" });
+            ready = sel != null;
+          } else if (kind === "tf") {
+            body = `<div class="tf">${(it.statements || [])
+              .map((t, i) => `<div class="tf-row"><span class="k">${"abcd"[i]}</span><span>${u.rich(t)}</span><span class="tf-btns"><button class="t ${sel[i] === true ? "on" : ""}" data-tf="${i}:1">Đúng</button><button class="f ${sel[i] === false ? "on" : ""}" data-tf="${i}:0">Sai</button></span></div>`)
+              .join("")}</div>`;
+            ready = sel.every((x) => x != null);
+          } else if (kind === "fill") {
+            const used = sel.filter((x) => x != null);
+            const left = (it.bank || []).slice();
+            used.forEach((w) => {
+              const j = left.indexOf(w);
+              if (j >= 0) left.splice(j, 1);
+            });
+            body = `<div class="fl-text">${(it.parts || [])
+              .map((t, i) => u.esc(t) + (i < sel.length ? `<button class="fl-b ${sel[i] != null ? "full" : ""} ${act === i ? "act" : ""}" data-fb="${i}"><i>${i + 1}</i>${sel[i] != null ? u.esc(sel[i]) : "……"}</button>` : ""))
+              .join("")}</div><p class="small muted" style="margin:10px 0 6px">Chạm một chỗ trống rồi chạm từ cần điền (hoặc kéo thả từ vào chỗ trống). Chạm lại chỗ đã điền để bỏ.</p><div class="fl-bank">${left
+              .map((w) => `<button class="dd-chip" data-fw="${u.esc(w)}">${u.esc(w)}</button>`)
+              .join("") || `<span class="small muted">Đã dùng hết từ.</span>`}</div>`;
+            ready = sel.every((x) => x != null);
+          } else if (kind === "sort") {
+            const chip = (x) => `<button class="dd-chip ${act === x.i ? "act" : ""}" data-si-it="${x.i}">${u.esc(x.text)}</button>`;
+            const pool = (it.items || []).filter((x) => sel[x.i] == null);
+            body = `<div class="so-pool">${pool.map(chip).join("") || `<span class="small muted">Đã xếp hết – kiểm tra lại rồi gửi.</span>`}</div>
+              <div class="so-groups" style="--n:${(it.groups || []).length}">${(it.groups || [])
+                .map((g, gi) => `<div class="so-g" data-sg="${gi}"><div class="so-gh">${u.esc(g)}</div><div class="so-gb">${(it.items || []).filter((x) => sel[x.i] === gi).map(chip).join("")}</div></div>`)
+                .join("")}</div><p class="small muted" style="margin-top:8px">Kéo từng mục vào đúng nhóm (hoặc chạm mục rồi chạm nhóm). Chạm mục đã xếp để đưa về.</p>`;
+            ready = sel.every((x) => x != null);
+          } else {
+            body = `<label class="field">Câu trả lời${it.unit ? ` (${u.esc(it.unit)})` : ""}<input id="sa" type="text" autocomplete="off" value="${u.esc(sel || "")}" style="font-size:1.2rem;font-weight:700"></label>`;
+            ready = !!(sel && String(sel).trim());
+          }
+          el.innerHTML = `<div class="card">${head}${body}<button class="btn primary lg block" style="margin-top:16px" data-send ${ready ? "" : "disabled"}>Gửi đáp án</button>
+            <p class="small muted center" style="margin-top:8px">Đây là cơ hội kiểm tra điều mình hiểu, không phải chạy đua tốc độ.</p></div>`;
           u.$$("[data-opt]", el).forEach((b) => (b.onclick = () => ((sel = Number(b.dataset.opt)), draw())));
-          u.$("[data-send]", el).onclick = () => sel != null && ctx.submit(sel);
+          if (kind === "fill") {
+            const put = (w, i) => {
+              if (i == null || i < 0) i = sel.findIndex((x) => x == null);
+              if (i < 0) return;
+              sel[i] = w;
+              const nx = sel.findIndex((x) => x == null);
+              act = nx < 0 ? -1 : nx;
+              draw();
+            };
+            u.$$("[data-fb]", el).forEach(
+              (b) =>
+                (b.onclick = () => {
+                  const i = Number(b.dataset.fb);
+                  if (sel[i] != null) sel[i] = null;
+                  act = i;
+                  draw();
+                })
+            );
+            u.$$("[data-fw]", el).forEach((b) => (b.onclick = () => !b.dataset.dragged && put(b.dataset.fw, act)));
+            dragChips(el, "[data-fw]", "[data-fb]", (c, d) => put(c.dataset.fw, Number(d.dataset.fb)));
+          }
+          if (kind === "sort") {
+            u.$$("[data-si-it]", el).forEach(
+              (b) =>
+                (b.onclick = () => {
+                  if (b.dataset.dragged) return;
+                  const i = Number(b.dataset.siIt);
+                  if (sel[i] != null) (sel[i] = null), (act = null);
+                  else act = act === i ? null : i;
+                  draw();
+                })
+            );
+            u.$$("[data-sg]", el).forEach(
+              (g) =>
+                (g.onclick = (e) => {
+                  if (act == null || e.target.closest("[data-si-it]")) return;
+                  sel[act] = Number(g.dataset.sg);
+                  act = null;
+                  draw();
+                })
+            );
+            dragChips(el, "[data-si-it]", "[data-sg]", (c, d) => {
+              sel[Number(c.dataset.siIt)] = Number(d.dataset.sg);
+              act = null;
+              draw();
+            });
+          }
+          u.$$("[data-tf]", el).forEach(
+            (b) =>
+              (b.onclick = () => {
+                const [i, v] = b.dataset.tf.split(":");
+                sel[Number(i)] = v === "1";
+                draw();
+              })
+          );
+          const sa = u.$("#sa", el);
+          if (sa) {
+            sa.oninput = () => {
+              sel = sa.value;
+              u.$("[data-send]", el).disabled = !sel.trim();
+            };
+            sa.focus();
+            sa.setSelectionRange(sa.value.length, sa.value.length);
+            sa.onkeydown = (e) => e.key === "Enter" && sel && sel.trim() && ctx.submit(sel.trim());
+          }
+          u.$("[data-send]", el).onclick = () => {
+            if (kind === "short") return sel && sel.trim() && ctx.submit(sel.trim());
+            if (kind === "tf" || kind === "fill" || kind === "sort") return sel.every((x) => x != null) && ctx.submit(sel.slice());
+            return sel != null && ctx.submit(sel);
+          };
         };
         draw();
       },
       result(el, ctx) {
         const it = ctx.item || {};
         const ans = ctx.answer;
+        const kind = it.kind || "mcq";
         const mine = ctx.sub ? ctx.sub.v : null;
-        const ok = ans && mine === ans.answer;
+        const pts = ans ? L360.quizPoints(ans, mine) : 0;
+        let body = "";
+        if (kind === "mcq") body = ui.options(it.options || [], { selected: mine, answer: ans ? ans.answer : null, mine, disabled: true, cls: "two" });
+        else if (kind === "tf")
+          body = `<div class="tf">${(it.statements || [])
+            .map((t, i) => {
+              const m = Array.isArray(mine) ? mine[i] : null;
+              const a = ans && ans.answers ? ans.answers[i] : null;
+              return `<div class="tf-row ${a == null ? "" : m === a ? "right" : "wrong"}"><span class="k">${"abcd"[i]}</span><span>${u.rich(t)}</span><span class="small"><b>${m == null ? "–" : m ? "Đúng" : "Sai"}</b>${a == null ? "" : ` · đáp án: <b>${a ? "Đúng" : "Sai"}</b>`}</span></div>`;
+            })
+            .join("")}</div>`;
+        else if (kind === "fill")
+          body = `<div class="fl-text">${(it.parts || [])
+            .map((t, i) => {
+              if (i >= (it.parts || []).length - 1) return u.esc(t);
+              const m = Array.isArray(mine) ? mine[i] : null;
+              const ok = ans && partOk(ans, mine, i);
+              return u.esc(t) + `<span class="fl-b full ${ans ? (ok ? "right" : "wrong") : ""}"><i>${i + 1}</i>${u.esc(m == null ? "……" : m)}${ans && !ok ? ` <small>→ ${u.esc(ans.answers[i])}</small>` : ""}</span>`;
+            })
+            .join("")}</div>`;
+        else if (kind === "sort")
+          body = `<div class="so-groups" style="--n:${(it.groups || []).length}">${(it.groups || [])
+            .map(
+              (g, gi) =>
+                `<div class="so-g"><div class="so-gh">${u.esc(g)}</div><div class="so-gb">${(it.items || [])
+                  .filter((x) => (Array.isArray(mine) ? mine[x.i] : null) === gi)
+                  .map((x) => `<span class="dd-chip ${ans ? (partOk(ans, mine, x.i) ? "right" : "wrong") : ""}">${u.esc(x.text)}${ans && !partOk(ans, mine, x.i) ? ` <small>→ ${u.esc(it.groups[ans.answers[x.i]] || "")}</small>` : ""}</span>`)
+                  .join("")}</div></div>`
+            )
+            .join("")}</div>`;
+        else body = `<div class="card flat"><div class="small muted">Em trả lời</div><b style="font-size:1.2rem">${u.esc(mine == null ? "–" : mine)}</b>${ans ? `<div class="small muted" style="margin-top:6px">Đáp án: <b>${u.esc(ans.answer)}</b></div>` : ""}</div>`;
         el.innerHTML = `<div class="card"><div class="row"><span class="pill accent">Câu ${it.q + 1}/${it.total}</span><span class="spacer"></span>
-          ${ans ? (mine == null ? `<span class="pill warn">Em chưa trả lời</span>` : ok ? `<span class="pill ok">Đúng · +100</span>` : `<span class="pill bad">Chưa đúng</span>`) : `<span class="pill">Đã khoá</span>`}</div>
-          <h2 style="margin-top:12px">${u.rich(it.text)}</h2>
-          ${ui.options(it.options || [], { selected: mine, answer: ans ? ans.answer : null, mine, disabled: true })}
-          ${ans && ans.explain ? `<div class="card flat" style="margin-top:14px;background:var(--paper)"><b>Giải thích.</b> ${u.rich(ans.explain)}</div>` : ""}
+          ${ans ? (mine == null ? `<span class="pill warn">Em chưa trả lời</span>` : pts === 100 ? `<span class="pill ok">Đúng · +100</span>` : pts ? `<span class="pill warn">Đúng một phần · +${pts}</span>` : `<span class="pill bad">Chưa đúng</span>`) : `<span class="pill">Đã khoá</span>`}</div>
+          <h2 style="margin-top:12px">${u.rich(it.text)}</h2>${body}
+          ${ans && ans.explain ? `<div class="card flat" style="margin-top:14px;background:var(--soft)"><b>Giải thích.</b> ${u.rich(ans.explain)}</div>` : ""}
+          ${ans && ans.ghiBai ? B.one({ kind: "note", text: ans.ghiBai }) : ""}
           ${ans ? `<p class="center" style="margin-top:12px">Điểm của em: <b>${ctx.myScore || 0}</b></p>` : `<p class="center muted" style="margin-top:12px">Chờ giáo viên công bố đáp án.</p>`}</div>`;
       }
     },
@@ -1502,31 +2351,99 @@ window.L360_HERITAGE = [
           <h1 style="font-size:3.2rem;margin-top:20px">Sẵn sàng câu ${(st.q || 0) + 1}</h1><p class="muted" style="font-size:1.4rem">${u.esc(s.instructions || "Mỗi câu có thời gian riêng. Điểm không tính tốc độ.")}</p></div>`;
         return;
       }
-      const cnt = countBy(ctx.subs, (it.options || []).length);
+      const kind = it.kind || "mcq";
       const n = Object.keys(ctx.subs || {}).length;
       const ans = ctx.answer;
       const showDist = ans || ctx.mode === "live";
-      el.innerHTML = `<div class="row"><span class="pill accent" style="font-size:1.05rem">Câu ${it.q + 1}/${it.total}</span></div>
-        <h1 class="scr-q">${u.rich(it.text)}</h1>
-        ${
-          showDist
-            ? ui.bars(
-                (it.options || []).map((o, i) => ({ label: `${u.letter(i)}. ${u.esc(o)}`, value: cnt[i], correct: ans && ans.answer === i, dim: ans && ans.answer !== i })),
-                { total: n || 1 }
-              ) + (ans && ans.explain ? `<div class="scr-explain"><b>Giải thích.</b> ${u.rich(ans.explain)}</div>` : "")
-            : `<div class="scr-opts">${(it.options || []).map((o, i) => `<div class="scr-opt"><span class="k">${u.letter(i)}</span>${u.rich(o)}</div>`).join("")}</div>`
-        }`;
+      let body = "";
+      if (kind === "mcq") {
+        const cnt = countBy(ctx.subs, (it.options || []).length);
+        body = showDist
+          ? ui.bars((it.options || []).map((o, i) => ({ label: `${u.letter(i)}. ${u.esc(o)}`, value: cnt[i], correct: ans && ans.answer === i, dim: ans && ans.answer !== i })), { total: n || 1 })
+          : `<div class="scr-opts">${(it.options || []).map((o, i) => `<div class="scr-opt"><span class="k">${u.letter(i)}</span>${u.rich(o)}</div>`).join("")}</div>`;
+      } else if (kind === "tf") {
+        const subs = u.vals(ctx.subs).map((x) => x.v);
+        body = `<div class="tf">${(it.statements || [])
+          .map((t, i) => {
+            const yes = subs.filter((v) => Array.isArray(v) && v[i] === true).length;
+            const no = subs.filter((v) => Array.isArray(v) && v[i] === false).length;
+            const a = ans && ans.answers ? ans.answers[i] : null;
+            return `<div class="tf-row ${a == null ? "" : "right"}" style="font-size:24px"><span class="k">${"abcd"[i]}</span><span>${u.rich(t)}</span><span style="font-size:20px;white-space:nowrap">${
+              showDist ? `Đ <b>${u.pct(yes, n || 1)}%</b> · S <b>${u.pct(no, n || 1)}%</b>` : ""
+            }${a == null ? "" : ` · <b style="color:var(--ok)">${a ? "ĐÚNG" : "SAI"}</b>`}</span></div>`;
+          })
+          .join("")}</div>`;
+      } else if (kind === "fill") {
+        const subs = u.vals(ctx.subs).map((x) => x.v);
+        const np = (it.parts || []).length;
+        body = `<div class="fl-text scr">${(it.parts || [])
+          .map((t, i) => {
+            if (i >= np - 1) return u.esc(t);
+            const ok = ans ? subs.filter((v) => partOk(ans, v, i)).length : 0;
+            return u.esc(t) + `<span class="fl-b ${ans ? "full right" : ""}"><i>${i + 1}</i>${ans ? u.esc(ans.answers[i]) + `<small> ${u.pct(ok, n || 1)}%</small>` : "……"}</span>`;
+          })
+          .join("")}</div>${ans ? "" : `<div class="fl-bank scr">${(it.bank || []).map((w) => `<span class="dd-chip">${u.esc(w)}</span>`).join("")}</div>`}`;
+      } else if (kind === "sort") {
+        const subs = u.vals(ctx.subs).map((x) => x.v);
+        body = ans
+          ? `<div class="so-groups scr" style="--n:${(it.groups || []).length}">${(it.groups || [])
+              .map(
+                (g, gi) =>
+                  `<div class="so-g"><div class="so-gh">${u.esc(g)}</div><div class="so-gb">${(it.items || [])
+                    .filter((x) => ans.answers[x.i] === gi)
+                    .map((x) => `<span class="dd-chip right">${u.esc(x.text)} <small>${u.pct(subs.filter((v) => partOk(ans, v, x.i)).length, n || 1)}%</small></span>`)
+                    .join("")}</div></div>`
+              )
+              .join("")}</div>`
+          : `<div class="so-pool scr">${(it.items || []).map((x) => `<span class="dd-chip">${u.esc(x.text)}</span>`).join("")}</div><div class="so-groups scr" style="--n:${(it.groups || []).length}">${(it.groups || [])
+              .map((g) => `<div class="so-g"><div class="so-gh">${u.esc(g)}</div><div class="so-gb"></div></div>`)
+              .join("")}</div>`;
+      } else {
+        const freq = {};
+        u.vals(ctx.subs).forEach((x) => {
+          const k = String(x.v || "").trim();
+          if (k) freq[k] = (freq[k] || 0) + 1;
+        });
+        const top = Object.entries(freq)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 8);
+        body = showDist
+          ? ui.bars(top.map(([k, c]) => ({ label: u.esc(k), value: c, correct: ans && shortOk(ans, k), dim: ans && !shortOk(ans, k) })), { total: n || 1 })
+          : `<p class="muted center" style="font-size:1.4rem">Học sinh đang nhập câu trả lời…</p>`;
+        if (ans) body += `<div class="scr-explain"><b>Đáp án:</b> ${u.esc(ans.answer)}</div>`;
+      }
+      el.innerHTML = `<div class="row"><span class="pill accent" style="font-size:1.05rem">Câu ${it.q + 1}/${it.total}</span>${kind !== "mcq" ? `<span class="pill">${KIND_LABEL[kind]}</span>` : ""}</div>
+        <h1 class="scr-q">${u.rich(it.text)}</h1>${it.source ? B.one({ kind: "quote", text: it.source }) : ""}${body}
+        ${ans && ans.explain ? `<div class="scr-explain"><b>Giải thích.</b> ${u.rich(ans.explain)}</div>` : ""}${ans && ans.ghiBai ? B.one({ kind: "note", text: ans.ghiBai }) : ""}`;
     },
     host(el, ctx) {
       const s = ctx.step;
-      const q = s.questions[ctx.state.q || 0] || {};
-      const cnt = countBy(ctx.subs, (q.options || []).length);
+      const qi = ctx.state.q || 0;
+      const q = s.questions[qi] || {};
       const n = Object.keys(ctx.subs || {}).length;
-      el.innerHTML = `<p class="small muted">Câu ${(ctx.state.q || 0) + 1}/${s.questions.length} · đáp án <b>${u.letter(q.answer)}</b></p>
-        <p><b>${u.rich(q.q)}</b></p>${ui.bars(
-          (q.options || []).map((o, i) => ({ label: `${u.letter(i)}. ${u.esc(o)}`, value: cnt[i], correct: i === q.answer })),
-          { total: n || 1 }
-        )}`;
+      let body = "";
+      if (q.kind === "mcq") {
+        const cnt = countBy(ctx.subs, (q.options || []).length);
+        body = `<p class="small muted">Đáp án <b>${u.letter(q.answer)}</b></p>` + ui.bars((q.options || []).map((o, i) => ({ label: `${u.letter(i)}. ${u.esc(o)}`, value: cnt[i], correct: i === q.answer })), { total: n || 1 });
+      } else if (q.kind === "tf") {
+        const subs = u.vals(ctx.subs).map((x) => x.v);
+        body = `<table class="t">${(q.statements || [])
+          .map((x, i) => `<tr><td><b>${"abcd"[i]}</b> ${u.esc(x.text)}</td><td class="num">${x.answer ? "Đ" : "S"}</td><td class="num">${u.pct(subs.filter((v) => Array.isArray(v) && v[i] === x.answer).length, n || 1)}% đúng</td></tr>`)
+          .join("")}</table>`;
+      } else if (q.kind === "fill" || q.kind === "sort") {
+        const ans = L360.types.quiz.answerPayload(s, { q: qi });
+        const subs = u.vals(ctx.subs).map((x) => x.v);
+        const rows = q.kind === "fill" ? ans.answers.map((a, j) => [`(${j + 1})`, a]) : (q.items || []).map((x) => [x.text, (q.groups || [])[x.group] || ""]);
+        body = `<table class="t">${rows.map((r, j) => `<tr><td>${u.esc(r[0])}</td><td><b>${u.esc(r[1])}</b></td><td class="num">${u.pct(subs.filter((v) => partOk(ans, v, j)).length, n || 1)}% đúng</td></tr>`).join("")}</table>`;
+      } else {
+        const ans = { answer: q.answer, accept: q.accept, tol: q.tol };
+        const ok = u.vals(ctx.subs).filter((x) => shortOk(ans, x.v)).length;
+        body = `<p class="small muted">Đáp án: <b>${u.esc(q.answer)}</b>${(q.accept || []).length ? ` (chấp nhận: ${u.esc(q.accept.join(", "))})` : ""} · ${ok}/${n} đúng</p><div class="small">${u
+          .entries(ctx.subs)
+          .map(([c, x]) => `<span class="pill ${shortOk(ans, x.v) ? "ok" : ""}">${c}: ${u.esc(x.v)}</span>`)
+          .join(" ")}</div>`;
+      }
+      el.innerHTML = `<p class="small muted">Câu ${qi + 1}/${s.questions.length} · ${KIND_LABEL[q.kind] || ""}</p><p><b>${u.rich(q.q)}</b></p>${body}`;
     },
     controls(ctx) {
       const { host, state, step } = ctx;
@@ -1559,17 +2476,7 @@ window.L360_HERITAGE = [
       { key: "card", label: "Thẻ ghi nhớ sau khi công bố", kind: "textarea" },
       { key: "timer", label: "Giây vòng 1, vòng 2", kind: "pair", hint: "Ví dụ 60 và 45" }
     ],
-    template: () => ({
-      type: "poll2",
-      title: "Em chọn gì?",
-      minutes: 4,
-      question: "Câu hỏi khái niệm dễ nhầm?",
-      options: ["Phương án A", "Phương án B"],
-      answer: 1,
-      explain: "",
-      card: "",
-      timer: [60, 45]
-    }),
+    template: () => ({ type: "poll2", phase: "hinh-thanh", title: "Em chọn gì?", minutes: 4, question: "Câu hỏi khái niệm dễ nhầm?", options: ["Phương án A", "Phương án B"], answer: 1, explain: "", card: "", timer: [60, 45] }),
     normalize(s) {
       s.options = s.options || [];
       if (!Array.isArray(s.timer)) s.timer = [Number(s.timer) || 60, 45];
@@ -1587,7 +2494,7 @@ window.L360_HERITAGE = [
     ],
     timerFor: (s, st) => (st.round === 2 ? Number(s.timer[1]) || 45 : Number(s.timer[0]) || 60),
     publicPayload: (s, st) => ({ question: s.question, options: s.options, round: st.round === 2 ? 2 : 1 }),
-    answerPayload: (s) => ({ answer: s.answer == null ? null : s.answer, explain: s.explain || "", card: s.card || "" }),
+    answerPayload: (s) => ({ answer: s.answer == null ? null : s.answer, explain: s.explain || "", card: s.card || "", ghiBai: s.ghiBai || "" }),
     isCorrect: (s, key, v) => (s.answer == null ? null : v === s.answer),
     describe: (s, key, v) => (typeof v === "number" ? u.letter(v) : ""),
     student: {
@@ -1614,8 +2521,8 @@ window.L360_HERITAGE = [
           has ? (mine === ans.answer ? `<span class="pill ok">Chính xác</span>` : `<span class="pill bad">Chưa chính xác</span>`) : ans ? "" : `<span class="pill">Đã khoá</span>`
         }</div><h2 style="margin-top:12px">${u.rich(it.question)}</h2>
           ${ui.options(it.options || [], { selected: mine, answer: has ? ans.answer : null, mine, disabled: true })}
-          ${ans && ans.explain ? `<div class="card flat" style="margin-top:14px;background:var(--paper)"><b>Giải thích.</b> ${u.rich(ans.explain)}</div>` : ""}
-          ${ans && ans.card ? `<div class="card flat" style="margin-top:12px;border-color:var(--accent)"><b>Thẻ ghi nhớ</b><div class="md">${ui.md(ans.card)}</div></div>` : ""}
+          ${ans && ans.explain ? `<div class="card flat" style="margin-top:14px;background:var(--soft)"><b>Giải thích.</b> ${u.rich(ans.explain)}</div>` : ""}
+          ${ans && ans.card ? B.one({ kind: "conclusion", title: "Thẻ ghi nhớ", text: ans.card }) : ""}${ans && ans.ghiBai ? B.one({ kind: "note", text: ans.ghiBai }) : ""}
           ${!ans ? `<p class="center muted" style="margin-top:12px">${it.round === 1 ? "Trao đổi với bạn bên cạnh: vì sao em chọn như vậy?" : "Chờ giáo viên công bố."}</p>` : ""}</div>`;
       }
     },
@@ -1625,11 +2532,9 @@ window.L360_HERITAGE = [
       const d = ctx.data;
       const st = ctx.state;
       const opts = (it && it.options) || [];
-      const k1 = `${s.id}__r1`;
-      const k2 = `${s.id}__r2`;
-      const s1 = (d.subs && d.subs[k1]) || {};
-      const s2 = (d.subs && d.subs[k2]) || {};
-      const ans = (d.pub && d.pub.answers && (d.pub.answers[k2] || d.pub.answers[k1])) || null;
+      const s1 = (d.subs && d.subs[`${s.id}__r1`]) || {};
+      const s2 = (d.subs && d.subs[`${s.id}__r2`]) || {};
+      const ans = (d.pub && d.pub.answers && (d.pub.answers[`${s.id}__r2`] || d.pub.answers[`${s.id}__r1`])) || null;
       if (!it) {
         el.innerHTML = `<div class="scr-center"><h1 style="font-size:3rem">${u.esc(s.title)}</h1><p class="muted" style="font-size:1.4rem">${u.esc(s.instructions || "Chuẩn bị suy nghĩ độc lập ở vòng 1.")}</p></div>`;
         return;
@@ -1639,19 +2544,15 @@ window.L360_HERITAGE = [
       const c1 = countBy(s1, opts.length);
       const c2 = countBy(s2, opts.length);
       let body;
-      if (ans || (st.round === 2 && (st.phase !== "open" || ctx.mode === "live")))
-        body = ui.pairBars(opts.map((o, i) => `${u.letter(i)}. ${u.esc(o)}`), c1, c2, n1 || 1, n2 || 1, ans ? ans.answer : null);
-      else if (ctx.mode === "live" || st.phase === "locked")
-        body = ui.bars(opts.map((o, i) => ({ label: `${u.letter(i)}. ${u.esc(o)}`, value: c1[i] })), { total: n1 || 1 });
+      if (ans || (st.round === 2 && (st.phase !== "open" || ctx.mode === "live"))) body = ui.pairBars(opts.map((o, i) => `${u.letter(i)}. ${u.esc(o)}`), c1, c2, n1 || 1, n2 || 1, ans ? ans.answer : null);
+      else if (ctx.mode === "live" || st.phase === "locked") body = ui.bars(opts.map((o, i) => ({ label: `${u.letter(i)}. ${u.esc(o)}`, value: c1[i] })), { total: n1 || 1 });
       else body = `<div class="scr-opts">${opts.map((o, i) => `<div class="scr-opt"><span class="k">${u.letter(i)}</span>${u.rich(o)}</div>`).join("")}</div>`;
-      el.innerHTML = `<div class="row"><span class="pill accent" style="font-size:1.05rem">Vòng ${st.round === 2 ? 2 : 1}</span>${
-        n1 ? `<span class="pill">Vòng 1: ${n1} lượt</span>` : ""
-      }${n2 ? `<span class="pill">Vòng 2: ${n2} lượt</span>` : ""}</div><h1 class="scr-q">${u.rich(it.question)}</h1>${body}
+      el.innerHTML = `<div class="row"><span class="pill accent" style="font-size:1.05rem">Vòng ${st.round === 2 ? 2 : 1}</span>${n1 ? `<span class="pill">Vòng 1: ${n1} lượt</span>` : ""}${
+        n2 ? `<span class="pill">Vòng 2: ${n2} lượt</span>` : ""
+      }</div><h1 class="scr-q">${u.rich(it.question)}</h1>${body}
       ${
         ans && (ans.explain || ans.card)
-          ? `<div class="grid ${ans.explain && ans.card ? "g2" : ""}" style="gap:16px">${ans.explain ? `<div class="scr-explain"><b>Giải thích.</b> ${u.rich(ans.explain)}</div>` : ""}${
-              ans.card ? `<div class="scr-explain" style="border-color:var(--accent)"><b>Thẻ ghi nhớ.</b> ${ui.md(ans.card)}</div>` : ""
-            }</div>`
+          ? `<div class="grid ${ans.explain && ans.card ? "g2" : ""}" style="gap:16px">${ans.explain ? `<div class="scr-explain"><b>Giải thích.</b> ${u.rich(ans.explain)}</div>` : ""}${ans.card ? B.one({ kind: "conclusion", title: "Thẻ ghi nhớ", text: ans.card }) : ""}</div>`
           : ""
       }`;
     },
@@ -1674,10 +2575,8 @@ window.L360_HERITAGE = [
       const c = [];
       const r = state.round === 2 ? 2 : 1;
       if (state.phase === "observe") c.push({ label: "▶ Mở vòng 1", cls: "primary", fn: () => host.open() });
-      if (state.phase === "open")
-        c.push({ label: "■ Khoá", cls: "dark", fn: () => host.lock() }, { label: "+15 giây", fn: () => host.addTime(15) });
-      if (state.phase === "locked" && r === 1)
-        c.push({ label: "↻ Mở vòng 2", cls: "primary", fn: () => host.round2() }, { label: "✓ Công bố ngay", fn: () => host.reveal() });
+      if (state.phase === "open") c.push({ label: "■ Khoá", cls: "dark", fn: () => host.lock() }, { label: "+15 giây", fn: () => host.addTime(15) });
+      if (state.phase === "locked" && r === 1) c.push({ label: "↻ Mở vòng 2", cls: "primary", fn: () => host.round2() }, { label: "✓ Công bố ngay", fn: () => host.reveal() });
       if (state.phase === "locked" && r === 2) c.push({ label: "✓ Công bố đáp án", cls: "ok", fn: () => host.reveal() });
       return c;
     }
@@ -1686,11 +2585,12 @@ window.L360_HERITAGE = [
   /* ---------------- Trả lời ngắn / Phiếu thoát ---------------- */
   L360.registerType({
     type: "text",
-    label: "Trả lời ngắn / Phiếu thoát",
+    label: "Viết ngắn / Phiếu thoát",
     icon: "✎",
-    desc: "Học sinh viết câu trả lời ngắn có giới hạn từ; tự đánh giá 3 mức; giáo viên gắn ★ bài hay để chiếu; màn chiếu có đám mây từ.",
+    desc: "Học sinh viết câu trả lời có giới hạn từ (phân tích tư liệu, nêu ý kiến, phiếu thoát); tự đánh giá 3 mức; giáo viên gắn ★ bài hay để chiếu; màn chiếu có đám mây từ.",
     fields: [
       { key: "question", label: "Câu hỏi / nhiệm vụ", kind: "textarea" },
+      { key: "source", label: "Tư liệu kèm theo (không bắt buộc)", kind: "textarea" },
       { key: "maxWords", label: "Giới hạn số từ", kind: "number" },
       { key: "placeholder", label: "Câu mở đầu gợi ý", kind: "text", hint: "Ví dụ: Tôi muốn thế hệ tương lai hiểu rằng…" },
       { key: "selfAssess", label: "Có tự đánh giá 3 mức", kind: "bool" },
@@ -1698,7 +2598,7 @@ window.L360_HERITAGE = [
       { key: "sample", label: "Gợi ý đáp án (công bố sau)", kind: "textarea" },
       { key: "timer", label: "Thời gian (giây)", kind: "number" }
     ],
-    template: () => ({ type: "text", title: "Phiếu thoát", minutes: 3, question: "Điều quan trọng nhất em học được hôm nay là gì?", maxWords: 40, selfAssess: true, askDoubt: true, timer: 120 }),
+    template: () => ({ type: "text", phase: "van-dung", title: "Phiếu thoát", minutes: 3, question: "Điều quan trọng nhất em học được hôm nay là gì?", maxWords: 40, selfAssess: true, askDoubt: true, timer: 120 }),
     normalize(s) {
       s.maxWords = Number(s.maxWords) || 40;
     },
@@ -1707,13 +2607,14 @@ window.L360_HERITAGE = [
     },
     publicPayload: (s) => ({
       question: s.question,
+      source: s.source || "",
       maxWords: s.maxWords,
       placeholder: s.placeholder || "",
       selfAssess: !!s.selfAssess,
       selfLabels: s.selfLabels || ["Chưa vững", "Khá vững", "Rất vững"],
       askDoubt: !!s.askDoubt
     }),
-    answerPayload: (s) => ({ sample: s.sample || "" }),
+    answerPayload: (s) => ({ sample: s.sample || "", ghiBai: s.ghiBai || "" }),
     describe: (s, key, v) => (v ? `${v.text || ""}${v.level ? ` [tự đánh giá ${v.level}/3]` : ""}${v.doubt ? ` [băn khoăn: ${v.doubt}]` : ""}` : ""),
     student: {
       input(el, ctx) {
@@ -1721,13 +2622,11 @@ window.L360_HERITAGE = [
         const prev = (ctx.sub && ctx.sub.v) || {};
         let level = prev.level || 0;
         el.innerHTML = `<div class="card"><div class="row"><span class="pill accent">Viết ngắn</span><span class="spacer"></span>${ui.timer()}</div>
-          <h2 style="margin-top:12px">${u.rich(it.question)}</h2>
+          <h2 style="margin-top:12px">${u.rich(it.question)}</h2>${it.source ? B.one({ kind: "quote", text: it.source }) : ""}
           ${ui.textarea("ta", { value: prev.text || it.placeholder || "", max: it.maxWords, rows: 5 })}
           ${
             it.selfAssess
-              ? `<p style="margin:14px 0 6px;font-weight:650">Em tự đánh giá mức hiểu bài:</p><div class="chips">${it.selfLabels
-                  .map((l, i) => `<button class="chip ${level === i + 1 ? "sel" : ""}" data-lv="${i + 1}">${i + 1}. ${u.esc(l)}</button>`)
-                  .join("")}</div>`
+              ? `<p style="margin:14px 0 6px;font-weight:650">Em tự đánh giá mức hiểu bài:</p><div class="chips">${it.selfLabels.map((l, i) => `<button class="chip ${level === i + 1 ? "sel" : ""}" data-lv="${i + 1}">${i + 1}. ${u.esc(l)}</button>`).join("")}</div>`
               : ""
           }
           ${it.askDoubt ? `<label class="field" style="margin-top:14px">Điều em còn băn khoăn (không bắt buộc)<input type="text" id="doubt" maxlength="160" value="${u.esc(prev.doubt || "")}"></label>` : ""}
@@ -1742,7 +2641,7 @@ window.L360_HERITAGE = [
         );
         u.$("[data-send]", el).onclick = () => {
           const text = u.$("#ta", el).value.trim();
-          if (!text || text === it.placeholder.trim()) return u.toast("Em hãy viết câu trả lời.", "bad");
+          if (!text || text === String(it.placeholder || "").trim()) return u.toast("Em hãy viết câu trả lời.", "bad");
           if (u.words(text) > it.maxWords) return u.toast(`Tối đa ${it.maxWords} từ.`, "bad");
           if (it.selfAssess && !level) return u.toast("Chọn mức tự đánh giá.", "bad");
           const v = { text };
@@ -1757,9 +2656,9 @@ window.L360_HERITAGE = [
         const v = (ctx.sub && ctx.sub.v) || null;
         const ans = ctx.answer;
         el.innerHTML = `<div class="card"><h2>${u.rich(it.question)}</h2>
-          ${v ? `<div class="card flat" style="background:var(--paper)"><div class="small muted">Câu trả lời của em</div>${u.rich(v.text)}</div>` : `<p class="muted">Em chưa nộp bài này.</p>`}
+          ${v ? `<div class="card flat" style="background:var(--soft)"><div class="small muted">Câu trả lời của em</div>${u.rich(v.text)}</div>` : `<p class="muted">Em chưa nộp bài này.</p>`}
           ${ctx.featured ? `<p style="margin-top:10px"><span class="pill ok">★ Giáo viên đã chọn bài của em để chiếu</span></p>` : ""}
-          ${ans && ans.sample ? `<div class="card flat" style="margin-top:12px;border-color:var(--accent)"><b>Gợi ý đáp án.</b><div class="md">${ui.md(ans.sample)}</div></div>` : ""}</div>`;
+          ${ans && ans.sample ? B.one({ kind: "conclusion", title: "Gợi ý đáp án", text: ans.sample }) : ""}${ans && ans.ghiBai ? B.one({ kind: "note", text: ans.ghiBai }) : ""}</div>`;
       }
     },
     screen(el, ctx) {
@@ -1777,10 +2676,10 @@ window.L360_HERITAGE = [
         u.vals(ctx.subs).forEach((s) => s.v && s.v.level && c[s.v.level - 1]++);
         if (c.some(Boolean)) lv = `<h3 style="margin-top:18px">Tự đánh giá</h3>` + ui.bars(it.selfLabels.map((l, i) => ({ label: `${i + 1}. ${l}`, value: c[i] })), { total: texts.length || 1 });
       }
-      el.innerHTML = `<h1 class="scr-q">${u.rich(it.question)}</h1>
+      el.innerHTML = `<h1 class="scr-q">${u.rich(it.question)}</h1>${it.source && !texts.length ? B.one({ kind: "quote", text: it.source }) : ""}
         ${feat.length ? `<div class="scr-feats">${feat.map((t) => `<blockquote class="scr-feat">“${u.esc(t)}”</blockquote>`).join("")}</div>` : ""}
         ${ctx.mode === "live" || ctx.state.phase !== "open" ? ui.cloud(texts) : `<p class="muted center" style="font-size:1.3rem">Học sinh đang viết…</p>`}
-        ${lv}${ans && ans.sample ? `<div class="scr-explain"><b>Gợi ý.</b> ${ui.md(ans.sample)}</div>` : ""}`;
+        ${lv}${ans && ans.sample ? B.one({ kind: "conclusion", title: "Gợi ý", text: ans.sample }) : ""}`;
     },
     host(el, ctx) {
       const { host, data, key } = ctx;
@@ -1792,9 +2691,9 @@ window.L360_HERITAGE = [
             .map(
               ([c, s]) => `<div class="row nowrap" style="align-items:flex-start;border-bottom:1px solid var(--line);padding-bottom:8px">
           <button class="btn sm ${feats[c] ? "primary" : ""}" data-feat="${c}" title="Gắn ★ để chiếu">★</button>
-          <div class="grow"><b>${c}</b> <span class="muted small">${u.esc((roster[c] || {}).name || "")}${s.v && s.v.level ? ` · tự đánh giá ${s.v.level}/3` : ""}</span><br>${u.esc(
-                (s.v && s.v.text) || ""
-              )}${s.v && s.v.doubt ? `<br><span class="small" style="color:var(--warn)">Băn khoăn: ${u.esc(s.v.doubt)}</span>` : ""}</div></div>`
+          <div class="grow"><b>${c}</b> <span class="muted small">${u.esc((roster[c] || {}).name || "")}${s.v && s.v.level ? ` · tự đánh giá ${s.v.level}/3` : ""}</span><br>${u.esc((s.v && s.v.text) || "")}${
+                s.v && s.v.doubt ? `<br><span class="small" style="color:var(--warn)">Băn khoăn: ${u.esc(s.v.doubt)}</span>` : ""
+              }</div></div>`
             )
             .join("")}</div>`
         : `<p class="muted">Chưa có bài nộp.</p>`;

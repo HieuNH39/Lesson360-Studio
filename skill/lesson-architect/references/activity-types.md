@@ -3,14 +3,14 @@
 Mỗi bước luôn có: `id`, `type`, `title`, `minutes`, `instructions` (nhiệm vụ cho học sinh), `script` (lời dẫn cho giáo viên). Có thể thêm `media`: {`image`, `caption`, `credit`, `video`, `link`}.
 
 ```text
-• type "slide" – Trình chiếu nội dung: Chiếu khái niệm, tư liệu, ghi nhớ; học sinh xem cùng trên máy. Không nộp bài.
-    - body: chuỗi (có thể nhiều dòng) – Nội dung (Mỗi ý một dòng; dòng bắt đầu bằng - là gạch đầu dòng; **chữ đậm**)
-  Ví dụ: {"id":"vi-du","type":"slide","title":"Ghi nhớ","minutes":2,"body":"- Ý chính thứ nhất\n- Ý chính thứ hai","script":""}
+• type "slide" – Bài giảng trực quan: Nội dung chính chiếu cho cả lớp: nhiều trang, mỗi trang ghép các khối ảnh, dòng thời gian, sơ đồ tư duy, bảng so sánh, tư liệu, kết luận, ghi vào vở. Học sinh xem cùng trên máy và tự có vở ghi.
+    - pages: mảng trang {"title","blocks":[khối…]} (xem KHỐI TRỰC QUAN) – Các trang bài giảng
+  Ví dụ: {"id":"vi-du","type":"slide","phase":"hinh-thanh","title":"Tìm hiểu kiến thức mới","minutes":6,"pages":[{"title":"Nội dung 1","blocks":[{"kind":"image","src":"","query":"từ khoá tìm ảnh","caption":"Chú thích","credit":""},{"kind":"list","items":["Ý chính thứ nhất","Ý chính thứ hai"]},{"kind":"note","text":"- Điều học sinh cần ghi vào vở"}]}],"script":""}
 
-• type "quiz" – Trắc nghiệm nhanh: Chuỗi câu hỏi 4 lựa chọn, mỗi câu có giờ; tự khoá khi hết giờ hoặc cả lớp đã nộp; có bảng xếp hạng. Không tính tốc độ.
-    - timer: số – Giây cho mỗi câu (Mặc định 20)
-    - questions: mảng {"q","options":[4 chuỗi],"answer": số thứ tự 0–3,"explain"} – Câu hỏi
-  Ví dụ: {"id":"vi-du","type":"quiz","title":"Thử thách nhanh","minutes":5,"timer":20,"questions":[{"q":"Câu hỏi?","options":["Phương án A","Phương án B","Phương án C","Phương án D"],"answer":0,"explain":"Giải thích ngắn."}]}
+• type "quiz" – Trắc nghiệm: Chuỗi câu hỏi có giờ: 4 lựa chọn, Đúng/Sai 4 ý (chấm như đề thi tốt nghiệp), trả lời ngắn. Tự khoá khi hết giờ hoặc cả lớp đã nộp; có bảng xếp hạng. Không tính tốc độ.
+    - timer: số – Giây cho mỗi câu (Mặc định 20 (Đúng/Sai nên 45–60))
+    - questions: mảng câu hỏi (xem DẠNG CÂU HỎI) – Câu hỏi
+  Ví dụ: {"id":"vi-du","type":"quiz","phase":"luyen-tap","title":"Thử thách nhanh","minutes":6,"timer":20,"questions":[{"kind":"mcq","q":"Câu hỏi?","options":["Phương án A","Phương án B","Phương án C","Phương án D"],"answer":0,"explain":"Giải thích ngắn."},{"kind":"tf","q":"Đọc tư liệu và cho biết mỗi nhận định đúng hay sai.","statements":[{"text":"a) ...","answer":true},{"text":"b) ...","answer":false},{"text":"c) ...","answer":true},{"text":"d) ...","answer":false}],"explain":""},{"kind":"short","q":"Câu hỏi trả lời ngắn?","answer":"đáp án","accept":[],"explain":""},{"kind":"fill","q":"Chọn từ thích hợp điền vào chỗ trống.","text":"Câu có [[đáp án 1]] và [[đáp án 2]].","bank":["từ nhiễu"],"explain":""},{"kind":"sort","q":"Xếp các mục vào đúng nhóm.","groups":["Nhóm A","Nhóm B"],"items":[{"text":"mục 1","group":0},{"text":"mục 2","group":1},{"text":"mục 3","group":0}],"explain":""}]}
 
 • type "poll2" – Hai vòng – học từ bạn: Vòng 1 tự chọn → trao đổi cặp → vòng 2 giữ hoặc đổi → công bố. Màn chiếu so sánh hai vòng: minh chứng học sinh tiến bộ ngay trong tiết.
     - question: chuỗi (có thể nhiều dòng) – Câu hỏi
@@ -18,18 +18,19 @@ Mỗi bước luôn có: `id`, `type`, `title`, `minutes`, `instructions` (nhi�
     - explain: chuỗi (có thể nhiều dòng) – Giải thích đáp án
     - card: chuỗi (có thể nhiều dòng) – Thẻ ghi nhớ sau khi công bố
     - timer: mảng 2 số – Giây vòng 1, vòng 2 (Ví dụ 60 và 45)
-    - answer: số thứ tự phương án đúng (0 = A); poll2 có thể để null nếu là câu hỏi ý kiến
-  Ví dụ: {"id":"vi-du","type":"poll2","title":"Em chọn gì?","minutes":4,"question":"Câu hỏi khái niệm dễ nhầm?","options":["Phương án A","Phương án B"],"answer":1,"explain":"","card":"","timer":[60,45]}
+    - answer: số thứ tự phương án đúng (0 = A); poll2 để null nếu là câu hỏi ý kiến
+  Ví dụ: {"id":"vi-du","type":"poll2","phase":"hinh-thanh","title":"Em chọn gì?","minutes":4,"question":"Câu hỏi khái niệm dễ nhầm?","options":["Phương án A","Phương án B"],"answer":1,"explain":"","card":"","timer":[60,45]}
 
-• type "text" – Trả lời ngắn / Phiếu thoát: Học sinh viết câu trả lời ngắn có giới hạn từ; tự đánh giá 3 mức; giáo viên gắn ★ bài hay để chiếu; màn chiếu có đám mây từ.
+• type "text" – Viết ngắn / Phiếu thoát: Học sinh viết câu trả lời có giới hạn từ (phân tích tư liệu, nêu ý kiến, phiếu thoát); tự đánh giá 3 mức; giáo viên gắn ★ bài hay để chiếu; màn chiếu có đám mây từ.
     - question: chuỗi (có thể nhiều dòng) – Câu hỏi / nhiệm vụ
+    - source: chuỗi (có thể nhiều dòng) – Tư liệu kèm theo (không bắt buộc)
     - maxWords: số – Giới hạn số từ
     - placeholder: chuỗi – Câu mở đầu gợi ý (Ví dụ: Tôi muốn thế hệ tương lai hiểu rằng…)
     - selfAssess: true/false – Có tự đánh giá 3 mức
     - askDoubt: true/false – Hỏi điều còn băn khoăn
     - sample: chuỗi (có thể nhiều dòng) – Gợi ý đáp án (công bố sau)
     - timer: số – Thời gian (giây)
-  Ví dụ: {"id":"vi-du","type":"text","title":"Phiếu thoát","minutes":3,"question":"Điều quan trọng nhất em học được hôm nay là gì?","maxWords":40,"selfAssess":true,"askDoubt":true,"timer":120}
+  Ví dụ: {"id":"vi-du","type":"text","phase":"van-dung","title":"Phiếu thoát","minutes":3,"question":"Điều quan trọng nhất em học được hôm nay là gì?","maxWords":40,"selfAssess":true,"askDoubt":true,"timer":120}
 
 • type "cards" – Chọn thẻ + giả thuyết: Học sinh chọn tối đa N thẻ (yếu tố, nguyên nhân, đặc điểm…) và viết giả thuyết ngắn; màn chiếu hiện tần suất các thẻ.
     - question: chuỗi (có thể nhiều dòng) – Câu hỏi
@@ -89,7 +90,7 @@ Mỗi bước luôn có: `id`, `type`, `title`, `minutes`, `instructions` (nhi�
     - maxWords: số – Giới hạn từ (nếu viết)
     - explain: chuỗi (có thể nhiều dòng) – Giải thích / kết luận sau khi công bố
     - timer: số – Thời gian (giây)
-    - answer: số thứ tự phương án đúng (0 = A); poll2 có thể để null nếu là câu hỏi ý kiến
+    - answer: số thứ tự phương án đúng (0 = A); poll2 để null nếu là câu hỏi ý kiến
   Ví dụ: {"id":"vi-du","type":"explore","title":"Khám phá di sản","minutes":6,"siteId":"phat-tich","mission":"Mở trang di tích, nghe thuyết minh và cho biết một chi tiết chứng tỏ giá trị lịch sử của di tích.","answerType":"text","maxWords":40,"timer":300}
 ```
 

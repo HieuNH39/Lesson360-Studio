@@ -13,10 +13,20 @@
   };
   const cache = {};
 
-  async function getJson(url) {
-    const r = await fetch(url, { headers: { "Api-User-Agent": "Lesson360Studio/2.0 (education)" } });
-    if (!r.ok) throw new Error("HTTP " + r.status);
-    return r.json();
+  // Wikimedia giới hạn số lượt hỏi (HTTP 429) khi nhiều máy cùng mạng tìm ảnh một lúc → chờ rồi thử lại.
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  async function getJson(url, tries = 3) {
+    for (let i = 0; ; i++) {
+      try {
+        const r = await fetch(url, { headers: { "Api-User-Agent": "Lesson360Studio/2.0 (education; FPT Schools)" } });
+        if (r.status === 429 || r.status >= 500) throw Object.assign(new Error("HTTP " + r.status), { retry: true });
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return await r.json();
+      } catch (e) {
+        if (i >= tries - 1 || (e && e.retry === false)) throw e;
+        await sleep(1200 * Math.pow(2, i) + Math.random() * 400);
+      }
+    }
   }
   // Thông tin ảnh (đường dẫn cỡ 1280, tác giả, giấy phép) cho danh sách tên tệp.
   async function fileInfo(titles, width) {
@@ -237,7 +247,9 @@
     return null;
   }
   const BAD = /\b(logo|icon|flag|coat of arms|emblem|seal|signature|stamp|banner|button|diagram|chart|graph|screenshot|qr)\b/i;
-  const words = (s) => (L360.Ppct ? L360.Ppct.norm(s) : String(s || "").toLowerCase()).split(" ").filter((w) => w.length > 2);
+  // Bỏ hư từ (tiếng Anh, tiếng Việt) khi so khớp từ khoá ảnh.
+  const STOPW = new Set("the and for from with into over under this that are was were has have its their about view photo image picture file jpg png svg of in on at to by an a cua cac nhung mot trong voi cho tren duoi anh hinh".split(" "));
+  const words = (s) => (L360.Ppct ? L360.Ppct.norm(s) : String(s || "").toLowerCase()).split(/[^\p{L}\p{N}]+/u).filter((w) => w.length > 2 && !STOPW.has(w));
   // Xếp hạng kết quả tìm: khớp từ khoá + mô tả, ảnh nét, tránh logo/biểu tượng.
   // Ảnh không khớp từ khoá nào bị loại (thà để trống cho giáo viên chọn còn hơn ảnh sai nội dung).
   function rank(list, b) {

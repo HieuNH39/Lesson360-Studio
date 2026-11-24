@@ -1,0 +1,1132 @@
+{
+  "schema": "l360-pack/2",
+  "id": "mau-nv10-dai-cao-binh-ngo",
+  "title": "Đại cáo bình Ngô – Bản tuyên ngôn độc lập thứ hai",
+  "subject": "Ngữ văn",
+  "subjectId": "ngu-van",
+  "grade": "10",
+  "bai": {
+    "key": "nv-10-2:6",
+    "so": "6",
+    "ten": "Nguyễn Trãi – “Dành còn để trợ dân này”"
+  },
+  "tiet": {
+    "so": 1,
+    "tong": 1
+  },
+  "duration": 45,
+  "objectives": [
+    "Nêu được hoàn cảnh ra đời, mục đích sáng tác của Đại cáo bình Ngô.",
+    "Nhận biết được đặc trưng của thể cáo và bố cục bốn phần của văn bản.",
+    "Phân tích được luận đề chính nghĩa: tư tưởng nhân nghĩa và chân lí về sự tồn tại độc lập, có chủ quyền của Đại Việt."
+  ],
+  "homework": {
+    "tasks": [
+      "Học thuộc phần ghi vở; đọc thuộc đoạn 1 của bài cáo.",
+      "Vẽ sơ đồ (trên giấy hoặc bằng công cụ số) “5 yếu tố khẳng định chủ quyền của Đại Việt”, ghi rõ câu văn làm dẫn chứng."
+    ],
+    "prepare": "Đọc phần 2, 3 của văn bản (bản cáo trạng tội ác giặc Minh và quá trình kháng chiến); gạch chân những hình ảnh, chi tiết gây ấn tượng mạnh nhất."
+  },
+  "steps": [
+    {
+      "id": "t1s1",
+      "type": "slide",
+      "phase": "khoi-dong",
+      "title": "Mở đầu (khởi động)",
+      "minutes": 3,
+      "pages": [
+        {
+          "title": "Khởi động",
+          "blocks": [
+            {
+              "kind": "image",
+              "alt": "Tượng đài Nguyễn Trãi",
+              "caption": "Tượng Nguyễn Trãi",
+              "src": "assets/img/packs/mau/nguyen-trai.jpg",
+              "credit": "vi:User:NHHP, CC BY-SA 3.0 – Wikimedia Commons",
+              "verified": true
+            },
+            {
+              "kind": "question",
+              "text": "Kể tên những văn bản được xem là “tuyên ngôn độc lập” của dân tộc Việt Nam mà em biết."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "t1s2",
+      "type": "quiz",
+      "phase": "khoi-dong",
+      "title": "Câu hỏi – Mở đầu (khởi động)",
+      "minutes": 2,
+      "questions": [
+        {
+          "options": [
+            "Đại cáo bình Ngô",
+            "Hịch tướng sĩ",
+            "Chiếu dời đô",
+            "Phú sông Bạch Đằng"
+          ],
+          "answer": 0,
+          "explain": "Sau Nam quốc sơn hà, Đại cáo bình Ngô (1428) được xem là bản tuyên ngôn độc lập thứ hai.",
+          "kind": "mcq",
+          "q": "Văn bản nào thường được gọi là “bản tuyên ngôn độc lập thứ hai” của dân tộc ta?"
+        }
+      ],
+      "timer": 20
+    },
+    {
+      "id": "t1s3",
+      "type": "slide",
+      "phase": "hinh-thanh",
+      "title": "I. Tìm hiểu chung",
+      "minutes": 12,
+      "pages": [
+        {
+          "title": "",
+          "blocks": [
+            {
+              "kind": "tenbai",
+              "so": "Bài 6",
+              "ten": "NGUYỄN TRÃI – “DÀNH CÒN ĐỂ TRỢ DÂN NÀY”",
+              "chude": "",
+              "muc": [
+                "I. Tìm hiểu chung",
+                "II. Đọc hiểu văn bản – 1. Luận đề chính nghĩa"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "",
+          "blocks": [
+            {
+              "kind": "muc",
+              "so": "1",
+              "ten": "I. Tìm hiểu chung"
+            }
+          ]
+        },
+        {
+          "title": "Hoàn cảnh ra đời",
+          "blocks": [
+            {
+              "kind": "timeline",
+              "items": [
+                {
+                  "time": "1418",
+                  "label": "Khởi nghĩa Lam Sơn bùng nổ",
+                  "desc": "Lê Lợi dựng cờ khởi nghĩa"
+                },
+                {
+                  "time": "1427",
+                  "label": "Chiến thắng Chi Lăng – Xương Giang",
+                  "desc": "Đánh tan viện binh nhà Minh"
+                },
+                {
+                  "time": "Cuối 1427",
+                  "label": "Hội thề Đông Quan",
+                  "desc": "Quân Minh xin rút về nước"
+                },
+                {
+                  "time": "Đầu 1428",
+                  "label": "Nguyễn Trãi viết Đại cáo",
+                  "desc": "Thừa lệnh Lê Lợi, bố cáo thiên hạ"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Thể cáo – nhan đề",
+          "blocks": [
+            {
+              "kind": "keyterms",
+              "items": [
+                {
+                  "term": "Cáo",
+                  "def": "Thể văn nghị luận cổ, dùng để trình bày chủ trương hoặc công bố kết quả một sự nghiệp."
+                },
+                {
+                  "term": "Văn biền ngẫu",
+                  "def": "Câu văn sóng đôi, đối xứng từng cặp; lời lẽ đanh thép, giàu nhạc điệu."
+                },
+                {
+                  "term": "Bình Ngô",
+                  "def": "Dẹp yên giặc Ngô – cách gọi quân Minh xâm lược."
+                },
+                {
+                  "term": "Đại cáo",
+                  "def": "Bài cáo lớn, công bố sự kiện trọng đại của quốc gia."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Bố cục",
+          "blocks": [
+            {
+              "kind": "flow",
+              "steps": [
+                {
+                  "label": "Phần 1",
+                  "desc": "Nêu luận đề chính nghĩa"
+                },
+                {
+                  "label": "Phần 2",
+                  "desc": "Bản cáo trạng tội ác giặc Minh"
+                },
+                {
+                  "label": "Phần 3",
+                  "desc": "Quá trình kháng chiến gian khổ và thắng lợi"
+                },
+                {
+                  "label": "Phần 4",
+                  "desc": "Tuyên bố độc lập, rút ra bài học lịch sử"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Ghi vào vở",
+          "blocks": [
+            {
+              "kind": "note",
+              "title": "I. Tìm hiểu chung",
+              "text": "- Hoàn cảnh: Đầu năm 1428, kháng chiến chống Minh toàn thắng; Nguyễn Trãi thừa lệnh Lê Lợi viết.\n- Mục đích: Tuyên cáo việc dẹp yên giặc Minh, khẳng định nền độc lập.\n- Thể loại: Cáo – văn nghị luận cổ, viết bằng chữ Hán, văn biền ngẫu.\n- Bố cục: 4 phần: luận đề – cáo trạng – kháng chiến – tuyên bố độc lập."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "t1s4",
+      "type": "quiz",
+      "phase": "hinh-thanh",
+      "title": "Củng cố – Hoàn cảnh ra đời, thể cáo và bố cục",
+      "minutes": 2,
+      "questions": [
+        {
+          "explain": "Đại cáo bình Ngô viết bằng chữ Hán, đầu năm 1428, sau khi kháng chiến chống quân Minh toàn thắng.",
+          "kind": "tf",
+          "q": "Đọc phần Tri thức ngữ văn về thể cáo, xác định đúng/sai:",
+          "statements": [
+            {
+              "text": "a) Cáo là thể văn nghị luận cổ.",
+              "answer": true
+            },
+            {
+              "text": "b) Cáo thường được viết bằng văn biền ngẫu.",
+              "answer": true
+            },
+            {
+              "text": "c) Đại cáo bình Ngô được viết bằng chữ Nôm.",
+              "answer": false
+            },
+            {
+              "text": "d) Bài cáo ra đời trước khởi nghĩa Lam Sơn.",
+              "answer": false
+            }
+          ]
+        }
+      ],
+      "timer": 20
+    },
+    {
+      "id": "t1s5",
+      "type": "slide",
+      "phase": "hinh-thanh",
+      "title": "II. Đọc hiểu văn bản – 1. Luận đề chính nghĩa",
+      "minutes": 16,
+      "pages": [
+        {
+          "title": "",
+          "blocks": [
+            {
+              "kind": "muc",
+              "so": "2",
+              "ten": "II. Đọc hiểu văn bản – 1. Luận đề chính nghĩa"
+            }
+          ]
+        },
+        {
+          "title": "Tư tưởng nhân nghĩa",
+          "blocks": [
+            {
+              "kind": "quote",
+              "text": "Nhân nghĩa chi cử yếu tại an dân,\nĐiếu phạt chi sư mạc tiên khử bạo.",
+              "source": "Phiên âm câu mở đầu Đại cáo bình Ngô"
+            },
+            {
+              "kind": "text",
+              "md": "**Dịch nghĩa:** Việc nhân nghĩa cốt ở yên dân, / Quân điếu phạt trước lo trừ bạo.\n- Nhân nghĩa gắn với **yên dân** (làm cho dân yên ổn)\n- Muốn yên dân phải **trừ bạo** (diệt kẻ tàn bạo)"
+            }
+          ]
+        },
+        {
+          "title": "Chân lí về nền độc lập",
+          "blocks": [
+            {
+              "kind": "mindmap",
+              "center": "Đại Việt độc lập",
+              "icon": "🏛",
+              "branches": [
+                {
+                  "label": "Văn hiến",
+                  "icon": "📜",
+                  "items": [
+                    "Nền văn hiến lâu đời"
+                  ]
+                },
+                {
+                  "label": "Lãnh thổ",
+                  "icon": "⛰️",
+                  "items": [
+                    "Núi sông bờ cõi riêng"
+                  ]
+                },
+                {
+                  "label": "Phong tục",
+                  "icon": "🏮",
+                  "items": [
+                    "Phong tục Bắc Nam khác"
+                  ]
+                },
+                {
+                  "label": "Lịch sử",
+                  "icon": "👑",
+                  "items": [
+                    "Triệu, Đinh, Lý, Trần",
+                    "Ngang hàng phương Bắc"
+                  ]
+                },
+                {
+                  "label": "Hào kiệt",
+                  "icon": "⚔️",
+                  "items": [
+                    "Đời nào cũng có"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "So sánh với Nam quốc sơn hà",
+          "blocks": [
+            {
+              "kind": "venn",
+              "left": "Nam quốc sơn hà",
+              "leftItems": [
+                "Chủ quyền gắn với vua",
+                "Sách trời định phận"
+              ],
+              "right": "Đại cáo bình Ngô",
+              "rightItems": [
+                "Văn hiến",
+                "Phong tục",
+                "Lịch sử",
+                "Hào kiệt"
+              ],
+              "bothLabel": "Giống nhau",
+              "both": [
+                "Lãnh thổ riêng",
+                "Khẳng định độc lập"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Ghi vào vở",
+          "blocks": [
+            {
+              "kind": "note",
+              "title": "1. Luận đề chính nghĩa",
+              "text": "- Tư tưởng nhân nghĩa: Yên dân, trừ bạo – vì dân, chống kẻ tàn bạo xâm lược.\n- Chân lí độc lập: Văn hiến, lãnh thổ, phong tục, lịch sử, hào kiệt riêng.\n- Nghệ thuật: Câu văn biền ngẫu, đối xứng; giọng điệu trang trọng, tự hào."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "t1s6",
+      "type": "quiz",
+      "phase": "hinh-thanh",
+      "title": "Củng cố – Tư tưởng nhân nghĩa và chân lí độc lập (thảo luận cặp đôi)",
+      "minutes": 2,
+      "questions": [
+        {
+          "explain": "Nhân nghĩa = yên dân, trừ bạo; chân lí độc lập dựa trên văn hiến, lãnh thổ, phong tục, lịch sử, hào kiệt.",
+          "kind": "sort",
+          "q": "Kéo mỗi ý vào đúng nhóm.",
+          "groups": [
+            "Tư tưởng nhân nghĩa",
+            "Chân lí độc lập"
+          ],
+          "items": [
+            {
+              "text": "Yên dân",
+              "group": 0
+            },
+            {
+              "text": "Trừ bạo",
+              "group": 0
+            },
+            {
+              "text": "Nền văn hiến lâu đời",
+              "group": 1
+            },
+            {
+              "text": "Núi sông bờ cõi riêng",
+              "group": 1
+            },
+            {
+              "text": "Phong tục Bắc Nam khác",
+              "group": 1
+            },
+            {
+              "text": "Hào kiệt đời nào cũng có",
+              "group": 1
+            }
+          ]
+        }
+      ],
+      "timer": 20
+    },
+    {
+      "id": "t1s7",
+      "type": "slide",
+      "phase": "luyen-tap",
+      "title": "Luyện tập",
+      "minutes": 3,
+      "pages": [
+        {
+          "title": "Luyện tập",
+          "blocks": [
+            {
+              "kind": "question",
+              "text": "Hoàn thành câu văn và trả lời nhanh trên máy."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "t1s8",
+      "type": "quiz",
+      "phase": "luyen-tap",
+      "title": "Câu hỏi – Luyện tập",
+      "minutes": 2,
+      "questions": [
+        {
+          "explain": "Câu mở đầu nêu tư tưởng nhân nghĩa: yên dân, trừ bạo.",
+          "kind": "fill",
+          "q": "Chọn từ thích hợp điền vào chỗ trống.",
+          "text": "Việc [[nhân nghĩa]] cốt ở [[yên dân]], / Quân điếu phạt trước lo [[trừ bạo]].",
+          "bank": [
+            "thương dân",
+            "diệt giặc",
+            "hoà hiếu"
+          ]
+        },
+        {
+          "options": [
+            "Văn hiến và phong tục",
+            "Lãnh thổ riêng biệt",
+            "Vua nước Nam làm chủ",
+            "Sách trời định phận"
+          ],
+          "answer": 0,
+          "explain": "Đại cáo bổ sung văn hiến, phong tục, lịch sử, hào kiệt.",
+          "kind": "mcq",
+          "q": "So với Nam quốc sơn hà, Đại cáo bình Ngô bổ sung yếu tố nào?"
+        }
+      ],
+      "timer": 20
+    }
+  ],
+  "meta": {
+    "gaId": "ga-chu-de-6-nguyen-trai-danh-con-de-tro-dan-d2tb",
+    "source": "giaoan",
+    "ppct": "48",
+    "tuan": "19",
+    "khbdV": 1,
+    "madeWithAI": true,
+    "aiTool": "Claude",
+    "sample": true,
+    "note": "Bài mẫu Lesson 360°: tiết học, giáo án Word và PowerPoint dựng tự động từ giáo án mẫu (bám SGK Kết nối tri thức). Ảnh Wikimedia Commons, có ghi nguồn."
+  },
+  "design": {
+    "style": "so-tay",
+    "palette": "cam-vang"
+  },
+  "theme": {
+    "accent": "#E8780C",
+    "accent2": "#C75F05",
+    "bg": "#FFF9EC"
+  },
+  "groups": null,
+  "khbd": {
+    "schema": "l360-khbd/1",
+    "giaoVien": "Giáo viên bộ môn",
+    "tenBai": "CHỦ ĐỀ 6. NGUYỄN TRÃI – “DÀNH CÒN ĐỂ TRỢ DÂN NÀY” – VĂN BẢN: ĐẠI CÁO BÌNH NGÔ (TIẾT 1)",
+    "mon": "Ngữ văn",
+    "lop": "10",
+    "thoiGian": "1 tiết (Tiết 48 theo PPCT – Tuần 19)",
+    "mucTieu": {
+      "kienThuc": [
+        "Nêu được hoàn cảnh ra đời, mục đích sáng tác của Đại cáo bình Ngô.",
+        "Nhận biết được đặc trưng của thể cáo và bố cục bốn phần của văn bản.",
+        "Phân tích được luận đề chính nghĩa: tư tưởng nhân nghĩa và chân lí về sự tồn tại độc lập, có chủ quyền của Đại Việt."
+      ],
+      "nangLucChung": [
+        {
+          "ten": "Tự chủ và tự học",
+          "nd": "Tự đọc văn bản, chú thích và hoàn thành phiếu học tập."
+        },
+        {
+          "ten": "Giao tiếp và hợp tác",
+          "nd": "Trao đổi theo cặp, trình bày kết quả trước lớp."
+        },
+        {
+          "ten": "Giải quyết vấn đề và sáng tạo",
+          "nd": "So sánh quan niệm về quốc gia trong Nam quốc sơn hà và Đại cáo bình Ngô."
+        }
+      ],
+      "dacThu": {
+        "ten": "Năng lực đặc thù",
+        "items": [
+          {
+            "ten": "Năng lực ngôn ngữ",
+            "nd": "Nhận biết đặc điểm văn biền ngẫu, câu văn đối xứng của thể cáo."
+          },
+          {
+            "ten": "Năng lực văn học",
+            "nd": "Phân tích cách lập luận, hệ thống luận điểm và yếu tố biểu cảm trong văn bản nghị luận trung đại."
+          }
+        ]
+      },
+      "nls": {
+        "muc": "Nâng cao 1",
+        "items": [
+          {
+            "ma": "1.1.NC1a",
+            "ten": "Duyệt, tìm kiếm và lọc dữ liệu, thông tin và nội dung số",
+            "nd": "Tra cứu tư liệu về khởi nghĩa Lam Sơn từ nguồn chính thống."
+          },
+          {
+            "ma": "1.2.NC1a",
+            "ten": "Đánh giá dữ liệu, thông tin và nội dung số",
+            "nd": "Đối chiếu thông tin tìm được với SGK, chỉ ra nguồn đáng tin cậy."
+          },
+          {
+            "ma": "3.1.NC1a",
+            "ten": "Phát triển nội dung số",
+            "nd": "Thiết kế sơ đồ/infographic về các yếu tố khẳng định chủ quyền (về nhà)."
+          }
+        ]
+      },
+      "ai": [
+        {
+          "ma": "NLa",
+          "ten": "Tư duy lấy con người làm trung tâm",
+          "code": "[GV điền mã]",
+          "nd": "Nhận thức con người là chủ thể học tập; công cụ số, AI chỉ hỗ trợ tra cứu, không thay HS suy nghĩ."
+        },
+        {
+          "ma": "NLb",
+          "ten": "Đạo đức AI",
+          "code": "[GV điền mã]",
+          "nd": "Tự làm bài trong chế độ tự học; khi dùng AI ngoài giờ phải kiểm chứng với SGK và ghi rõ nguồn, không nộp sản phẩm do AI làm hộ."
+        }
+      ],
+      "phamChat": [
+        {
+          "ten": "Yêu nước",
+          "nd": "Tự hào về truyền thống độc lập, văn hiến của dân tộc."
+        },
+        {
+          "ten": "Trách nhiệm",
+          "nd": "Ý thức giữ gìn, phát huy giá trị văn hoá dân tộc."
+        }
+      ]
+    },
+    "thietBi": {
+      "giaoVien": [
+        "Máy chiếu/tivi, máy tính; bài giảng Lesson 360°",
+        "Phiếu học tập số 1: Luận đề chính nghĩa",
+        "SGK, SGV Ngữ văn 10, tập hai"
+      ],
+      "hocSinh": [
+        "SGK Ngữ văn 10, tập hai; laptop/iPad truy cập Lesson 360° bằng mã phòng",
+        "Đọc trước văn bản Đại cáo bình Ngô"
+      ],
+      "hocLieuSo": [],
+      "moRong": []
+    },
+    "tiet": [
+      {
+        "ten": "TIẾT 1 (TIẾT 48 THEO PPCT)",
+        "hoatDong": [
+          {
+            "ten": "HOẠT ĐỘNG 1. MỞ ĐẦU (KHỞI ĐỘNG)",
+            "phut": "5",
+            "mucTieu": "Kết nối hiểu biết về các văn bản khẳng định chủ quyền dân tộc, tạo tâm thế đọc văn bản.",
+            "noiDung": "HS trả lời câu hỏi trắc nghiệm về “những bản tuyên ngôn độc lập” của dân tộc.",
+            "sanPham": "Câu trả lời của HS trên Lesson 360°.",
+            "slide": "Slide 4–5",
+            "buoc": [
+              [
+                "GV chiếu ảnh tượng đài Nguyễn Trãi, nêu câu hỏi: Dân tộc ta có những văn bản nào được xem là “tuyên ngôn độc lập”?"
+              ],
+              [
+                "HS suy nghĩ, chọn đáp án trên máy."
+              ],
+              [
+                "GV công bố kết quả, mời 1–2 HS giải thích lựa chọn."
+              ],
+              [
+                "GV dẫn vào bài: Đại cáo bình Ngô – áng “thiên cổ hùng văn” của Nguyễn Trãi."
+              ]
+            ],
+            "nhiemVu": [],
+            "muc": [],
+            "nls": [],
+            "ai": [],
+            "chot": null,
+            "trinhChieu": [
+              {
+                "tieuDe": "Khởi động",
+                "blocks": [
+                  {
+                    "kind": "image",
+                    "alt": "Tượng đài Nguyễn Trãi",
+                    "caption": "Tượng Nguyễn Trãi",
+                    "src": "assets/img/packs/mau/nguyen-trai.jpg",
+                    "credit": "vi:User:NHHP, CC BY-SA 3.0 – Wikimedia Commons",
+                    "verified": true
+                  },
+                  {
+                    "kind": "question",
+                    "text": "Kể tên những văn bản được xem là “tuyên ngôn độc lập” của dân tộc Việt Nam mà em biết."
+                  }
+                ]
+              }
+            ],
+            "cauHoi": [
+              {
+                "kind": "mcq",
+                "q": "Văn bản nào thường được gọi là “bản tuyên ngôn độc lập thứ hai” của dân tộc ta?",
+                "options": [
+                  "Đại cáo bình Ngô",
+                  "Hịch tướng sĩ",
+                  "Chiếu dời đô",
+                  "Phú sông Bạch Đằng"
+                ],
+                "answer": 0,
+                "explain": "Sau Nam quốc sơn hà, Đại cáo bình Ngô (1428) được xem là bản tuyên ngôn độc lập thứ hai."
+              }
+            ]
+          },
+          {
+            "ten": "HOẠT ĐỘNG 2. HÌNH THÀNH KIẾN THỨC MỚI",
+            "phut": "35",
+            "mucTieu": [
+              "Nêu được hoàn cảnh ra đời, thể loại, bố cục.",
+              "Phân tích được luận đề chính nghĩa."
+            ],
+            "noiDung": "Đọc hiểu phần chung và đoạn 1 của văn bản.",
+            "sanPham": "Câu trả lời, Phiếu học tập số 1, phần ghi vở.",
+            "slide": "",
+            "buoc": null,
+            "nhiemVu": [],
+            "muc": [
+              {
+                "ten": "I. Tìm hiểu chung",
+                "nhiemVu": [
+                  {
+                    "ten": "Nhiệm vụ 1. Hoàn cảnh ra đời, thể cáo và bố cục",
+                    "phut": "12",
+                    "slide": "Slide 9–13",
+                    "buoc": [
+                      [
+                        "GV yêu cầu HS đọc phần Tri thức ngữ văn và chú thích trong SGK, trả lời: Bài cáo ra đời khi nào, để làm gì? Thể cáo có đặc điểm gì? Văn bản chia mấy phần?"
+                      ],
+                      [
+                        "HS đọc SGK, ghi câu trả lời."
+                      ],
+                      [
+                        "GV mời HS trình bày; HS khác bổ sung."
+                      ],
+                      [
+                        "GV chốt kiến thức, giải thích nhan đề “Bình Ngô”, “Đại cáo”."
+                      ]
+                    ],
+                    "nls": [
+                      {
+                        "ma": "1.1.NC1a",
+                        "nd": "HS tra cứu mốc thời gian khởi nghĩa Lam Sơn từ nguồn chính thống."
+                      }
+                    ],
+                    "ai": [],
+                    "chot": null,
+                    "trinhChieu": [
+                      {
+                        "tieuDe": "Hoàn cảnh ra đời",
+                        "blocks": [
+                          {
+                            "kind": "timeline",
+                            "items": [
+                              {
+                                "time": "1418",
+                                "label": "Khởi nghĩa Lam Sơn bùng nổ",
+                                "desc": "Lê Lợi dựng cờ khởi nghĩa"
+                              },
+                              {
+                                "time": "1427",
+                                "label": "Chiến thắng Chi Lăng – Xương Giang",
+                                "desc": "Đánh tan viện binh nhà Minh"
+                              },
+                              {
+                                "time": "Cuối 1427",
+                                "label": "Hội thề Đông Quan",
+                                "desc": "Quân Minh xin rút về nước"
+                              },
+                              {
+                                "time": "Đầu 1428",
+                                "label": "Nguyễn Trãi viết Đại cáo",
+                                "desc": "Thừa lệnh Lê Lợi, bố cáo thiên hạ"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "tieuDe": "Thể cáo – nhan đề",
+                        "blocks": [
+                          {
+                            "kind": "keyterms",
+                            "items": [
+                              {
+                                "term": "Cáo",
+                                "def": "Thể văn nghị luận cổ, dùng để trình bày chủ trương hoặc công bố kết quả một sự nghiệp."
+                              },
+                              {
+                                "term": "Văn biền ngẫu",
+                                "def": "Câu văn sóng đôi, đối xứng từng cặp; lời lẽ đanh thép, giàu nhạc điệu."
+                              },
+                              {
+                                "term": "Bình Ngô",
+                                "def": "Dẹp yên giặc Ngô – cách gọi quân Minh xâm lược."
+                              },
+                              {
+                                "term": "Đại cáo",
+                                "def": "Bài cáo lớn, công bố sự kiện trọng đại của quốc gia."
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "tieuDe": "Bố cục",
+                        "blocks": [
+                          {
+                            "kind": "flow",
+                            "steps": [
+                              {
+                                "label": "Phần 1",
+                                "desc": "Nêu luận đề chính nghĩa"
+                              },
+                              {
+                                "label": "Phần 2",
+                                "desc": "Bản cáo trạng tội ác giặc Minh"
+                              },
+                              {
+                                "label": "Phần 3",
+                                "desc": "Quá trình kháng chiến gian khổ và thắng lợi"
+                              },
+                              {
+                                "label": "Phần 4",
+                                "desc": "Tuyên bố độc lập, rút ra bài học lịch sử"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ],
+                    "cauHoi": [
+                      {
+                        "kind": "tf",
+                        "q": "Đọc phần Tri thức ngữ văn về thể cáo, xác định đúng/sai:",
+                        "statements": [
+                          {
+                            "text": "a) Cáo là thể văn nghị luận cổ.",
+                            "answer": true
+                          },
+                          {
+                            "text": "b) Cáo thường được viết bằng văn biền ngẫu.",
+                            "answer": true
+                          },
+                          {
+                            "text": "c) Đại cáo bình Ngô được viết bằng chữ Nôm.",
+                            "answer": false
+                          },
+                          {
+                            "text": "d) Bài cáo ra đời trước khởi nghĩa Lam Sơn.",
+                            "answer": false
+                          }
+                        ],
+                        "explain": "Đại cáo bình Ngô viết bằng chữ Hán, đầu năm 1428, sau khi kháng chiến chống quân Minh toàn thắng."
+                      }
+                    ]
+                  }
+                ],
+                "chot": {
+                  "slide": "Slide 12",
+                  "phut": "2",
+                  "items": [],
+                  "bang": {
+                    "tieuDe": "I. Tìm hiểu chung",
+                    "cot": [],
+                    "dong": [
+                      [
+                        "Hoàn cảnh",
+                        "Đầu năm 1428, kháng chiến chống Minh toàn thắng; Nguyễn Trãi thừa lệnh Lê Lợi viết."
+                      ],
+                      [
+                        "Mục đích",
+                        "Tuyên cáo việc dẹp yên giặc Minh, khẳng định nền độc lập."
+                      ],
+                      [
+                        "Thể loại",
+                        "Cáo – văn nghị luận cổ, viết bằng chữ Hán, văn biền ngẫu."
+                      ],
+                      [
+                        "Bố cục",
+                        "4 phần: luận đề – cáo trạng – kháng chiến – tuyên bố độc lập."
+                      ]
+                    ]
+                  }
+                },
+                "trinhChieu": []
+              },
+              {
+                "ten": "II. Đọc hiểu văn bản – 1. Luận đề chính nghĩa",
+                "nhiemVu": [
+                  {
+                    "ten": "Nhiệm vụ 2. Tư tưởng nhân nghĩa và chân lí độc lập (thảo luận cặp đôi)",
+                    "phut": "16",
+                    "slide": "Slide 15–19",
+                    "buoc": [
+                      [
+                        "GV chia cặp, phát Phiếu học tập số 1: Tư tưởng nhân nghĩa trong đoạn 1 có nội dung gì? Tác giả đưa ra những yếu tố nào để khẳng định Đại Việt là một quốc gia độc lập?"
+                      ],
+                      [
+                        "HS đọc đoạn 1, thảo luận cặp đôi, hoàn thành phiếu."
+                      ],
+                      [
+                        "Đại diện 2 cặp trình bày; các cặp khác nhận xét, bổ sung."
+                      ],
+                      [
+                        "GV chốt: nhân nghĩa gắn với yên dân, trừ bạo; 5 yếu tố khẳng định chủ quyền – quan niệm toàn diện hơn Nam quốc sơn hà."
+                      ]
+                    ],
+                    "nls": [
+                      {
+                        "ma": "1.2.NC1a",
+                        "nd": "HS so sánh, đánh giá thông tin hai văn bản để rút ra kết luận."
+                      }
+                    ],
+                    "ai": [],
+                    "chot": null,
+                    "trinhChieu": [
+                      {
+                        "tieuDe": "Tư tưởng nhân nghĩa",
+                        "blocks": [
+                          {
+                            "kind": "quote",
+                            "text": "Nhân nghĩa chi cử yếu tại an dân,\nĐiếu phạt chi sư mạc tiên khử bạo.",
+                            "source": "Phiên âm câu mở đầu Đại cáo bình Ngô"
+                          },
+                          {
+                            "kind": "text",
+                            "md": "**Dịch nghĩa:** Việc nhân nghĩa cốt ở yên dân, / Quân điếu phạt trước lo trừ bạo.\n- Nhân nghĩa gắn với **yên dân** (làm cho dân yên ổn)\n- Muốn yên dân phải **trừ bạo** (diệt kẻ tàn bạo)"
+                          }
+                        ]
+                      },
+                      {
+                        "tieuDe": "Chân lí về nền độc lập",
+                        "blocks": [
+                          {
+                            "kind": "mindmap",
+                            "center": "Đại Việt độc lập",
+                            "icon": "🏛",
+                            "branches": [
+                              {
+                                "label": "Văn hiến",
+                                "icon": "📜",
+                                "items": [
+                                  "Nền văn hiến lâu đời"
+                                ]
+                              },
+                              {
+                                "label": "Lãnh thổ",
+                                "icon": "⛰️",
+                                "items": [
+                                  "Núi sông bờ cõi riêng"
+                                ]
+                              },
+                              {
+                                "label": "Phong tục",
+                                "icon": "🏮",
+                                "items": [
+                                  "Phong tục Bắc Nam khác"
+                                ]
+                              },
+                              {
+                                "label": "Lịch sử",
+                                "icon": "👑",
+                                "items": [
+                                  "Triệu, Đinh, Lý, Trần",
+                                  "Ngang hàng phương Bắc"
+                                ]
+                              },
+                              {
+                                "label": "Hào kiệt",
+                                "icon": "⚔️",
+                                "items": [
+                                  "Đời nào cũng có"
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "tieuDe": "So sánh với Nam quốc sơn hà",
+                        "blocks": [
+                          {
+                            "kind": "venn",
+                            "left": "Nam quốc sơn hà",
+                            "leftItems": [
+                              "Chủ quyền gắn với vua",
+                              "Sách trời định phận"
+                            ],
+                            "right": "Đại cáo bình Ngô",
+                            "rightItems": [
+                              "Văn hiến",
+                              "Phong tục",
+                              "Lịch sử",
+                              "Hào kiệt"
+                            ],
+                            "bothLabel": "Giống nhau",
+                            "both": [
+                              "Lãnh thổ riêng",
+                              "Khẳng định độc lập"
+                            ]
+                          }
+                        ]
+                      }
+                    ],
+                    "cauHoi": [
+                      {
+                        "kind": "sort",
+                        "q": "Kéo mỗi ý vào đúng nhóm.",
+                        "groups": [
+                          "Tư tưởng nhân nghĩa",
+                          "Chân lí độc lập"
+                        ],
+                        "items": [
+                          {
+                            "text": "Yên dân",
+                            "group": 0
+                          },
+                          {
+                            "text": "Trừ bạo",
+                            "group": 0
+                          },
+                          {
+                            "text": "Nền văn hiến lâu đời",
+                            "group": 1
+                          },
+                          {
+                            "text": "Núi sông bờ cõi riêng",
+                            "group": 1
+                          },
+                          {
+                            "text": "Phong tục Bắc Nam khác",
+                            "group": 1
+                          },
+                          {
+                            "text": "Hào kiệt đời nào cũng có",
+                            "group": 1
+                          }
+                        ],
+                        "explain": "Nhân nghĩa = yên dân, trừ bạo; chân lí độc lập dựa trên văn hiến, lãnh thổ, phong tục, lịch sử, hào kiệt."
+                      }
+                    ]
+                  }
+                ],
+                "chot": {
+                  "slide": "Slide 18",
+                  "phut": "2",
+                  "items": [],
+                  "bang": {
+                    "tieuDe": "1. Luận đề chính nghĩa",
+                    "cot": [],
+                    "dong": [
+                      [
+                        "Tư tưởng nhân nghĩa",
+                        "Yên dân, trừ bạo – vì dân, chống kẻ tàn bạo xâm lược."
+                      ],
+                      [
+                        "Chân lí độc lập",
+                        "Văn hiến, lãnh thổ, phong tục, lịch sử, hào kiệt riêng."
+                      ],
+                      [
+                        "Nghệ thuật",
+                        "Câu văn biền ngẫu, đối xứng; giọng điệu trang trọng, tự hào."
+                      ]
+                    ]
+                  }
+                },
+                "trinhChieu": []
+              }
+            ],
+            "nls": [],
+            "ai": [],
+            "chot": null,
+            "trinhChieu": [],
+            "cauHoi": []
+          },
+          {
+            "ten": "HOẠT ĐỘNG 3. LUYỆN TẬP",
+            "phut": "5",
+            "mucTieu": "Củng cố kiến thức về luận đề chính nghĩa.",
+            "noiDung": "Điền khuyết và trắc nghiệm nhanh trên Lesson 360°.",
+            "sanPham": "Kết quả bài làm của HS.",
+            "slide": "Slide 21–23",
+            "buoc": [
+              [
+                "GV mở câu hỏi điền khuyết và trắc nghiệm."
+              ],
+              [
+                "HS làm bài trên máy."
+              ],
+              [
+                "GV công bố đáp án, phân tích câu sai nhiều."
+              ],
+              [
+                "GV nhận xét, tuyên dương."
+              ]
+            ],
+            "nhiemVu": [],
+            "muc": [],
+            "nls": [],
+            "ai": [],
+            "chot": null,
+            "trinhChieu": [
+              {
+                "tieuDe": "Luyện tập",
+                "blocks": [
+                  {
+                    "kind": "question",
+                    "text": "Hoàn thành câu văn và trả lời nhanh trên máy."
+                  }
+                ]
+              }
+            ],
+            "cauHoi": [
+              {
+                "kind": "fill",
+                "q": "Chọn từ thích hợp điền vào chỗ trống.",
+                "text": "Việc [[nhân nghĩa]] cốt ở [[yên dân]], / Quân điếu phạt trước lo [[trừ bạo]].",
+                "bank": [
+                  "thương dân",
+                  "diệt giặc",
+                  "hoà hiếu"
+                ],
+                "explain": "Câu mở đầu nêu tư tưởng nhân nghĩa: yên dân, trừ bạo."
+              },
+              {
+                "kind": "mcq",
+                "q": "So với Nam quốc sơn hà, Đại cáo bình Ngô bổ sung yếu tố nào?",
+                "options": [
+                  "Văn hiến và phong tục",
+                  "Lãnh thổ riêng biệt",
+                  "Vua nước Nam làm chủ",
+                  "Sách trời định phận"
+                ],
+                "answer": 0,
+                "explain": "Đại cáo bổ sung văn hiến, phong tục, lịch sử, hào kiệt."
+              }
+            ]
+          }
+        ],
+        "veNha": {
+          "tasks": [
+            "Học thuộc phần ghi vở; đọc thuộc đoạn 1 của bài cáo.",
+            "Vẽ sơ đồ (trên giấy hoặc bằng công cụ số) “5 yếu tố khẳng định chủ quyền của Đại Việt”, ghi rõ câu văn làm dẫn chứng."
+          ],
+          "prepare": "Đọc phần 2, 3 của văn bản (bản cáo trạng tội ác giặc Minh và quá trình kháng chiến); gạch chân những hình ảnh, chi tiết gây ấn tượng mạnh nhất."
+        }
+      }
+    ],
+    "phuLuc": [
+      {
+        "ten": "Phụ lục 1. Phiếu học tập số 1 – Luận đề chính nghĩa",
+        "moTa": "Dùng trong Nhiệm vụ 2 (thảo luận cặp đôi, 8 phút).",
+        "items": [],
+        "bang": {
+          "tieuDe": "",
+          "cot": [
+            "Câu hỏi",
+            "Câu trả lời của nhóm"
+          ],
+          "dong": [
+            [
+              "Tư tưởng nhân nghĩa có nội dung gì?",
+              ""
+            ],
+            [
+              "Những yếu tố khẳng định Đại Việt là quốc gia độc lập?",
+              ""
+            ],
+            [
+              "Điểm mới so với Nam quốc sơn hà?",
+              ""
+            ]
+          ]
+        },
+        "dapAn": {
+          "tieuDe": "",
+          "cot": [
+            "Câu hỏi",
+            "Gợi ý"
+          ],
+          "dong": [
+            [
+              "Tư tưởng nhân nghĩa",
+              "Yên dân, trừ bạo"
+            ],
+            [
+              "Yếu tố độc lập",
+              "Văn hiến, lãnh thổ, phong tục, lịch sử, hào kiệt"
+            ],
+            [
+              "Điểm mới",
+              "Bổ sung văn hiến, phong tục, lịch sử, hào kiệt – quan niệm toàn diện"
+            ]
+          ]
+        }
+      }
+    ],
+    "truong": "TH, THCS & THPT FPT Bắc Giang",
+    "to": "Khoa học xã hội",
+    "toTruong": "Nguyễn Ngọc Đức"
+  },
+  "author": "Lesson 360° – bài mẫu"
+}
