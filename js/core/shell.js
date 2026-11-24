@@ -7,8 +7,9 @@
     ["thuvien", "thuvien.html", "Thư viện", "grid"],
     ["studio", "studio.html", "Soạn bài", "spark"],
     ["day", "giaovien.html", "Dạy học", "play"],
+    ["giaoan", "giaoan.html", "Giáo án", "doc"],
     ["ppct", "ppct.html", "Phụ lục 1", "layers"],
-    ["baogiang", "baogiang.html", "Báo giảng", "doc"],
+    ["baogiang", "baogiang.html", "Báo giảng", "clock"],
     ["dulieu", "insight.html", "Dữ liệu", "chart"],
     ["tiendo", "tiendo.html", "Tiến độ", "trophy"]
   ];

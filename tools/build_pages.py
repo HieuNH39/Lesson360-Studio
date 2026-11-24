@@ -18,6 +18,7 @@ PAGES = {
     "insight.html": ("Dữ liệu 360 – Lesson 360°", ["js/core/architect.js"], True, "js/pages/insight.js", ""),
     "ppct.html": ("Phụ lục 1 – Kế hoạch dạy học môn – Lesson 360°", [], False, "js/pages/ppct.js", ""),
     "taikhoan.html": ("Tài khoản & quản trị – Lesson 360°", [], False, "js/pages/account.js", ""),
+    "giaoan.html": ("Soạn giáo án (Phụ lục 4) – Lesson 360°", STUDIO, False, "js/pages/giaoan.js", ""),
     "baogiang.html": ("Báo giảng CSDL – Lesson 360°", ["js/core/baogiang.js"], False, "js/pages/baogiang.js", ""),
     "tiendo.html": ("Tiến độ của tổ – Lesson 360°", [], False, "js/pages/tiendo.js", ""),
 }

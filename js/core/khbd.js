@@ -119,8 +119,11 @@
     if (!c) return null;
     return { slide: str(c.slide), phut: str(c.phut), items: arr(c.items).map(str), bang: table(c.bang) };
   }
+  // "trinhChieu" (trang chiếu cho học sinh) và "cauHoi" (câu hỏi tương tác) dùng để dựng PowerPoint từ giáo án.
+  const slidesOf = (x) => arr(x && x.trinhChieu).filter((pg) => pg && typeof pg === "object");
+  const qsOf = (x) => arr(x && x.cauHoi).filter((q) => q && typeof q === "object");
   function nv(x) {
-    return { ten: str(x.ten), phut: str(x.phut), slide: str(x.slide), buoc: buoc(x.buoc), nls: expr(x.nls), ai: expr(x.ai), chot: chot(x.chot) };
+    return { ten: str(x.ten), phut: str(x.phut), slide: str(x.slide), buoc: buoc(x.buoc), nls: expr(x.nls), ai: expr(x.ai), chot: chot(x.chot), trinhChieu: slidesOf(x), cauHoi: qsOf(x) };
   }
   function hd(x) {
     return {
@@ -132,10 +135,12 @@
       slide: str(x.slide),
       buoc: x.buoc ? buoc(x.buoc) : null,
       nhiemVu: arr(x.nhiemVu).map(nv),
-      muc: arr(x.muc).map((m) => ({ ten: str(m.ten), nhiemVu: arr(m.nhiemVu).map(nv), chot: chot(m.chot) })),
+      muc: arr(x.muc).map((m) => ({ ten: str(m.ten), nhiemVu: arr(m.nhiemVu).map(nv), chot: chot(m.chot), trinhChieu: slidesOf(m) })),
       nls: expr(x.nls),
       ai: expr(x.ai),
-      chot: chot(x.chot)
+      chot: chot(x.chot),
+      trinhChieu: slidesOf(x),
+      cauHoi: qsOf(x)
     };
   }
 
@@ -934,7 +939,13 @@
               noiDung: "…",
               sanPham: "…",
               slide: "Slide 2–3",
-              buoc: [["GV …"], ["HS …"], ["GV mời …"], ["GV nhận xét, dẫn vào bài: …"]]
+              buoc: [["GV …"], ["HS …"], ["GV mời …"], ["GV nhận xét, dẫn vào bài: …"]],
+              ...(o.slides
+                ? {
+                    trinhChieu: [{ tieuDe: "Khởi động", blocks: [{ kind: "image", commons: "File:Tên tệp.jpg", src: "https://upload.wikimedia.org/…", caption: "Tên ảnh ngắn", query: "từ khoá tìm ảnh" }, { kind: "question", text: "Câu hỏi khởi động cho HS" }] }],
+                    cauHoi: [{ kind: "mcq", q: "…", options: ["…", "…", "…", "…"], answer: 0, explain: "…" }]
+                  }
+                : {})
             },
             {
               ten: "HOẠT ĐỘNG 2. HÌNH THÀNH KIẾN THỨC MỚI",
@@ -945,7 +956,19 @@
               muc: [
                 {
                   ten: "2.1. …",
-                  nhiemVu: [{ ten: "Nhiệm vụ 1. …", phut: "8", slide: "Slide 4–6", buoc: [["…"], ["…"], ["…"], ["…"]], nls: [{ ma: `1.1.${lv}a`, nd: "HS …" }], ai: [] }],
+                  nhiemVu: [
+                    Object.assign(
+                      { ten: "Nhiệm vụ 1. …", phut: "8", slide: "Slide 4–6", buoc: [["…"], ["…"], ["…"], ["…"]], nls: [{ ma: `1.1.${lv}a`, nd: "HS …" }], ai: [] },
+                      o.slides
+                        ? {
+                            trinhChieu: [
+                              { tieuDe: "Nhiệm vụ 1", blocks: [{ kind: "text", md: "**Đọc mục 1 SGK trang …, trả lời:**\n- Câu hỏi 1 …\n- Câu hỏi 2 …" }, { kind: "image", commons: "File:….jpg", caption: "Tên ảnh", query: "…" }] },
+                              { tieuDe: "…", blocks: [{ kind: "mindmap", center: "…", branches: [{ label: "…", items: ["…"] }] }] }
+                            ]
+                          }
+                        : {}
+                    )
+                  ],
                   chot: { slide: "Slide 7", phut: "3", bang: { tieuDe: "1. …", cot: [], dong: [["Ý", "Nội dung ghi vở"]] } }
                 }
               ]
@@ -991,10 +1014,172 @@ Trả về DUY NHẤT một khối \`\`\`json … \`\`\` hợp lệ theo khung s
 \`\`\`json
 ${JSON.stringify(ex, null, 1)}
 \`\`\`
-${o.extra ? "\nYÊU CẦU THÊM CỦA GIÁO VIÊN: " + o.extra + "\n" : ""}
-TÀI LIỆU: (tôi đính kèm giáo án cũ/SGK nếu có, hoặc dán nội dung ngay bên dưới)
+${o.slides ? slideRules() : ""}${o.extra ? "\nYÊU CẦU THÊM CỦA GIÁO VIÊN: " + o.extra + "\n" : ""}
+${
+  o.source
+    ? `GIÁO ÁN CÓ SẴN CỦA GIÁO VIÊN – chuyển ĐÚNG nội dung dưới đây sang khung JSON (giữ nguyên các hoạt động, câu hỏi, nội dung ghi bài; chỉ bổ sung phần còn thiếu theo quy tắc, ví dụ năng lực số, năng lực AI, hướng dẫn về nhà, phiếu học tập${o.slides ? ", trang chiếu" : ""}):\n"""\n${o.source}\n"""\n`
+    : "TÀI LIỆU: (tôi đính kèm giáo án cũ/SGK nếu có, hoặc dán nội dung ngay bên dưới)\n"
+}`;
+  }
+  // Quy tắc phần trình chiếu (dựng PowerPoint giảng dạy dùng offline từ chính giáo án).
+  function slideRules() {
+    const A = L360.Architect || {};
+    return `
+TRÌNH CHIẾU (ứng dụng dựng PowerPoint giảng dạy dùng offline khớp giáo án)
+10. Mỗi hoạt động hoặc nhiệm vụ có "trinhChieu": 1–3 trang chiếu dành cho HỌC SINH (không chép lời GV); mỗi trang {"tieuDe":"…","blocks":[…]}. Ngắn gọn: mỗi khối ≤ 4 ý, mỗi ý ≤ 25 chữ; mỗi nội dung chính có ảnh/lược đồ/sơ đồ minh hoạ đúng nội dung; khái quát kiến thức đa dạng (sơ đồ tư duy, dòng thời gian, bảng so sánh, quy trình…). Khối dùng được:
+${A.BLOCKS || "- text, image, cards, timeline, mindmap, compare, keyterms, stats, quote, question"}
+${A.MAPRULES || ""}
+${A.MEDIA || ""}
+11. Câu hỏi tương tác (khởi động, củng cố, luyện tập, trò chơi) ghi trong "cauHoi" của hoạt động/nhiệm vụ đó, theo các dạng:
+${A.QUESTIONS || '- {"kind":"mcq","q":"…","options":["…","…","…","…"],"answer":0,"explain":"…"}'}
+12. KHÔNG cần tạo trang tên bài, tên chủ đề, tên mục, trang ghi vở, nhiệm vụ về nhà, trang kết: ứng dụng tự dựng từ "tenBai", "muc", "chot", "veNha" và tự đánh số slide vào giáo án (trường "slide" có thể để trống).
 `;
   }
+  // Dựng các tiết học (gói bài học) từ giáo án: dùng để xuất PowerPoint offline và dạy tương tác.
+  // o: { subjectId, subject, grade, bai: {key, so, ten}, chude, gaId, ppct: [số tiết PPCT], tuan: [...] }
+  function toPacks(raw, o = {}) {
+    const k = normalize(raw);
+    const md = (t) => String(t || "").trim();
+    const phaseOf = (t) => {
+      const sl = u.slug(t);
+      return /mo-dau|khoi-dong/.test(sl) ? "khoi-dong" : /luyen-tap/.test(sl) ? "luyen-tap" : /van-dung/.test(sl) ? "van-dung" : "hinh-thanh";
+    };
+    const clean = (t) => md(t).replace(/^HOẠT ĐỘNG\s*\d+\s*[.:–-]?\s*/i, "").replace(/^Nhiệm vụ\s*\d+\s*[.:–-]\s*/i, "");
+    const mucSo = (t, j) => (md(t).match(/^(\d+(?:\.\d+)*)/) || [])[1] || String(j + 1);
+    const mucTen = (t) => md(t).replace(/^\d+(?:\.\d+)*\.?\s*/, "").replace(/^[a-zđ]\)\s*/i, "");
+    const tenBai = (o.bai && o.bai.ten) || md(k.tenBai).replace(/^(BÀI|CHỦ ĐỀ|CHUYÊN ĐỀ)\s*[\dIVX.]+\s*[.:–-]?\s*/i, "");
+    const gaId = o.gaId || `ga-${u.slug(tenBai).slice(0, 40)}-${u.uid(4).toLowerCase()}`;
+    const tong = k.tiet.length || 1;
+    const chotPage = (c, title) => {
+      const lines = c.items.length
+        ? c.items
+        : c.bang
+        ? c.bang.dong.filter((r) => r.some(Boolean)).map((r) => (r.length > 1 && r[0] && r[1] ? `${r[0]}: ${r[1]}` : r.filter(Boolean).join(" ")))
+        : [];
+      return lines.length ? { title: "Ghi vào vở", blocks: [{ kind: "note", title: (c.bang && c.bang.tieuDe) || title || "Ghi vào vở", text: lines.map((x) => "- " + x).join("\n") }] } : null;
+    };
+    // Trang chiếu tự dựng khi giáo án chưa có "trinhChieu": nhiệm vụ giao cho học sinh.
+    const autoPage = (x, title) => {
+      const giao = ((x.buoc && x.buoc[0]) || []).map(md).filter(Boolean);
+      if (!giao.length) return null;
+      return { title: title || "Nhiệm vụ", blocks: [{ kind: "text", md: giao.map((g) => "- " + g.replace(/^GV\s+/, "")).join("\n") }] };
+    };
+    const pagesOf = (x, title) => {
+      const tc = arr(x.trinhChieu)
+        .map((pg) => ({ title: md(pg.tieuDe || pg.title), blocks: arr(pg.blocks).filter((b) => b && b.kind) }))
+        .filter((pg) => pg.blocks.length);
+      if (tc.length) return tc;
+      // Hoạt động chỉ gồm câu hỏi (trò chơi, luyện tập) thì trang câu hỏi đã đủ, không thêm trang nhiệm vụ.
+      if (arr(x.cauHoi).length) return [];
+      const a = autoPage(x, title);
+      return a ? [a] : [];
+    };
+    // Liên kết bước ↔ phần giáo án để ghi số slide thật: [mã bước, đối tượng, vị trí trang trong bước].
+    const links = [];
+    const packs = k.tiet.map((ti, i) => {
+      const steps = [];
+      let n = 0;
+      const sid = () => `t${i + 1}s${++n}`;
+      const quiz = (x, phase, title) => {
+        const qs = arr(x.cauHoi);
+        if (!qs.length) return null;
+        const st = { id: sid(), type: "quiz", phase, title: title || "Câu hỏi", minutes: Math.max(2, qs.length), questions: qs };
+        steps.push(st);
+        return st;
+      };
+      ti.hoatDong.forEach((h) => {
+        const phase = phaseOf(h.ten);
+        if (h.muc.length) {
+          h.muc.forEach((m, j) => {
+            const pages = [{ title: "", blocks: [{ kind: "muc", so: mucSo(m.ten, j), ten: mucTen(m.ten) }] }].concat(pagesOf(m, mucTen(m.ten)));
+            const parts = [];
+            m.nhiemVu.forEach((x) => {
+              const from = pages.length;
+              pages.push(...pagesOf(x, clean(x.ten)));
+              parts.push([x, from, Math.max(from, pages.length - 1)]);
+            });
+            const cp = m.chot && chotPage(m.chot, mucTen(m.ten));
+            if (cp) pages.push(cp);
+            const mins = m.nhiemVu.reduce((a, x) => a + (Number(x.phut) || 0), 0) + (Number(m.chot && m.chot.phut) || 0);
+            const st = { id: sid(), type: "slide", phase, title: mucTen(m.ten) || clean(h.ten), minutes: mins || 8, pages };
+            steps.push(st);
+            parts.forEach(([x, a, b]) => links.push({ id: st.id, target: x, off: [a, b] }));
+            if (cp) links.push({ id: st.id, target: m.chot, off: [pages.length - 1, pages.length - 1] });
+            m.nhiemVu.forEach((x) => {
+              const q = quiz(x, phase, "Củng cố – " + clean(x.ten));
+              q && links.push({ id: q.id, target: x, extend: true });
+            });
+          });
+        } else if (h.nhiemVu.length) {
+          h.nhiemVu.forEach((x) => {
+            const pages = pagesOf(x, clean(x.ten));
+            const cp = x.chot && chotPage(x.chot, clean(x.ten));
+            if (cp) pages.push(cp);
+            if (pages.length) {
+              const st = { id: sid(), type: "slide", phase, title: clean(x.ten) || clean(h.ten), minutes: Number(x.phut) || 5, pages };
+              steps.push(st);
+              links.push({ id: st.id, target: x });
+            }
+            const q = quiz(x, phase, clean(x.ten) || clean(h.ten));
+            q && links.push({ id: q.id, target: x, extend: pages.length > 0 });
+          });
+        } else {
+          const pages = pagesOf(h, clean(h.ten));
+          const cp = h.chot && chotPage(h.chot, clean(h.ten));
+          if (cp) pages.push(cp);
+          if (pages.length) {
+            const st = { id: sid(), type: "slide", phase, title: clean(h.ten), minutes: Number(h.phut) || 5, pages };
+            steps.push(st);
+            links.push({ id: st.id, target: h });
+          }
+          const q = quiz(h, phase, clean(h.ten));
+          q && links.push({ id: q.id, target: h, extend: pages.length > 0 });
+        }
+      });
+      const p = L360.Pack.normalize({
+        schema: "l360-pack/2",
+        id: `${gaId}-t${i + 1}`,
+        title: tenBai || k.tenBai,
+        subject: o.subject || k.mon,
+        subjectId: o.subjectId || "",
+        grade: String(o.grade || k.lop || ""),
+        bai: Object.assign({ key: "", so: "", ten: tenBai }, o.bai || {}),
+        tiet: { so: i + 1, tong },
+        duration: 45,
+        objectives: k.mucTieu.kienThuc.slice(0, 5),
+        homework: { tasks: ti.veNha.tasks, prepare: ti.veNha.prepare },
+        steps,
+        meta: { gaId, source: "giaoan", ppct: arr(o.ppct)[i] != null ? String(arr(o.ppct)[i]) : "", tuan: arr(o.tuan).join(", ") }
+      });
+      return p;
+    });
+    // Trang chủ đề (bài đầu chủ đề) và trang tên bài ở tiết 1.
+    const added = packs[0] ? packs[0].steps.map((s) => (s.pages || []).length) : [];
+    if (packs[0]) L360.Pack.addHeadings(packs[0], { chude: o.chude || "" });
+    const shift = {};
+    if (packs[0]) packs[0].steps.forEach((s, j) => (shift[s.id] = (s.pages || []).length - (added[j] || 0)));
+    // Ghi số slide thật của bài giảng vào giáo án.
+    if (L360.Pptx && packs.length) {
+      const pl = L360.Pptx.plan(packs);
+      links.forEach((l) => {
+        const r = pl.range[l.id];
+        if (!r) return;
+        let a = r[0];
+        let b = r[1];
+        if (l.off) {
+          const sh = shift[l.id] || 0;
+          a = Math.min(r[1], r[0] + l.off[0] + sh);
+          b = Math.min(r[1], r[0] + l.off[1] + sh);
+        }
+        const cur = l.extend && l.target.slide && l.target.slide.match(/Slide (\d+)/);
+        if (cur) a = Math.min(a, Number(cur[1]));
+        l.target.slide = a === b ? `Slide ${a}` : `Slide ${a}–${b}`;
+      });
+    }
+    packs.forEach((p) => (p.khbd = k));
+    return { packs, k, gaId };
+  }
+
 
   function validate(raw) {
     const errors = [];
@@ -1019,6 +1204,6 @@ TÀI LIỆU: (tôi đính kèm giáo án cũ/SGK nếu có, hoặc dán nội du
     return { errors, warnings, khbd: k };
   }
 
-  L360.Khbd = { NLS, AI, NLS_LEVEL, LEVEL_NAME, DAC_THU, CHUNG, PHAM_CHAT, BUOC, normalize, build, html, docxBlob, download, pdf, edocName, worksheets, fromPacks, describe, qLine, prompt, validate, parse: (t) => L360.Pack.parse(t) };
+  L360.Khbd = { NLS, AI, NLS_LEVEL, LEVEL_NAME, DAC_THU, CHUNG, PHAM_CHAT, BUOC, normalize, build, html, docxBlob, download, pdf, edocName, worksheets, toPacks, fromPacks, describe, qLine, prompt, validate, parse: (t) => L360.Pack.parse(t) };
   L360.describeStep = describe;
 })();

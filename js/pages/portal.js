@@ -10,6 +10,7 @@
   const ic = (n) => L360.icon(n);
   const pillars = [
     ["spark", "Soạn bài cùng AI", "Chọn bài trong SGK, tích 12–15 hoạt động, trợ lý AI dựng tiết học trực quan. Xuất luôn giáo án Word theo CV 5512 có năng lực số và PowerPoint 20–40 trang.", "studio.html?tab=tao", "Tạo tiết mới"],
+    ["doc", "Giáo án (Phụ lục 4)", "Trợ lý AI soạn giáo án đúng mẫu của tổ theo Phụ lục 1, hoặc chuyển giáo án Word có sẵn; tải ngay Word, PDF và PowerPoint giảng dạy dùng offline.", "giaoan.html", "Soạn giáo án"],
     ["play", "Lớp học 360", "Giáo viên điều khiển; học sinh làm trên laptop/iPad; màn chiếu hiện ảnh, sơ đồ, kết quả cả lớp, đồng hồ có âm thanh, gọi tên ngẫu nhiên, vở ghi tự động.", "giaovien.html", "Mở tiết học"],
     ["grid", "Thư viện trường", "Theo môn → đủ bài SGK từ bài 1 → các tiết thầy cô đã soạn kèm tên người tạo. Mở SGK đúng trang; Lịch sử 6–9 có sẵn video EduHistory.", "thuvien.html", "Vào thư viện"],
     ["chart", "Dữ liệu 360", "Mỗi tiết tự sinh minh chứng: tỉ lệ tham gia, mức hiểu bài, câu học sinh sai nhiều. Tổ trưởng xem cả tổ và ghi phiếu nhận xét tiết dạy.", "insight.html", "Xem dữ liệu"]
@@ -22,18 +23,18 @@
     ["5", "Dạy & lưu minh chứng", "Học sinh tương tác trên máy; số liệu tự lưu cho giáo viên và tổ trưởng"]
   ];
   app.innerHTML =
-    L360.shell.topbar(`${L360.shell.modeBadge()}<a class="btn sm primary" href="${q("studio.html")}">${ic("spark")} Soạn bài</a>`, { nav: "" }) +
+    L360.shell.topbar(`${L360.shell.modeBadge()}<a class="btn sm primary" href="${q("studio.html")}">${ic("spark")} Soạn bài</a><span id="ptAcc"><a class="btn sm ghost" href="${q("taikhoan.html")}">${ic("user")} Đăng nhập</a></span>`, { nav: "" }) +
     `<main class="wrap">
     <section class="pt-hero">
       <div><span class="pill accent">AI Educamp 2027 · Trường học số</span>
         <div class="row nowrap" style="margin-top:16px;gap:16px"><img src="assets/img/logo-l360.svg" alt="" class="pt-logo"><div><h1 class="pt-h1">Lesson 360° <span>Studio</span></h1>
         <p class="pt-sub">Xưởng AI kiến tạo bài học số từ giáo án</p></div></div>
-        <div class="row" style="margin-top:16px"><a class="btn primary lg" href="${q("studio.html?tab=tao")}">${ic("spark")} Tạo tiết học từ SGK</a><a class="btn lg" href="${q("thuvien.html")}">${ic("grid")} Thư viện bài học</a></div></div>
+        <div class="row" style="margin-top:16px"><a class="btn primary lg" href="${q("studio.html?tab=tao")}">${ic("spark")} Tạo tiết học từ SGK</a><a class="btn lg" href="${q("giaoan.html")}">${ic("doc")} Soạn giáo án (PL4)</a></div></div>
       <div class="card pt-join"><div class="row"><span class="pt-ji">${ic("users")}</span><div><h2 style="font-size:1.2rem;margin:0">Học sinh vào lớp</h2><p class="small muted" style="margin:0">Nhập mã phòng trên màn chiếu · laptop hoặc iPad</p></div></div>
         <div class="row nowrap" style="margin-top:12px"><input id="rc" type="text" placeholder="MÃ PHÒNG" autocomplete="off" style="text-transform:uppercase;font-weight:800;letter-spacing:.12em;font-size:1.25rem"><button class="btn primary lg" id="go">Vào</button></div>
         <p class="tiny muted" style="margin:10px 0 0">Không cần tài khoản. Học sinh chỉ nhập tên hiển thị; không thu thập email, số điện thoại.</p></div>
     </section>
-    <section class="grid g4">${pillars
+    <section class="pt-pils">${pillars
       .map(
         ([i, n, d, href, cta]) => `<article class="card pt-pil"><span class="pt-pi">${ic(i)}</span><h3 style="margin:6px 0 0">${n}</h3><p class="small muted" style="margin:0">${d}</p><a class="btn sm" style="margin-top:auto" href="${q(href)}">${cta} ›</a></article>`
       )
@@ -67,5 +68,13 @@
     if (r) location.href = `hocsinh.html?phong=${r}`;
   };
   u.$("#go").onclick = go;
+  // Tài khoản đang đăng nhập: hiện ảnh đại diện và trình đơn tài khoản như các trang khác.
+  L360.Auth.current()
+    .then((t) => {
+      if (!t) return;
+      u.$("#ptAcc").innerHTML = L360.shell.userMenu(t);
+      L360.shell.bindUserMenu(t);
+    })
+    .catch(() => {});
   u.$("#rc").addEventListener("keydown", (e) => e.key === "Enter" && go());
 })();
