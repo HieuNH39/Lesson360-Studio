@@ -13,8 +13,9 @@
   const PH_NAME = { "khoi-dong": "KHỞI ĐỘNG", "hinh-thanh": "HÌNH THÀNH KIẾN THỨC", "luyen-tap": "LUYỆN TẬP", "van-dung": "VẬN DỤNG" };
   const LET = "ABCDEFGH";
   const hex = (c) => String(c || "").replace("#", "").toUpperCase() || "2563EB";
+  // Chữ thuần để vẽ: đối tượng thì lấy tiêu đề/nội dung (không bao giờ in "[object Object]").
   const plain = (s) =>
-    String(s == null ? "" : s)
+    String(s == null ? "" : typeof s === "object" ? (Array.isArray(s) ? s.map((x) => (x && typeof x === "object" ? x.title || x.text || x.label || "" : x)).join(", ") : s.title || s.text || s.label || s.ten || s.term || "") : s)
       .replace(/\*\*([^*]+)\*\*/g, "$1")
       .replace(/(^|\s)\*([^*\s][^*]*)\*/g, "$1$2")
       .replace(/^#+\s*/gm, "")
@@ -115,7 +116,8 @@
         .filter((r) => r.answer)
         .slice(0, 10);
     ["options", "roles"].forEach((f) => f in st && (s[f] = strs(st[f])));
-    ["cards", "items", "pairs", "fields", "resources", "groups"].forEach((f) => f in st && (s[f] = objs(st[f], (t) => ({ title: t, text: t, label: t, left: t, right: "" }))));
+    // Giữ nguyên kiểu từng phần tử (chuỗi vẫn là chuỗi, đối tượng được làm sạch) – mỗi loại hoạt động đọc theo cách riêng.
+    ["cards", "items", "pairs", "fields", "resources", "groups"].forEach((f) => f in st && (s[f] = arr(st[f]).filter((x) => x != null && x !== "").map((x) => (typeof x === "object" && !Array.isArray(x) ? cleanObj(x) : toStr(x)))));
     return s;
   }
   function cleanPack(p) {
@@ -1346,7 +1348,8 @@
         const x = MX + (i % cols) * (cw + 0.2);
         const y = 3.05 + Math.floor(i / cols) * (ch + 0.15);
         box(sl, x, y, cw, ch, { fill: col.soft, line: col.accent, lw: 1 });
-        T(sl, plain(c), { x: x + 0.1, y, w: cw - 0.2, h: ch, fontSize: fit(plain(c), cw - 0.2, ch, 18, 10), align: "center", valign: "middle", bold: true });
+        const ct = plain(typeof c === "object" ? c.title || c.text || c.label || "" : c);
+        T(sl, ct, { x: x + 0.1, y, w: cw - 0.2, h: ch, fontSize: fit(ct, cw - 0.2, ch, 18, 11), align: "center", valign: "middle", bold: true });
       });
       if (s.textPrompt) T(sl, "✎ " + plain(s.textPrompt), { x: MX, y: H - 1.4, w: W - 2 * MX, h: 0.45, fontSize: 15, italic: true, color: col.muted });
       timerBar(sl, d.s.minutes);
