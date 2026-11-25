@@ -22,6 +22,7 @@ PAGES = {
     "baogiang.html": ("Báo giảng CSDL – Lesson 360°", ["js/core/baogiang.js"], False, "js/pages/baogiang.js", ""),
     "tiendo.html": ("Tiến độ của tổ – Lesson 360°", [], False, "js/pages/tiendo.js", ""),
     "lophoc.html": ("Danh sách lớp – Lesson 360°", ["js/core/lophoc.js"], False, "js/pages/lophoc.js", ""),
+    "tronde.html": ("Trộn đề kiểm tra – Lesson 360°", ["js/core/tronde.js"], False, "js/pages/tronde.js", ""),
 }
 # ?v=<mã nội dung>: trình duyệt luôn tải bản mới sau mỗi lần cập nhật, không trộn mã cũ – mới.
 def V(path):
