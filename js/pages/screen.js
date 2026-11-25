@@ -237,7 +237,14 @@
     // Không thu nhỏ quá 72% để chữ (nhất là phần ghi vở) vẫn đọc rõ; nội dung dài hơn nên tách trang.
     if (need > avail) inner.style.zoom = Math.max(0.72, avail / need);
   }
-  const render = u.throttleRaf(() => {
+  // Chỉ thay nội dung khi HTML thật sự khác: giữ nguyên đồng hồ, thanh tiến trình, logo… giữa các lần cập nhật phòng.
+  const put = (el, html) => {
+    if (el && el._h !== html) {
+      el.innerHTML = html;
+      el._h = html;
+    }
+  };
+  const draw = () => {
     const meta = data.meta;
     if (!meta) {
       stage.innerHTML = `<div class="scr-center" style="grid-row:1/4"><h1>Đang chờ phòng ${u.esc(R)}…</h1><p class="muted">Mở màn chiếu từ bảng điều khiển giáo viên (đã đăng nhập).</p></div>`;
@@ -251,8 +258,8 @@
     if (!stage.querySelector(".s-head"))
       stage.innerHTML = `<div class="ds-pat"></div><div class="s-head"></div><div class="s-prog"></div><div class="s-body"><div class="s-main" id="sm"></div><aside class="s-side" id="side"></aside></div>`;
     sounds(st, pm);
-    u.$(".s-head", stage).innerHTML = headHtml(meta, pm, st);
-    u.$(".s-prog", stage).innerHTML = progHtml(pm, st);
+    put(u.$(".s-head", stage), headHtml(meta, pm, st));
+    put(u.$(".s-prog", stage), progHtml(pm, st));
     const mainBox = u.$("#sm", stage);
     if (!u.$("#smi", mainBox)) mainBox.innerHTML = `<div id="smi"></div>`;
     const main = u.$("#smi", mainBox);
@@ -276,12 +283,12 @@
     const pageNote = step && step.type === "slide" && item && item.pages && L360.blocks.hasNote(item.pages[st.page || 0] || {});
     const note = step && (pageNote || (data.pub && data.pub.notes && data.pub.notes[key]));
     if (!side.querySelector("[data-hg]")) side.innerHTML = `${ui.hourglass()}<div id="sideRest" class="side-rest"></div>`;
-    u.$("#sideRest", side).innerHTML = `
+    put(u.$("#sideRest", side), `
       ${step && !step.noSubmit ? `<div><div class="lbl">${step.groupMode ? "Nhóm đã nộp" : "Đã nộp"}</div><div class="big-n">${n}/${denom}</div></div>` : `<div><div class="lbl">Sĩ số</div><div class="big-n">${joined.length}</div></div>`}
       ${step ? `<div><div class="lbl">Trạng thái</div><div style="font-size:22px;font-weight:700">${ui.phaseLabel(st, step)}${step.type === "slide" && step.pages > 1 ? ` · trang ${(st.page || 0) + 1}/${step.pages}` : ""}</div></div>` : ""}
       ${note ? `<span class="ghi-badge">${L360.icon("ghiBai")} Ghi vào vở</span>` : step && step.ghiBai ? `<span class="ghi-badge" style="opacity:.6">${L360.icon("ghiBai")} Có nội dung ghi vở</span>` : ""}
       <div class="side-clock"><div class="lbl">Còn lại của tiết</div><div class="big" data-left>${pm ? pm.steps.reduce((a, x) => a + (Number(x.minutes) || 0), 0) || 45 : 45}:00</div><div class="sub">Đã học <span data-clock>0:00</span> / ${pm ? pm.steps.reduce((a, x) => a + (Number(x.minutes) || 0), 0) || 45 : 45} phút</div></div>
-      <button class="snd-btn" id="sndb" title="Âm thanh">${L360.icon(st.sound === false || !snd.enabled ? "soundOff" : "soundOn")}</button>`;
+      <button class="snd-btn" id="sndb" title="Âm thanh">${L360.icon(st.sound === false || !snd.enabled ? "soundOff" : "soundOn")}</button>`);
     u.$("#sndb", side).onclick = () => {
       snd.unlock();
       snd.setEnabled(!snd.enabled);
@@ -318,6 +325,11 @@
       main.dataset.step = step.id;
     }
     T.screen(main, ctx);
+  };
+  // Dựng xong là điền ngay giờ hiện tại (trước khi trình duyệt vẽ) – không lóe số tạm.
+  const render = u.throttleRaf(() => {
+    draw();
+    L360.ui.tick();
   });
 
   (async function init() {

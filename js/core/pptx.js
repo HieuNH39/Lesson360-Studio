@@ -537,21 +537,23 @@
         sl._an = prev;
       }
     };
-    // Thanh đếm giờ chạy offline: bấm để bắt đầu, thanh rút ngắn dần trong N phút, hết giờ hiện "Hết giờ!".
+    // Đồng hồ hoạt động chạy offline: bấm nút "► Bắt đầu" thì thanh rút ngắn dần trong N phút, hết giờ hiện "Hết giờ!".
+    // Đồng hồ là một chuỗi hiệu ứng riêng gắn với nút (trigger): bấm tiếp để hiện nội dung khác không làm đồng hồ nhảy tới cuối.
     const timerBar = (sl, minutes) => {
-      const m = Number(minutes) || 0;
-      if (!m) return;
+      const m = Math.round(Number(minutes) || 0);
+      if (m < 1) return;
       const y = H - 0.78;
       const x = MX + 2.4;
       const w = W - 2 * MX - 2.4 - 1.5;
-      T(sl, `⏱ ${m} phút`, { x: MX, y: y - 0.1, w: 2.3, h: 0.34, fontSize: 13, bold: true, color: col.accent2, valign: "middle" });
+      const k = 900 + ++sl._trig;
+      anim(sl, k, "button", () =>
+        T(sl, `► Bắt đầu · ${m} phút`, { shape: S.roundRect, rectRadius: 0.2, x: MX, y: y - 0.14, w: 2.25, h: 0.42, fill: { color: col.accent2 }, line: { type: "none" }, color: "FFFFFF", fontSize: 13, bold: true, align: "center", valign: "middle", margin: 0 })
+      );
       sl.addShape(S.roundRect, { x, y, w, h: 0.14, rectRadius: 0.07, fill: { color: col.line }, line: { type: "none" } });
-      const k = click(sl);
       anim(sl, k, "timer", () => sl.addShape(S.roundRect, { x, y, w, h: 0.14, rectRadius: 0.07, fill: { color: col.accent }, line: { type: "none" } }), m * 60000);
-      anim(sl, k, "after", () => {
-        sl.addShape(S.roundRect, { x: W - MX - 1.35, y: y - 0.12, w: 1.35, h: 0.38, rectRadius: 0.19, fill: { color: "D2453B" }, line: { type: "none" } });
-        T(sl, "Hết giờ!", { x: W - MX - 1.35, y: y - 0.12, w: 1.35, h: 0.38, fontSize: 13, bold: true, color: "FFFFFF", align: "center", valign: "middle", margin: 0 });
-      }, m * 60000);
+      // vạch chia từng phút để đọc nhanh số phút còn lại
+      if (m > 1 && m <= 30) for (let i = 1; i < m; i++) sl.addShape(S.rect, { x: x + (w * i) / m - 0.01, y, w: 0.02, h: 0.14, fill: { color: "FFFFFF" }, line: { type: "none" } });
+      anim(sl, k, "after", () => T(sl, "Hết giờ!", { shape: S.roundRect, rectRadius: 0.19, x: W - MX - 1.35, y: y - 0.12, w: 1.35, h: 0.38, fill: { color: "D2453B" }, line: { type: "none" }, fontSize: 13, bold: true, color: "FFFFFF", align: "center", valign: "middle", margin: 0 }), m * 60000);
     };
     const decorate = (sl, strong) => {
       if (decor === "circles") {
@@ -1531,6 +1533,7 @@
       if (opt.only && !opt.only.includes(i)) return;
       const sl = pptx.addSlide();
       sl._click = 0;
+      sl._trig = 0;
       sl._an = null;
       // Gắn tên đánh dấu hiệu ứng vào hình được vẽ khi đang trong anim(…).
       const tag = (o) => (sl._an ? Object.assign({}, o, { objectName: `L360A|${sl._an.k}|${sl._an.fx}|${sl._an.dur}|${++animSeq}` }) : o);
@@ -1553,7 +1556,7 @@
   }
 
   /* ---------- Hiệu ứng PowerPoint: dựng <p:transition> + <p:timing> từ các hình đã đánh dấu ---------- */
-  function timingXml(items) {
+  function timingXml(items, buttons = {}) {
     let id = 2;
     const nid = () => ++id;
     const tgt = (spid) => `<p:tgtEl><p:spTgt spid="${spid}"/></p:tgtEl>`;
@@ -1570,27 +1573,36 @@
       if (it.fx === "wipe") return head(22, "entr", 4) + vis(it.id, "visible") + `<p:animEffect transition="in" filter="wipe(down)"><p:cBhvr><p:cTn id="${nid()}" dur="500"/>${tgt(it.id)}</p:cBhvr></p:animEffect>` + tail;
       return head(10, "entr", 0) + vis(it.id, "visible") + `<p:animEffect transition="in" filter="fade"><p:cBhvr><p:cTn id="${nid()}" dur="500"/>${tgt(it.id)}</p:cBhvr></p:animEffect>` + tail;
     };
-    const groups = {};
-    items.forEach((it) => (groups[it.k] = groups[it.k] || []).push(it));
-    const clicks = Object.keys(groups)
-      .map(Number)
-      .sort((a, b) => a - b)
+    // Một nhóm bấm: các hiệu ứng chạy ngay (bấm/cùng lúc) rồi các hiệu ứng "sau" (chờ hiệu ứng trước xong).
+    const group = (g, start) => {
+      const now = g.filter((x) => x.fx !== "after");
+      const later = g.filter((x) => x.fx === "after");
+      const outer = nid();
+      let inner = "";
+      if (now.length) inner += `<p:par><p:cTn id="${nid()}" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>${now.map((x, i) => effect(x, i ? "withEffect" : "clickEffect")).join("")}</p:childTnLst></p:cTn></p:par>`;
+      if (later.length) {
+        const wait = Math.max(0, ...now.map((x) => (x.fx === "timer" ? Math.max(1000, x.dur || 60000) : 500)));
+        inner += `<p:par><p:cTn id="${nid()}" fill="hold"><p:stCondLst><p:cond delay="${now.length ? wait : 0}"/></p:stCondLst><p:childTnLst>${later.map((x, i) => effect(x, i ? "withEffect" : now.length ? "afterEffect" : "clickEffect")).join("")}</p:childTnLst></p:cTn></p:par>`;
+      }
+      return `<p:par><p:cTn id="${outer}" fill="hold"><p:stCondLst><p:cond delay="${start}"/></p:stCondLst><p:childTnLst>${inner}</p:childTnLst></p:cTn></p:par>`;
+    };
+    const byK = {};
+    items.forEach((it) => (byK[it.k] = byK[it.k] || []).push(it));
+    const keys = Object.keys(byK).map(Number).sort((a, b) => a - b);
+    // nhóm có nút bấm riêng (trigger) chạy thành chuỗi độc lập; còn lại theo thứ tự bấm của trang
+    const trig = keys.filter((k) => buttons[k]);
+    const main = keys.filter((k) => !buttons[k]);
+    const mainXml = main.length
+      ? `<p:seq concurrent="1" nextAc="seek"><p:cTn id="2" dur="indefinite" nodeType="mainSeq"><p:childTnLst>${main.map((k) => group(byK[k], "indefinite")).join("")}</p:childTnLst></p:cTn><p:prevCondLst><p:cond evt="onPrev" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:prevCondLst><p:nextCondLst><p:cond evt="onNext" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:nextCondLst></p:seq>`
+      : "";
+    const trigXml = trig
       .map((k) => {
-        const g = groups[k];
-        const now = g.filter((x) => x.fx !== "after");
-        const later = g.filter((x) => x.fx === "after");
-        const outer = nid();
-        let inner = "";
-        if (now.length) inner += `<p:par><p:cTn id="${nid()}" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>${now.map((x, i) => effect(x, i ? "withEffect" : "clickEffect")).join("")}</p:childTnLst></p:cTn></p:par>`;
-        if (later.length) {
-          const wait = Math.max(0, ...now.map((x) => (x.fx === "timer" ? x.dur : 500)));
-          inner += `<p:par><p:cTn id="${nid()}" fill="hold"><p:stCondLst><p:cond delay="${now.length ? wait : 0}"/></p:stCondLst><p:childTnLst>${later.map((x, i) => effect(x, i ? "withEffect" : now.length ? "afterEffect" : "clickEffect")).join("")}</p:childTnLst></p:cTn></p:par>`;
-        }
-        return `<p:par><p:cTn id="${outer}" fill="hold"><p:stCondLst><p:cond delay="indefinite"/></p:stCondLst><p:childTnLst>${inner}</p:childTnLst></p:cTn></p:par>`;
+        const b = `<p:tgtEl><p:spTgt spid="${buttons[k]}"/></p:tgtEl>`;
+        return `<p:seq concurrent="1" nextAc="seek"><p:cTn id="${nid()}" restart="whenNotActive" fill="hold" evtFilter="cancelBubble" nodeType="interactiveSeq"><p:stCondLst><p:cond evt="onClick" delay="0">${b}</p:cond></p:stCondLst><p:endSync evt="end" delay="0"><p:rtn val="all"/></p:endSync><p:childTnLst>${group(byK[k], "0")}</p:childTnLst></p:cTn><p:nextCondLst><p:cond evt="onClick" delay="0">${b}</p:cond></p:nextCondLst></p:seq>`;
       })
       .join("");
     const bld = items.filter((x) => x.sp).map((x) => `<p:bldP spid="${x.id}" grpId="0" animBg="1"/>`);
-    return `<p:timing><p:tnLst><p:par><p:cTn id="1" dur="indefinite" restart="never" nodeType="tmRoot"><p:childTnLst><p:seq concurrent="1" nextAc="seek"><p:cTn id="2" dur="indefinite" nodeType="mainSeq"><p:childTnLst>${clicks}</p:childTnLst></p:cTn><p:prevCondLst><p:cond evt="onPrev" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:prevCondLst><p:nextCondLst><p:cond evt="onNext" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:nextCondLst></p:seq></p:childTnLst></p:cTn></p:par></p:tnLst>${
+    return `<p:timing><p:tnLst><p:par><p:cTn id="1" dur="indefinite" restart="never" nodeType="tmRoot"><p:childTnLst>${mainXml}${trigXml}</p:childTnLst></p:cTn></p:par></p:tnLst>${
       bld.length ? `<p:bldLst>${bld.join("")}</p:bldLst>` : ""
     }</p:timing>`;
   }
@@ -1604,6 +1616,7 @@
       let nid = 0;
       xml = xml.replace(/<p:cNvPr id="\d+"/g, () => `<p:cNvPr id="${++nid}"`);
       const items = [];
+      const buttons = {};
       xml = xml.replace(/<p:cNvPr id="(\d+)" name="L360A\|(\d+)\|(\w+)\|(\d+)\|(\d+)"/g, (m, id, k, fx, dur, seq, off) => {
         // PowerPoint chỉ ghi bldP cho hình có chữ; hình không có chữ, ảnh, đường nối thì không.
         const before = xml.slice(Math.max(0, off - 400), off);
@@ -1611,11 +1624,15 @@
         const end = xml.indexOf("</p:sp>", off);
         const body = isSp && end > 0 ? xml.slice(off, end) : "";
         const sp = isSp && /<a:t>[^<]*\S[^<]*<\/a:t>/.test(body) && body.indexOf("<p:pic>") < 0;
+        if (fx === "button") {
+          buttons[k] = id;
+          return `<p:cNvPr id="${id}" name="Nút bắt đầu đồng hồ ${k - 900}"`;
+        }
         items.push({ id, k: Number(k), fx, dur: Number(dur), sp });
-        return `<p:cNvPr id="${id}" name="Hiệu ứng ${k}.${seq}"`;
+        return `<p:cNvPr id="${id}" name="${Number(k) >= 900 ? "Đồng hồ " + (k - 900) : "Hiệu ứng " + k}.${seq}"`;
       });
       const tr = `<p:transition spd="med"><p:fade/></p:transition>`;
-      const tm = items.length ? timingXml(items) : "";
+      const tm = items.length ? timingXml(items, buttons) : "";
       total += items.length;
       xml = xml.replace(/<\/p:clrMapOvr>/, `</p:clrMapOvr>${tr}${tm}`);
       zip.file(f, xml);

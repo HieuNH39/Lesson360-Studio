@@ -560,7 +560,7 @@ label.row > input[type=checkbox],label.row > input[type=radio]{flex:none;margin-
 .hg svg{width:120px;height:180px;overflow:visible}
 .hg-glass{fill:rgba(255,255,255,.55);stroke:var(--ink);stroke-width:3;stroke-linejoin:round}
 .hg-cap{fill:var(--accent)}
-.hg-sand{fill:#E8B04A;transition:y .25s linear,height .25s linear}
+.hg-sand{fill:#E8B04A}
 .hg-stream{stroke:#E8B04A;stroke-width:3;stroke-dasharray:4 6;opacity:0}
 .hg.run .hg-stream{opacity:1;animation:hgFlow .6s linear infinite}
 @keyframes hgFlow{to{stroke-dashoffset:-20}}

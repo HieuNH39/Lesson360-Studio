@@ -129,80 +129,101 @@
     return { rem: plan - (L360.store.now() - st.stepAt) / 1000, total: plan, kind: "plan" };
   };
   const fmtSigned = (r) => (r < 0 ? "+" + u.fmtSec(-r) : u.fmtSec(r));
-  setInterval(() => {
+  // Chỉ ghi vào trang khi giá trị thật sự đổi: tránh vẽ lại thừa, chữ số nhảy đúng nhịp từng giây.
+  const setText = (el, v) => el.textContent !== v && (el.textContent = v);
+  const setCls = (el, c, on) => el.classList.contains(c) !== !!on && el.classList.toggle(c, !!on);
+  const setAttr = (el, a, v) => el && el.getAttribute(a) !== v && el.setAttribute(a, v);
+  const setVar = (el, k, v) => el.style.getPropertyValue(k) !== v && el.style.setProperty(k, v);
+  const all = (sel) => document.querySelectorAll(sel);
+  // Cập nhật mọi đồng hồ trên trang. Gọi theo từng khung hình (mượt) và gọi ngay sau khi trang vừa dựng lại
+  // (ui.tick()) để phần mới dựng không lóe số tạm "0:00".
+  ui.tick = () => {
     const st = ui.timerState;
+    const now = L360.store.now();
     const rem = L360.Room ? L360.Room.remaining(st) : null;
-    document.querySelectorAll("[data-timer]").forEach((el) => {
+    all("[data-timer]").forEach((el) => {
       if (rem == null) {
-        el.textContent = st && st.phase === "open" ? "∞" : "–:–";
-        el.classList.remove("low");
+        setText(el, st && st.phase === "open" ? "∞" : "–:–");
+        setCls(el, "low", false);
       } else {
-        el.textContent = u.fmtSec(Math.max(0, rem));
-        el.classList.toggle("low", rem <= 10);
+        setText(el, u.fmtSec(Math.max(0, rem)));
+        setCls(el, "low", rem <= 10);
       }
     });
     const at = ui.activityTime(st);
-    document.querySelectorAll("[data-hg]").forEach((el) => {
+    all("[data-hg]").forEach((el) => {
       const f = at ? Math.max(0, Math.min(1, at.rem / Math.max(1, at.total))) : 1;
-      const set = (sel, a, v) => {
-        const x = el.querySelector(sel);
-        if (x) x.setAttribute(a, v);
-      };
-      set("[data-hgt]", "y", (90 - 76 * f).toFixed(1));
-      set("[data-hgt]", "height", (76 * f).toFixed(1));
-      set("[data-hgb]", "y", (166 - 76 * (1 - f)).toFixed(1));
-      set("[data-hgb]", "height", (76 * (1 - f)).toFixed(1));
-      const running = !!(at && at.rem > 0);
-      el.classList.toggle("run", running);
-      el.classList.toggle("low", !!(at && at.rem > 0 && at.rem <= (at.kind === "open" ? 10 : 30)));
-      el.classList.toggle("over", !!(at && at.rem <= 0));
-      el.classList.toggle("idle", !at);
+      setAttr(el.querySelector("[data-hgt]"), "y", (90 - 76 * f).toFixed(2));
+      setAttr(el.querySelector("[data-hgt]"), "height", (76 * f).toFixed(2));
+      setAttr(el.querySelector("[data-hgb]"), "y", (166 - 76 * (1 - f)).toFixed(2));
+      setAttr(el.querySelector("[data-hgb]"), "height", (76 * (1 - f)).toFixed(2));
+      setCls(el, "run", !!(at && at.rem > 0));
+      setCls(el, "low", !!(at && at.rem > 0 && at.rem <= (at.kind === "open" ? 10 : 30)));
+      setCls(el, "over", !!(at && at.rem <= 0));
+      setCls(el, "idle", !at);
       const n = el.querySelector("[data-hgnum]");
-      if (n) n.textContent = at ? (at.kind === "open" ? u.fmtSec(Math.max(0, at.rem)) : fmtSigned(Math.ceil(at.rem))) : "–:–";
+      if (n) setText(n, at ? (at.kind === "open" ? u.fmtSec(Math.max(0, at.rem)) : fmtSigned(Math.ceil(at.rem))) : "–:–");
       const l = el.querySelector("[data-hglbl]");
-      if (l) l.textContent = !at ? "Chưa tính giờ" : at.kind === "open" ? (at.rem > 0 ? "Thời gian làm bài" : "Hết giờ!") : at.rem > 0 ? "Thời lượng hoạt động" : "Quá giờ dự kiến";
+      if (l) setText(l, !at ? "Chưa tính giờ" : at.kind === "open" ? (at.rem > 0 ? "Thời gian làm bài" : "Hết giờ!") : at.rem > 0 ? "Thời lượng hoạt động" : "Quá giờ dự kiến");
     });
     const s0 = st && st.startedAt;
-    const el0 = s0 ? (L360.store.now() - s0) / 1000 : 0;
-    document.querySelectorAll("[data-clock]").forEach((el) => (el.textContent = u.fmtSec(el0)));
+    const el0 = s0 ? Math.max(0, (now - s0) / 1000) : 0;
+    all("[data-clock]").forEach((el) => setText(el, u.fmtSec(el0)));
     // Dải tiến trình cả tiết: phần đã học tô đậm theo thời gian thực, bước hiện tại tô dần theo số phút dự kiến.
     const pl = ui.timerPlan;
     const total = pl ? pl.steps.reduce((a, s) => a + (Number(s.minutes) || 0) * 60, 0) || 2700 : 2700;
-    document.querySelectorAll("[data-left]").forEach((el) => {
-      if (!s0) return (el.textContent = u.fmtSec(total), el.classList.remove("over"));
+    all("[data-left]").forEach((el) => {
+      if (!s0) {
+        setText(el, u.fmtSec(total));
+        setCls(el, "over", false);
+        setCls(el, "low", false);
+        return;
+      }
       const left = total - el0;
-      el.textContent = left >= 0 ? u.fmtSec(left) : "+" + u.fmtSec(-left);
-      el.classList.toggle("over", left < 0);
-      el.classList.toggle("low", left >= 0 && left <= 300);
+      setText(el, left >= 0 ? u.fmtSec(left) : "+" + u.fmtSec(-left));
+      setCls(el, "over", left < 0);
+      setCls(el, "low", left >= 0 && left <= 300);
     });
-    document.querySelectorAll("[data-ribbon]").forEach((el) => {
+    all("[data-ribbon]").forEach((el) => {
       if (!pl) return;
       const head = el.querySelector(".rb-head");
       if (head) {
-        head.style.left = Math.min(100, (el0 / total) * 100).toFixed(2) + "%";
-        head.hidden = !s0;
+        setVar(head, "left", Math.min(100, (el0 / total) * 100).toFixed(2) + "%");
+        if (head.hidden !== !s0) head.hidden = !s0;
       }
       const pace = el.querySelector("[data-pace]");
       const curSeg = el.querySelector(".rb-seg.cur");
       if (!s0 || !st || st.step < 0) {
-        if (curSeg) curSeg.style.setProperty("--p", "0");
-        if (pace) (pace.textContent = "Chưa bắt đầu"), (pace.className = "rb-pace");
+        if (curSeg) setVar(curSeg, "--p", "0");
+        if (pace) setText(pace, "Chưa bắt đầu"), pace.className !== "rb-pace" && (pace.className = "rb-pace");
         return;
       }
       const before = pl.steps.slice(0, Math.min(st.step, pl.steps.length)).reduce((a, s) => a + (Number(s.minutes) || 0) * 60, 0);
       const cur = st.step < pl.steps.length ? (Number(pl.steps[st.step].minutes) || 0) * 60 : 0;
-      const spent = st.stepAt ? Math.max(0, (L360.store.now() - st.stepAt) / 1000) : 0;
+      const spent = st.stepAt ? Math.max(0, (now - st.stepAt) / 1000) : 0;
       if (curSeg) {
-        curSeg.style.setProperty("--p", cur ? Math.min(1, spent / cur).toFixed(3) : "1");
-        curSeg.classList.toggle("over", !!cur && spent > cur + 30);
+        setVar(curSeg, "--p", cur ? Math.min(1, spent / cur).toFixed(3) : "1");
+        setCls(curSeg, "over", !!cur && spent > cur + 30);
       }
       if (!pace) return;
       const diff = el0 - (before + Math.min(cur, spent));
       const m = Math.round(Math.abs(diff) / 60);
-      pace.textContent = Math.abs(diff) < 60 ? "Đúng tiến độ" : diff > 0 ? `Chậm ${m} phút` : `Nhanh ${m} phút`;
-      pace.className = "rb-pace " + (Math.abs(diff) < 60 ? "ok" : diff > 0 ? "late" : "early");
+      setText(pace, Math.abs(diff) < 60 ? "Đúng tiến độ" : diff > 0 ? `Chậm ${m} phút` : `Nhanh ${m} phút`);
+      const cls = "rb-pace " + (Math.abs(diff) < 60 ? "ok" : diff > 0 ? "late" : "early");
+      if (pace.className !== cls) pace.className = cls;
     });
-  }, 250);
+  };
+  // Chạy theo khung hình của trình duyệt (mượt, tự dừng khi thẻ bị ẩn); khi thẻ ẩn vẫn cập nhật chậm mỗi giây.
+  const loop = () => {
+    try {
+      ui.tick();
+    } catch (e) {
+      console.warn("Đồng hồ", e);
+    }
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+  setInterval(() => document.hidden && ui.tick(), 1000);
 
   // Dải tiến trình tiết học (màn chiếu): mỗi bước một đoạn dài theo số phút, màu theo pha;
   // bước đã xong tô đậm, bước đang dạy tô dần theo thời gian, bước sau để nhạt; kim tròn chỉ thời điểm hiện tại.

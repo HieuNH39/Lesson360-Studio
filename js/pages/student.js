@@ -292,7 +292,7 @@
   const nameOf = (c) => (roster[c] && roster[c].name ? `${roster[c].name} (${c})` : c);
 
   let lastRender = "";
-  const render = u.throttleRaf(() => {
+  const renderNow = () => {
     if (!code || !u.$("#main")) return;
     const g = myGroup();
     u.$("#ttl").textContent = [(pubMeta && pubMeta.label) || "", (meta && meta.title) || ""].filter(Boolean).join(" · ");
@@ -418,6 +418,10 @@
       return;
     }
     T.student.result(main, ctx);
+  };
+  const render = u.throttleRaf(() => {
+    renderNow();
+    ui.tick();
   });
 
   (async function init() {

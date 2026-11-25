@@ -494,7 +494,7 @@
     return c;
   }
 
-  const draw = u.throttleRaf(() => {
+  const drawNow = () => {
     if (!host || !u.$("#ctrl")) return;
     const d = host.data;
     const st = host.state;
@@ -637,6 +637,11 @@
         .map((g) => `<div class="row nowrap">${ui.gbadge(g)}<span class="small">${joined.filter(([, r]) => r.group === g.id).length} học sinh</span></div>`)
         .join("")}</div>`;
     u.$$("[data-seat]").forEach((b) => (b.onclick = () => seatModal(b.dataset.seat)));
+  };
+  // Dựng xong điền ngay giờ hiện tại vào đồng hồ (cùng khung hình) – không lóe "0:00".
+  const draw = u.throttleRaf(() => {
+    drawNow();
+    L360.ui.tick();
   });
 
   function seatModal(code) {
