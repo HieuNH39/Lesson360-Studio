@@ -15,16 +15,15 @@
     }
   })();
   const yearNow = () => (L360.Ppct ? L360.Ppct.yearNow() : "");
-  const D = Object.assign(
-    {
+  const DEFAULTS = () => ({
       so: "SỞ GD&ĐT BẮC NINH",
       truong: (L360.cfg && L360.cfg.school) || "",
-      ky: "KIỂM TRA GIỮA HỌC KÌ I",
-      namHoc: yearNow() ? `NĂM HỌC ${yearNow().replace("-", " – ")}` : "",
+      ky: "Kiểm tra giữa học kì I",
+      namHoc: yearNow() ? `NĂM HỌC ${yearNow().replace("-", " - ")}` : "",
       mon: "",
       thoiGian: 45,
       who: "học sinh",
-      sbd: "Lớp",
+      sbd: "Số báo danh",
       chinhThuc: true,
       count: 4,
       digits: 3,
@@ -42,16 +41,15 @@
       balance: true,
       forceFont: true,
       unifySize: true
-    },
-    saved
-  );
+  });
+  let D = Object.assign(DEFAULTS(), saved);
   const KIND = { mcq: "Trắc nghiệm nhiều phương án lựa chọn", tf: "Trắc nghiệm đúng sai", sa: "Trắc nghiệm trả lời ngắn" };
 
   function render() {
     app.innerHTML =
       L360.shell.topbar(`${L360.shell.modeBadge()}${L360.shell.userMenu(teacher)}`, { sub: "Trộn đề kiểm tra", nav: "tronde" }) +
       `<main class="wrap" style="max-width:1240px">
-      <h1 style="margin-bottom:4px">Trộn đề kiểm tra</h1>
+      <div class="row" style="align-items:flex-end;gap:12px;flex-wrap:wrap"><h1 class="grow" style="margin-bottom:4px">Trộn đề kiểm tra</h1><button class="btn" id="reset" title="Xoá đề gốc và các thông tin vừa nhập để bắt đầu đề mới">↺ Trộn đề mới</button></div>
       <p class="muted" style="margin-top:0">Tải đề gốc (Word) → kiểm tra máy nhận dạng → điền thông tin → nhận một tệp ZIP gồm đề gốc, các mã đề, đáp án TN Maker và đáp án Word. Đề được xử lí ngay trên máy thầy cô, không gửi lên mạng.</p>
       <div class="grid td-grid" style="grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:18px;align-items:start">
         <div>
@@ -75,11 +73,11 @@
           <section class="card"><h2>2. Thông tin đề</h2>
             <div class="grid g2" style="gap:10px">
               ${fld("so", "Sở / Phòng")}${fld("truong", "Trường")}
-              ${fld("ky", "Kì kiểm tra", "VD: KIỂM TRA GIỮA HỌC KÌ I")}${fld("namHoc", "Năm học (dòng phụ)", "VD: NĂM HỌC 2026 – 2027")}
-              ${fld("mon", "Môn", "VD: LỊCH SỬ 12")}
+              ${fld("namHoc", "Năm học", "VD: NĂM HỌC 2026 - 2027")}${fld("mon", "Môn", "VD: Lịch sử")}
+              ${fld("ky", "Kì kiểm tra", "VD: Kiểm tra giữa học kì I · Kì thi KSCL tháng 11")}
               <label class="field">Thời gian làm bài (phút)<input type="number" min="5" max="240" data-k="thoiGian" value="${u.esc(D.thoiGian)}"></label>
-              <label class="field">Người làm bài<select data-k="who"><option value="học sinh" ${D.who === "học sinh" ? "selected" : ""}>Họ, tên học sinh</option><option value="thí sinh" ${D.who === "thí sinh" ? "selected" : ""}>Họ, tên thí sinh</option></select></label>
-              <label class="field">Dòng thứ hai<select data-k="sbd"><option ${D.sbd === "Lớp" ? "selected" : ""}>Lớp</option><option ${D.sbd === "Số báo danh" ? "selected" : ""}>Số báo danh</option></select></label>
+              <label class="field">Ô cạnh “Họ và tên”<select data-k="sbd"><option ${D.sbd === "Số báo danh" ? "selected" : ""}>Số báo danh</option><option ${D.sbd === "Lớp" ? "selected" : ""}>Lớp</option></select></label>
+              <label class="field">Dòng cuối đề<select data-k="who"><option value="học sinh" ${D.who === "học sinh" ? "selected" : ""}>Học sinh không được sử dụng tài liệu</option><option value="thí sinh" ${D.who === "thí sinh" ? "selected" : ""}>Thí sinh không được sử dụng tài liệu</option></select></label>
             </div>
             <div class="row" style="gap:16px;flex-wrap:wrap;margin-top:8px">${chk("chinhThuc", "Ghi “ĐỀ CHÍNH THỨC”")}${chk("soTrang", "Ghi “(Đề thi có … trang)”")}${chk("pageNo", "Chân trang: Trang x/y – Mã đề")}</div>
           </section>
@@ -160,6 +158,17 @@
     });
     modeUi();
     u.$("#go").onclick = go;
+    u.$("#reset").onclick = async () => {
+      if ((ex || u.$("#done").textContent.trim()) && !(await u.confirm("Xoá đề gốc, kết quả nhận dạng và toàn bộ thông tin vừa nhập để trộn đề mới?", "Trộn đề mới"))) return;
+      ex = null;
+      D = DEFAULTS();
+      try {
+        localStorage.removeItem(KEY);
+      } catch (e) {}
+      render();
+      window.scrollTo(0, 0);
+      u.toast("Đã làm mới – chọn đề gốc để bắt đầu.", "ok");
+    };
   }
   function modeUi() {
     u.$("#fStart").style.display = D.codeMode === "seq" ? "" : "none";
@@ -198,7 +207,8 @@
       u.$("#done").innerHTML = `<div class="td-ok"><b>Đã tạo ${res.versions.length - 1} mã đề</b> + đề gốc (mã ${u.esc(res.versions[0].code)}): ${res.versions
         .slice(1)
         .map((v) => u.esc(v.code))
-        .join(", ")}.<br><span class="small">Tệp <b>${u.esc(res.name)}</b> gồm: đề gốc đã trình bày, ${res.versions.length - 1} đề trộn, đáp án TN Maker (.xlsx) và đáp án Word (kèm bảng đối chiếu với đề gốc). Mở đề bằng Word để số trang tự cập nhật.</span></div>`;
+        .join(", ")}.<br><span class="small">Tệp <b>${u.esc(res.name)}</b> gồm: ${res.versions.map((v) => u.esc(v.file)).join(", ")}, đáp án TN Maker (.xlsx) và đáp án Word (kèm bảng đối chiếu với đề gốc). Mở đề bằng Word để số trang tự cập nhật.</span><div style="margin-top:8px"><button class="btn sm" id="reset2">↺ Trộn đề mới</button></div></div>`;
+      u.$("#reset2").onclick = () => u.$("#reset").click();
       u.toast("Đã trộn đề xong.", "ok");
     } catch (e) {
       console.error(e);

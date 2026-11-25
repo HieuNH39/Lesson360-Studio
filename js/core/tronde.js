@@ -174,6 +174,67 @@
     return all ? red / all : 0;
   };
 
+  /* ---------- Đo chữ Times New Roman (độ rộng theo 1/1000 em, đo từ Liberation Serif – cùng số đo) ---------- */
+  const WCH = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~đĐơƠưƯ–—“”‘’…•·−";
+  const WIDTH = { r: new Map(), b: new Map() };
+  [..."250,333,408,500,500,833,778,180,333,333,500,564,250,333,250,278,500,500,500,500,500,500,500,500,500,500,278,278,564,564,564,444,921,722,667,667,722,611,556,722,722,333,389,722,611,889,722,722,556,722,667,556,611,722,722,944,722,722,611,333,278,333,469,500,333,444,500,444,500,444,333,500,500,278,278,500,278,778,500,500,500,500,333,389,278,500,500,722,500,500,444,480,200,480,541,500,722,529,722,542,776,500,1000,444,444,333,333,1000,350,333,564,".split(",")].forEach((w, i) => w && WIDTH.r.set(WCH[i], Number(w)));
+  [..."250,333,555,500,500,1000,833,278,333,333,500,570,250,333,250,278,500,500,500,500,500,500,500,500,500,500,333,333,570,570,570,500,930,722,667,722,722,667,611,778,778,389,500,778,667,944,722,778,611,778,722,556,667,722,722,1000,722,722,667,333,278,333,581,500,333,500,556,444,556,444,333,500,556,278,333,556,278,833,556,500,556,556,444,389,333,556,500,722,500,500,444,394,220,394,520,556,722,554,778,600,796,500,1000,500,500,333,333,1000,350,333,570,".split(",")].forEach((w, i) => w && WIDTH.b.set(WCH[i], Number(w)));
+  const HORN = { o: "ơ", O: "Ơ", u: "ư", U: "Ư" };
+  function chW(ch, bold) {
+    const m = bold ? WIDTH.b : WIDTH.r;
+    let w = m.get(ch);
+    if (w != null) return w;
+    const d = ch.normalize("NFD");
+    const base = d.includes("\u031B") && HORN[d[0]] ? HORN[d[0]] : d[0];
+    w = m.get(base);
+    return w != null ? w : 500;
+  }
+  const isBold = (rPr) => !!(rPr && child(rPr, "b") && !/^(0|false|off)$/i.test(wAttr(child(rPr, "b"), "val")));
+  /* Mô phỏng Word xuống dòng một đoạn căn đều: có dòng nào (trừ dòng cuối) phải giãn khoảng trắng quá mức không?
+     atoms: [{text, bold} | {box: pt} | {br: true}]; avail: bề rộng dòng (pt), first: bề rộng dòng đầu. */
+  function overStretched(atoms, availPt, firstPt, sizePt) {
+    const toks = [];
+    let cur = null;
+    const flush = () => cur && (toks.push(cur), (cur = null));
+    atoms.forEach((a) => {
+      if (a.br) return flush(), toks.push({ br: true });
+      if (a.box != null) return (cur = cur || { w: 0 }), (cur.w += a.box);
+      for (const ch of a.text) {
+        if (ch === " " || ch === "\t" || ch === "\u00a0") flush();
+        else (cur = cur || { w: 0 }), (cur.w += (chW(ch, a.bold) / 1000) * sizePt);
+      }
+    });
+    flush();
+    const sp = 0.25 * sizePt;
+    let line = [],
+      lw = 0,
+      avail = firstPt,
+      bad = false;
+    const close = (isLast) => {
+      if (!isLast && line.length > 1) {
+        const per = (avail - lw) / (line.length - 1);
+        if (per > 0.45 * sizePt) bad = true;
+      }
+      line = [];
+      lw = 0;
+      avail = availPt;
+    };
+    toks.forEach((t) => {
+      if (t.br) return close(false);
+      if (!line.length) return line.push(t), (lw = t.w);
+      if (lw + sp + t.w <= avail) return line.push(t), (lw += sp + t.w);
+      close(false);
+      line.push(t);
+      lw = t.w;
+    });
+    close(true);
+    return bad;
+  }
+  const atomsOf = (pcs, sizePt) =>
+    pcs.map((x) =>
+      x.k === "t" ? { text: x.text, bold: isBold(x.rPr) } : x.k === "tab" ? { text: " " } : x.text === "\n" ? { br: true } : { box: ((x.len || 1) * 6.2 * sizePt) / 12 }
+    );
+
   /* ---------- Nhận dạng đề gốc ---------- */
   const RE_G = /^\s*<\s*(\/)?\s*g\s*(\d*)\s*>\s*$/i;
   const RE_Q = /^\s*Câu\s*(\d+)\s*(\([^)]{0,14}\))?\s*[.:)]?\s*/i;
@@ -476,6 +537,20 @@
         E("rPr", null, fonts(), E("sz", { val: sz }), E("szCs", { val: sz }))
       );
     const P = (pp, runs) => E("p", null, pPr(pp), runs);
+    const sizePt = opt.size || 12;
+    // Tên dài: xuống dòng sao cho địa danh (2–3 chữ cuối) đứng liền ở dòng dưới, VD "TRƯỜNG TH, THCS & THPT FPT / BẮC GIANG".
+    const textW = (t, bold) => [...t].reduce((a, ch) => a + (chW(ch, bold) / 1000) * sizePt, 0);
+    const splitName = (name, colPt) => {
+      if (textW(name, true) <= colPt) return [name];
+      const w = name.split(" ");
+      for (const k of [2, 3, 4]) if (w.length > k && textW(w.slice(0, -k).join(" "), true) <= colPt) return [w.slice(0, -k).join(" "), w.slice(-k).join(" ")];
+      return [name];
+    };
+    const brRuns = (lines, f) => lines.flatMap((t, i) => (i ? [E("r", null, rPr(f), E("br")), run(t, f)] : [run(t, f)]));
+    const TWpt = TW / 20;
+    // "both" nếu căn đều đẹp; "left" nếu có dòng phải giãn chữ quá mức.
+    const jcFit = (labelText, pcs, leftTw, firstTw) =>
+      overStretched([{ text: labelText ? labelText + " " : "", bold: true }].concat(atomsOf(pcs, sizePt)), TWpt - leftTw / 20, TWpt - (leftTw + firstTw) / 20, sizePt) ? "left" : "both";
     // Làm sạch định dạng của các mảnh: bỏ màu đỏ (đáp án), đưa về Times New Roman, cỡ chữ thống nhất.
     const cleanRPr = (rp, inMath) => {
       if (!rp) return;
@@ -533,31 +608,39 @@
       fs.appendChild(run(val, f));
       return fs;
     };
-    const lw = Math.round(TW * 0.42),
+    // Phần đầu đề (theo mẫu của trường): bảng 2 cột không viền, rồi dòng Họ và tên | Số báo danh | Mã đề có gạch đậm phía dưới.
+    const lw = Math.round(TW * 0.47),
       rw = TW - lw;
     const left = [
-      P({ jc: "center" }, run(String(opt.so || "").toUpperCase(), { s: opt.size || 12 })),
-      P({ jc: "center" }, run(String(opt.truong || "").toUpperCase(), { b: true })),
-      opt.chinhThuc ? P({ jc: "center", before: 60 }, run("ĐỀ CHÍNH THỨC", { b: true })) : null,
-      opt.soTrang !== false ? P({ jc: "center" }, [run("(Đề thi có ", { i: true }), fld(' NUMPAGES \\# "00" ', String(ex._pages || 2).padStart(2, "0"), { i: true }), run(" trang)", { i: true })]) : null
+      opt.so ? P({ jc: "center" }, run(String(opt.so).toUpperCase())) : null,
+      P({ jc: "center" }, brRuns(splitName(String(opt.truong || "").toUpperCase(), lw / 20 - 6), { b: true })),
+      P({ jc: "center" }, run("--------------------")),
+      opt.chinhThuc ? P({ jc: "center" }, run("ĐỀ CHÍNH THỨC", { b: true })) : null,
+      opt.soTrang !== false ? P({ jc: "center" }, [run("(Đề thi có ", { i: true }), fld(" NUMPAGES ", String(ex._pages || 2), { i: true }), run(" trang)", { i: true })]) : null
     ].filter(Boolean);
     const right = [
-      P({ jc: "center" }, run(String(opt.ky || "").toUpperCase(), { b: true })),
       opt.namHoc ? P({ jc: "center" }, run(String(opt.namHoc), { b: true })) : null,
-      P({ jc: "center" }, run(`Môn: ${String(opt.mon || "").toUpperCase()}`, { b: true })),
-      P({ jc: "center" }, run(`Thời gian làm bài: ${opt.thoiGian || 45} phút, không kể thời gian phát đề`, { i: true }))
+      P({ jc: "center" }, run(`MÔN: ${String(opt.mon || "").trim()}`, { b: true })),
+      opt.ky ? P({ jc: "center" }, run(String(opt.ky).trim(), { b: true })) : null,
+      P({ jc: "center" }, run(`Thời gian làm bài: ${opt.thoiGian || 45} phút`, { i: true })),
+      P({ jc: "center" }, run("(không kể thời gian phát đề)", { i: true }))
     ].filter(Boolean);
     out.push(table([lw, rw], [E("tr", null, cell(lw, left), cell(rw, right))]));
     out.push(P({ after: 0 }, run("")));
-    const who = opt.who || "thí sinh";
-    const boxW = 2400;
+    const who = opt.who || "học sinh";
+    const w1 = Math.round(TW * 0.6),
+      w3 = Math.round(TW * 0.19),
+      w2 = TW - w1 - w3;
+    const line = () => E("tcBorders", null, E("bottom", { val: "single", sz: 12, space: 0, color: "000000" }));
+    const cellL = (w, paras) => E("tc", null, E("tcPr", null, E("tcW", { w, type: "dxa" }), line(), E("vAlign", { val: "bottom" })), paras);
     out.push(
-      table([TW - boxW, boxW], [
+      table([w1, w2, w3], [
         E(
           "tr",
           null,
-          cell(TW - boxW, [P({ jc: "left", after: 60 }, [run(`Họ, tên ${who}: `, { b: true }), run("..........................................................................")]), P({ jc: "left" }, [run(`${opt.sbd || "Số báo danh"}: `, { b: true }), run("..........................................................................")])]),
-          cell(boxW, [P({ jc: "center" }, run(`Mã đề ${code}`, { b: true }))], true)
+          cellL(w1, [P({ jc: "left", after: 40 }, [run("Họ và tên: "), run("..........................................................................")])]),
+          cellL(w2, [P({ jc: "left", after: 40 }, [run(`${opt.sbd || "Số báo danh"}: `), run("..........")])]),
+          cellL(w3, [P({ jc: "center", after: 40 }, run(`Mã đề ${code}`, { b: true, s: Math.max(13, (opt.size || 12) + 2) }))])
         )
       ])
     );
@@ -578,7 +661,7 @@
         // Thân câu
         q.stem.forEach((s, si) => {
           if (s.tbl) return out.push(cleanTree(s.el.cloneNode(true)));
-          if (si === 0) return out.push(P({ jc: "both", before: 60, keep: true }, [run(label, { b: true }), run(" "), runsOf(s.pcs)]));
+          if (si === 0) return out.push(P({ jc: jcFit(label, s.pcs, 0, 0), before: 60, keep: true }, [run(label, { b: true }), run(" "), runsOf(s.pcs)]));
           if (s.blank) return;
           const j = jcOf(s.el);
           if (isSource(s.pcs)) return out.push(P({ jc: "right", keep: true }, runsOf(trimPcs(s.pcs))));
@@ -601,13 +684,17 @@
               if (j) runs.push(tabRun());
               runs.push(run(`${L[i + j]}.`, { b: true }), run(" "), runsOf(o.pcs));
             });
-            out.push(per === 1 ? P({ jc: "both", left: indent + 340, hanging: 340, keep: i + per < ops.length }, runs) : P({ jc: "left", left: indent, tabs, keep: i + per < ops.length }, runs));
-            line.forEach((o) => o.extra.forEach((x) => out.push(x.tbl ? cleanTree(x.el.cloneNode(true)) : P({ jc: "both", left: indent + 340 }, runsOf(trimPcs(x.pcs))))));
+            out.push(
+              per === 1
+                ? P({ jc: jcFit("", line[0].pcs, indent + 340, 0), left: indent + 340, hanging: 340, keep: i + per < ops.length }, runs)
+                : P({ jc: "left", left: indent, tabs, keep: i + per < ops.length }, runs)
+            );
+            line.forEach((o) => o.extra.forEach((x) => out.push(x.tbl ? cleanTree(x.el.cloneNode(true)) : P({ jc: jcFit("", trimPcs(x.pcs), indent + 340, 0), left: indent + 340 }, runsOf(trimPcs(x.pcs))))));
           }
         } else if (q.kind === "tf") {
           ops.forEach((o, j) => {
-            out.push(P({ jc: "both", first: 284, keep: j < ops.length - 1 }, [run(`${"abcd"[j]})`, { b: true }), run(" "), runsOf(o.pcs)]));
-            o.extra.forEach((x) => out.push(x.tbl ? cleanTree(x.el.cloneNode(true)) : P({ jc: "both", first: 284 }, runsOf(trimPcs(x.pcs)))));
+            out.push(P({ jc: jcFit(`${"abcd"[j]})`, o.pcs, 0, 284), first: 284, keep: j < ops.length - 1 }, [run(`${"abcd"[j]})`, { b: true }), run(" "), runsOf(o.pcs)]));
+            o.extra.forEach((x) => out.push(x.tbl ? cleanTree(x.el.cloneNode(true)) : P({ jc: jcFit("", trimPcs(x.pcs), 0, 284), first: 284 }, runsOf(trimPcs(x.pcs)))));
           });
         }
       });
@@ -711,9 +798,14 @@
     const tr = (cells, head) => `<w:tr>${head ? "<w:trPr><w:tblHeader/><w:cantSplit/></w:trPr>" : "<w:trPr><w:cantSplit/></w:trPr>"}${cells.join("")}</w:tr>`;
     const H = (t) => p(r(t, { b: true, s: 13, color: "1F3864" }), { before: 240, after: 80, keep: true });
     const body = [];
+    const lw = Math.round(TW * 0.47),
+      rw = TW - lw;
+    const nob = `<w:tcBorders><w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="nil"/><w:right w:val="nil"/></w:tcBorders>`;
     body.push(
-      tbl([Math.round(TW * 0.42), TW - Math.round(TW * 0.42)], [
-        `<w:tr><w:tc><w:tcPr><w:tcW w:w="${Math.round(TW * 0.42)}" w:type="dxa"/><w:tcBorders><w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="nil"/><w:right w:val="nil"/></w:tcBorders></w:tcPr>${p(r(String(opt.so || "").toUpperCase()), { jc: "center" })}${p(r(String(opt.truong || "").toUpperCase(), { b: true }), { jc: "center" })}</w:tc><w:tc><w:tcPr><w:tcW w:w="${TW - Math.round(TW * 0.42)}" w:type="dxa"/><w:tcBorders><w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="nil"/><w:right w:val="nil"/></w:tcBorders></w:tcPr>${p(r(String(opt.ky || "").toUpperCase(), { b: true }), { jc: "center" })}${opt.namHoc ? p(r(opt.namHoc, { b: true }), { jc: "center" }) : ""}${p(r(`Môn: ${String(opt.mon || "").toUpperCase()}`, { b: true }), { jc: "center" })}</w:tc></w:tr>`
+      tbl([lw, rw], [
+        `<w:tr><w:tc><w:tcPr><w:tcW w:w="${lw}" w:type="dxa"/>${nob}</w:tcPr>${opt.so ? p(r(String(opt.so).toUpperCase()), { jc: "center" }) : ""}${p(r(String(opt.truong || "").toUpperCase(), { b: true }), { jc: "center" })}${p(r("--------------------"), { jc: "center" })}</w:tc><w:tc><w:tcPr><w:tcW w:w="${rw}" w:type="dxa"/>${nob}</w:tcPr>${
+          opt.namHoc ? p(r(opt.namHoc, { b: true }), { jc: "center" }) : ""
+        }${p(r(`MÔN: ${String(opt.mon || "").trim()}`, { b: true }), { jc: "center" })}${opt.ky ? p(r(String(opt.ky).trim(), { b: true }), { jc: "center" }) : ""}</w:tc></w:tr>`
       ])
     );
     body.push(p(r("ĐÁP ÁN", { b: true, s: 16, color: "1F3864" }), { jc: "center", before: 240 }));
@@ -821,6 +913,26 @@
       .map((w) => (/^[IVX]+$/.test(w) ? w : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()))
       .join("");
 
+  // Tên tệp: giữ tiếng Việt, bỏ kí tự Windows không cho phép.
+  const fileName = (s) =>
+    String(s || "")
+      .normalize("NFC")
+      .replace(/[\\/:*?"<>|\u0000-\u001f]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/^\.+|\.+$/g, "");
+  // Kì kiểm tra viết tắt: GHKI, CHKI, GHKII, CHKII; kì khác giữ nguyên tên.
+  function kyShort(ky) {
+    const t = String(ky || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/gi, "d")
+      .toLowerCase();
+    const m = /(giua|cuoi)\s*(?:hoc\s*k[iy]|hk|k[iy])\s*(ii|2|i|1)\b/.exec(t);
+    if (m) return (m[1] === "giua" ? "GHK" : "CHK") + (m[2] === "ii" || m[2] === "2" ? "II" : "I");
+    return fileName(ky);
+  }
+
   // Ước lượng số trang (giá trị hiển thị tạm, Word/LibreOffice tự cập nhật trường NUMPAGES khi mở).
   function estimatePages(ex) {
     let lines = 12;
@@ -855,25 +967,25 @@
       versions.push({ code, plan: pl });
     });
     versions.forEach((v) => (v.keys = keysOf(ex, v.plan)));
-    const base = [slugName(opt.mon) || "De", slugName(opt.ky)].filter(Boolean).join("_");
+    const mon = fileName(opt.mon) || "De";
     const out = new window.JSZip();
     let i = 0;
     for (const v of versions) {
       onProgress && onProgress(++i, versions.length + 2, v.code);
       const xml = buildVersion(null, ex, v.plan, opt, v.code);
       const bytes = await packVersion(ex, xml, v.code, opt);
-      v.file = v.original ? `00_De_goc_Ma_${v.code}_${base}.docx` : `De_Ma_${v.code}_${base}.docx`;
+      v.file = v.original ? `Degoc_${v.code}_${mon}.docx` : `MĐ${v.code}_${mon}.docx`;
       out.file(v.file, bytes);
       await new Promise((r) => setTimeout(r, 0));
     }
     onProgress && onProgress(versions.length + 1, versions.length + 2, "đáp án");
-    out.file(`Dap_an_TNMaker_${base}.xlsx`, await tnmakerXlsx(ex, versions));
-    out.file(`Dap_an_${base}.docx`, await answerDocx(ex, versions, opt));
+    out.file(`Dapan_TNMaker_${mon}.xlsx`, await tnmakerXlsx(ex, versions));
+    out.file(`Dapan_${mon}.docx`, await answerDocx(ex, versions, opt));
     out.file(`Tep_tai_len/${ex.name}`, ex.buf);
     onProgress && onProgress(versions.length + 2, versions.length + 2, "nén");
     const blob = await out.generateAsync({ type: "blob", compression: "DEFLATE" });
-    return { blob, name: `Tron_de_${base || "De"}_${versions.length - 1}_ma.zip`, versions };
+    return { blob, name: `Tronde_${mon}_${kyShort(opt.ky) || "De"}.zip`, versions };
   }
 
-  L360.TronDe = { load, run, parseXml, _test: { findLabels, isRedHex, plan, keysOf, estimatePages } };
+  L360.TronDe = { load, run, parseXml, kyShort, _test: { findLabels, isRedHex, plan, keysOf, estimatePages, overStretched, kyShort, fileName } };
 })();
