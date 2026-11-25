@@ -94,15 +94,15 @@
       <label class="field">Mã phòng<input id="room" type="text" autocomplete="off" autocapitalize="characters" value="${u.esc(R)}" placeholder="VD: K7Q2M" style="text-transform:uppercase;font-weight:700;letter-spacing:.08em"></label>
       ${
         meta
-          ? `<p style="margin:14px 0 6px;font-weight:650">Mã học sinh của em <span class="muted small">(theo số thứ tự giáo viên đã quy ước)</span></p>
-        <div class="seat-grid" id="codes">${codes
+          ? `<p style="margin:14px 0 6px;font-weight:650">${meta.classId ? `Chọn tên của em <span class="muted small">(mã theo số thứ tự trong danh sách lớp)</span>` : `Mã học sinh của em <span class="muted small">(theo số thứ tự giáo viên đã quy ước)</span>`}</p>
+        <div class="seat-grid ${meta.classId ? "named" : ""}" id="codes">${codes
           .map((c) => {
             const r = roster[c];
             const taken = r && r.uid && r.uid !== (S.auth.user && S.auth.user.uid);
-            return `<button class="seat ${taken ? "" : "in"} ${saved.code === c ? "done" : ""}" data-code="${c}" ${taken ? "disabled title='Đã có bạn dùng'" : ""}>${c}</button>`;
+            return `<button class="seat ${taken ? "" : "in"} ${saved.code === c ? "done" : ""}" data-code="${c}" ${taken ? "disabled title='Đã có bạn dùng'" : ""}>${c}${meta.classId ? `<span class="nm">${u.esc((r && r.name) || "")}</span>` : ""}</button>`;
           })
           .join("")}</div>
-        <label class="field" style="margin-top:14px">Tên gọi <span class="hint">không bắt buộc, tối đa 20 kí tự</span><input id="nm" type="text" maxlength="20" value="${u.esc(saved.name || "")}"></label>
+        ${meta.classId ? "" : `<label class="field" style="margin-top:14px">Tên gọi <span class="hint">không bắt buộc, tối đa 20 kí tự</span><input id="nm" type="text" maxlength="20" value="${u.esc(saved.name || "")}"></label>`}
         ${groups.length ? `<p style="margin:14px 0 6px;font-weight:650">Nhóm</p><div class="chips" id="grp">${groups.map((g) => `<button class="chip ${saved.group === g.id ? "sel" : ""}" data-g="${g.id}" style="border-color:${g.color}">${u.esc(g.name)}</button>`).join("")}</div>` : ""}
         <button class="btn primary lg block" style="margin-top:18px" id="go">Vào lớp</button>`
           : `<button class="btn primary lg block" style="margin-top:14px" id="find">Tiếp tục</button>`
@@ -129,11 +129,11 @@
     );
     if (u.$("#go"))
       u.$("#go").onclick = async () => {
-        if (!pick) return u.toast("Chọn mã học sinh của em.", "bad");
+        if (!pick) return u.toast(meta.classId ? "Chọn tên của em." : "Chọn mã học sinh của em.", "bad");
         if (groups.length && !grp) return u.toast("Chọn nhóm của em.", "bad");
         u.$("#go").disabled = true;
         try {
-          await Room.Student.join(R, pick, u.$("#nm").value.trim(), grp);
+          await Room.Student.join(R, pick, u.$("#nm") ? u.$("#nm").value.trim() : "", grp);
           code = pick;
           startClass();
         } catch (e) {
@@ -173,6 +173,8 @@
       const taken = r && r.uid && r.uid !== uid;
       b.disabled = !!taken;
       b.classList.toggle("in", !taken);
+      const nm = b.querySelector(".nm");
+      if (nm && r && nm.textContent !== (r.name || "")) nm.textContent = r.name || "";
     });
   }
 

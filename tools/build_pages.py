@@ -12,7 +12,7 @@ PAGES = {
     "index.html": ("Lesson 360° Studio – Xưởng AI kiến tạo bài học số từ giáo án", [], True, "js/pages/portal.js", ""),
     "thuvien.html": ("Thư viện bài học – Lesson 360°", [], True, "js/pages/library.js", ""),
     "studio.html": ("Soạn bài – Lesson 360° Studio", STUDIO, True, "js/pages/studio.js", ""),
-    "giaovien.html": ("Dạy học – Lesson 360°", ["js/core/nhanxet.js"], True, "js/pages/host.js", ""),
+    "giaovien.html": ("Dạy học – Lesson 360°", ["js/core/nhanxet.js", "js/core/lophoc.js"], True, "js/pages/host.js", ""),
     "manchieu.html": ("Màn chiếu – Lesson 360°", [], True, "js/pages/screen.js", "screen"),
     "hocsinh.html": ("Vào lớp – Lesson 360°", ["js/core/lock.js"], True, "js/pages/student.js", ""),
     "insight.html": ("Dữ liệu 360 – Lesson 360°", ["js/core/architect.js"], True, "js/pages/insight.js", ""),
@@ -21,6 +21,7 @@ PAGES = {
     "giaoan.html": ("Soạn giáo án (Phụ lục 4) – Lesson 360°", STUDIO, False, "js/pages/giaoan.js", ""),
     "baogiang.html": ("Báo giảng CSDL – Lesson 360°", ["js/core/baogiang.js"], False, "js/pages/baogiang.js", ""),
     "tiendo.html": ("Tiến độ của tổ – Lesson 360°", [], False, "js/pages/tiendo.js", ""),
+    "lophoc.html": ("Danh sách lớp – Lesson 360°", ["js/core/lophoc.js"], False, "js/pages/lophoc.js", ""),
 }
 # ?v=<mã nội dung>: trình duyệt luôn tải bản mới sau mỗi lần cập nhật, không trộn mã cũ – mới.
 def V(path):

@@ -56,6 +56,7 @@
       <div><div class="row" style="margin-bottom:10px">${pm && pm.label ? `<span class="pill accent" style="font-size:18px">${u.esc(pm.label)}</span>` : ""}${pm && pm.subject ? `<span class="pill" style="font-size:18px">${u.esc(pm.subject)}${pm.grade ? " " + u.esc(pm.grade) : ""}</span>` : ""}</div>
       <h1 style="font-size:54px;margin-bottom:8px">${u.esc((pm && pm.title) || meta.title)}</h1><p class="scr-sub">${meta.className ? "Lớp " + u.esc(meta.className) + " · " : ""}Quét mã QR hoặc mở đường dẫn, chọn mã học sinh và nhóm.</p>
       <div class="row" style="margin:24px 0;gap:30px"><div><div class="big-n">${joined.length}/${meta.classSize}</div><div class="muted">học sinh đã vào lớp</div></div></div>
+      ${meta.classId && joined.length ? `<div class="lobby-names">${joined.sort((a, b) => a[0].localeCompare(b[0])).map(([c, r]) => `<span><b>${u.esc(c)}</b> ${u.esc(r.name || "")}</span>`).join("")}</div>` : ""}
       <div class="grid" style="grid-template-columns:repeat(${Math.max(1, groups.length)},1fr);gap:12px">${groups
         .map((g) => `<div class="card center s-card" style="border-top:6px solid ${g.color};padding:14px"><b style="color:${g.color}">${u.esc(g.name)}</b><div class="big-n" style="font-size:44px">${joined.filter(([, r]) => r.group === g.id).length}</div></div>`)
         .join("")}</div></div></div>`;
@@ -284,7 +285,11 @@
     const note = step && (pageNote || (data.pub && data.pub.notes && data.pub.notes[key]));
     if (!side.querySelector("[data-hg]")) side.innerHTML = `${ui.hourglass()}<div id="sideRest" class="side-rest"></div>`;
     put(u.$("#sideRest", side), `
-      ${step && !step.noSubmit ? `<div><div class="lbl">${step.groupMode ? "Nhóm đã nộp" : "Đã nộp"}</div><div class="big-n">${n}/${denom}</div></div>` : `<div><div class="lbl">Sĩ số</div><div class="big-n">${joined.length}</div></div>`}
+      ${step && !step.noSubmit ? `<div><div class="lbl">${step.groupMode ? "Nhóm đã nộp" : "Đã nộp"}</div><div class="big-n">${n}/${denom}</div></div>` : `<div><div class="lbl">Có mặt</div><div class="big-n">${joined.length}/${meta.classSize}</div></div>`}
+      ${(() => {
+        const att = Room.attendance(data);
+        return att.started && att.absent.length ? `<div class="side-att">Vắng <b>${att.absent.length}</b>: ${u.esc(att.absent.slice(0, 6).map((c) => ((data.roster || {})[c] || {}).name || c).join(", "))}${att.absent.length > 6 ? "…" : ""}</div>` : "";
+      })()}
       ${step ? `<div><div class="lbl">Trạng thái</div><div style="font-size:22px;font-weight:700">${ui.phaseLabel(st, step)}${step.type === "slide" && step.pages > 1 ? ` · trang ${(st.page || 0) + 1}/${step.pages}` : ""}</div></div>` : ""}
       ${note ? `<span class="ghi-badge">${L360.icon("ghiBai")} Ghi vào vở</span>` : step && step.ghiBai ? `<span class="ghi-badge" style="opacity:.6">${L360.icon("ghiBai")} Có nội dung ghi vở</span>` : ""}
       <div class="side-clock"><div class="lbl">Còn lại của tiết</div><div class="big" data-left>${pm ? pm.steps.reduce((a, x) => a + (Number(x.minutes) || 0), 0) || 45 : 45}:00</div><div class="sub">Đã học <span data-clock>0:00</span> / ${pm ? pm.steps.reduce((a, x) => a + (Number(x.minutes) || 0), 0) || 45 : 45} phút</div></div>

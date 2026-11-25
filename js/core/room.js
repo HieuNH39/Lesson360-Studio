@@ -12,8 +12,10 @@
     async exists(room) {
       return !!(await S().get(R(room, "meta")));
     },
-    async create({ pack, room, className, classSize, groupCount, teacher, lock }) {
+    async create({ pack, room, className, classSize, groupCount, teacher, lock, lop }) {
       const p = Pack.normalize(pack);
+      // Lớp có danh sách (quản trị viên tải lên): sĩ số, mã S01… và tên hiển thị lấy từ danh sách.
+      const ds = lop && lop.hs && lop.hs.length ? L360.Lop.roster(lop) : null;
       const groups = Pack.groups(p, groupCount);
       const meta = {
         title: p.title,
@@ -23,8 +25,9 @@
         lessonRef: p.lessonRef || "",
         label: Pack.label(p),
         baiKey: (p.bai && p.bai.key) || "",
-        className: className || "",
-        classSize: Math.max(1, Math.min(L360.cfg.maxClassSize || 45, Number(classSize) || L360.cfg.defaultClassSize || 30)),
+        className: ds ? lop.ten : className || "",
+        classSize: ds ? ds.length : Math.max(1, Math.min(L360.cfg.maxClassSize || 45, Number(classSize) || L360.cfg.defaultClassSize || 30)),
+        classId: ds ? `${lop.nam}/${lop.id}` : null,
         groups,
         teacherUid: teacher.uid,
         teacherName: teacher.name || teacher.email || "",
@@ -39,6 +42,7 @@
       await S().set(`priv/${room}`, { pack: p });
       await S().set(R(room, "pub"), { meta: Pack.publicMeta(p) });
       await S().set(R(room, "state"), { step: -1, phase: "observe", q: 0, round: 1, screen: "content", v: 1 });
+      if (ds) await S().update(R(room), Object.fromEntries(ds.map((x) => [`roster/${x.code}`, { name: x.name }])));
       return { pack: p, meta };
     },
     async wipe(room) {
@@ -57,6 +61,16 @@
     },
     joined(room) {
       return u.entries(room && room.roster).filter(([, r]) => r && r.uid);
+    },
+    // Điểm danh: vắng = chưa vào lớp lúc bắt đầu tiết và vẫn chưa vào; muộn = vào sau khi tiết đã bắt đầu.
+    attendance(room) {
+      const meta = (room && room.meta) || {};
+      const ab = meta.absent || {};
+      const roster = (room && room.roster) || {};
+      const started = !!(room && room.state && room.state.startedAt);
+      const absent = started ? Object.keys(ab).filter((c) => !(roster[c] && roster[c].uid)).sort() : [];
+      const late = Object.keys(ab).filter((c) => roster[c] && roster[c].uid).sort();
+      return { started, absent, late, isAbsent: (c) => absent.includes(c), isLate: (c) => late.includes(c) };
     },
     remaining(state) {
       if (!state || state.phase !== "open" || !state.dur || !state.openedAt) return null;
@@ -116,7 +130,14 @@
       const n = this.pack.steps.length;
       i = Math.max(-1, Math.min(n, i));
       const st = { step: i, phase: "observe", q: 0, round: 1, page: 0, screen: "content", openedAt: null, dur: 0, vcmd: null, stepAt: S().TS };
-      if (i >= 0 && !this.state.startedAt) st.startedAt = S().TS;
+      const first = i >= 0 && !this.state.startedAt;
+      if (first) st.startedAt = S().TS;
+      // Bắt đầu tiết: học sinh chưa vào lớp được ghi là vắng (vào sau thì thành "muộn").
+      if (first) {
+        const roster = this.data.roster || {};
+        const ab = Object.fromEntries(Room.codes(this.meta.classSize).filter((c) => !(roster[c] && roster[c].uid)).map((c) => [c, true]));
+        await S().set(R(this.room, "meta/absent"), Object.keys(ab).length ? ab : null);
+      }
       await this.patchState(st);
       // Hết tiết: công bố nhiệm vụ về nhà – chuẩn bị bài sau cho màn chiếu và học sinh.
       if (i >= n) await S().set(R(this.room, "pub/homework"), Pack.homework(this.pack));
@@ -309,6 +330,8 @@
         if (pres && Date.now() - (pres.t || 0) < 20000) throw new Error(`Mã ${code} đang được dùng trên thiết bị khác. Hãy báo giáo viên.`);
       }
       const grp = cur && cur.group && !group ? cur.group : group;
+      // Lớp có danh sách: tên do hệ thống đặt sẵn, học sinh không tự đặt tên.
+      if (meta.classId) name = (cur && cur.name) || "";
       // Ghi danh trước, rồi mới ghi ánh xạ uid → mã (luật bảo mật kiểm tra theo thứ tự này).
       await S().set(R(room, `roster/${code}`), {
         uid: user.uid,
@@ -459,7 +482,10 @@
         endedAt: Date.now(),
         day: u.isoDay(startedAt),
         classSize: meta.classSize || null,
+        classId: meta.classId || null,
         joined: st.joined,
+        absent: Room.attendance(data).absent.map((c) => ({ code: c, name: ((data.roster || {})[c] || {}).name || "" })),
+        late: Room.attendance(data).late.map((c) => ({ code: c, name: ((data.roster || {})[c] || {}).name || "" })),
         steps: pack.steps.length,
         interactive: opened.length,
         participation: opened.length ? Math.round(u.avg(opened.map((r) => r.rate || 0))) : null,

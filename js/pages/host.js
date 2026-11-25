@@ -50,6 +50,19 @@
     const C = L360.Curr;
     const nam = await PP.activeYear().catch(() => PP.yearNow());
     const ppIndex = await PP.list(nam).catch(() => []);
+    // Danh sách lớp của năm học (quản trị viên tải lên): chọn lớp là có sẵn sĩ số, mã và tên học sinh.
+    const lops = L360.Lop ? await L360.Lop.list(nam).catch(() => []) : [];
+    const lastLop = localStorage.getItem("l360:lastLop") || "";
+    const manualFields = `<label class="field">Lớp<input id="cls" type="text" placeholder="VD: 10A2" value="${u.esc(localStorage.getItem("l360:lastClass") || "")}"></label>
+        <label class="field" style="margin-top:10px">Sĩ số<input id="size" type="number" min="1" max="${L360.cfg.maxClassSize}" value="${localStorage.getItem("l360:lastSize") || L360.cfg.defaultClassSize}"></label>`;
+    const lopPicker = lops.length
+      ? `<label class="field">Lớp<span class="hint">Danh sách lớp năm học ${u.esc(PP.yearLabel(nam))} do quản trị viên cập nhật</span><select id="lopSel"><option value="">— Chọn lớp —</option>${L360.Lop.byKhoi(lops)
+          .map((g) => `<optgroup label="${g.khoi ? "Khối " + g.khoi : "Khác"}">${g.lop.map((c) => `<option value="${u.esc(c.id)}" ${c.id === lastLop ? "selected" : ""}>${u.esc(c.ten)} · ${c.hs.length} học sinh</option>`).join("")}</optgroup>`)
+          .join("")}<option value="__tay" ${lastLop === "__tay" ? "selected" : ""}>Lớp chưa có danh sách – nhập tay</option></select></label>
+        <div id="clsInfo" class="cls-info" hidden></div><div id="manual" hidden style="margin-top:10px">${manualFields}</div>`
+      : `${manualFields}<p class="tiny muted" style="margin:6px 0 0">${
+          teacher.isAdmin ? `Chưa có danh sách lớp năm học ${u.esc(PP.yearLabel(nam))}. <a href="lophoc.html${L360.isLocal && /che-do=dien-tap/.test(location.search) ? "?che-do=dien-tap&dev=1" : ""}">Tải danh sách lớp lên</a> để giáo viên chỉ cần chọn lớp.` : `Quản trị viên chưa tải danh sách lớp năm học ${u.esc(PP.yearLabel(nam))} – tạm nhập lớp và sĩ số.`
+        }</p>`;
     app.innerHTML =
       L360.shell.topbar(`${L360.shell.modeBadge()}${L360.shell.userMenu(teacher)}`, { sub: "Dạy học trực tiếp", nav: "day" }) +
       `<main class="wrap" style="max-width:1400px"><h1>Mở tiết học</h1><div class="grid host-setup" style="grid-template-columns:minmax(0,2.1fr) minmax(300px,.9fr);gap:20px;align-items:start">
@@ -57,11 +70,8 @@
         <p class="small muted" style="margin:0">Chọn <b>Môn → Bài → Tiết</b> theo Phụ lục 1 của tổ. Gồm bài của tôi, bài mẫu và bài chọn từ <a href="thuvien.html">Thư viện trường</a>.</p>
         <div id="sug"></div><div id="plist"></div></section>
       <section class="card"><h2>2. Thông tin lớp</h2>
-        <label class="field">Lớp<input id="cls" type="text" placeholder="VD: 10A2" value="${u.esc(localStorage.getItem("l360:lastClass") || "")}"></label>
-        <div class="grid g2" style="margin-top:10px"><label class="field">Sĩ số<input id="size" type="number" min="1" max="${L360.cfg.maxClassSize}" value="${
-        localStorage.getItem("l360:lastSize") || L360.cfg.defaultClassSize
-      }"></label>
-        <label class="field">Số nhóm<select id="gc">${[2, 3, 4, 5, 6].map((n) => `<option ${n === (Number(localStorage.getItem("l360:lastGroups")) || L360.cfg.defaultGroupCount) ? "selected" : ""}>${n}</option>`).join("")}</select></label></div>
+        ${lopPicker}
+        <div style="margin-top:10px"><label class="field">Số nhóm<select id="gc">${[2, 3, 4, 5, 6].map((n) => `<option ${n === (Number(localStorage.getItem("l360:lastGroups")) || L360.cfg.defaultGroupCount) ? "selected" : ""}>${n}</option>`).join("")}</select></label></div>
         <label class="field" style="margin-top:10px">Mã phòng<span class="hint">Học sinh nhập mã này hoặc quét QR. Để trống để tạo ngẫu nhiên.</span><input id="rc" type="text" maxlength="12" style="text-transform:uppercase;letter-spacing:.08em;font-weight:700" placeholder="Tự động"></label>
         <label class="row small" style="margin-top:10px"><input type="checkbox" id="lock" ${localStorage.getItem("l360:lock") === "0" ? "" : "checked"}> Chế độ tự học: máy học sinh mở toàn màn hình, chặn sao chép – dán, báo khi rời bài</label>
         <label class="row small" style="margin-top:6px"><input type="checkbox" id="wipe"> Xoá dữ liệu cũ nếu mã phòng đã dùng (chỉ với phòng của tôi)</label>
@@ -215,11 +225,33 @@
         }</div>`;
       bindRadios(drawList);
     };
+    // Lớp đang chọn: từ danh sách (lop) hoặc nhập tay.
+    const curLop = () => {
+      const v = u.$("#lopSel") ? u.$("#lopSel").value : "__tay";
+      return v && v !== "__tay" ? lops.find((c) => c.id === v) || null : null;
+    };
+    const curClassName = () => {
+      const l = curLop();
+      if (l) return l.ten;
+      return u.$("#cls") && (!u.$("#lopSel") || u.$("#lopSel").value === "__tay") ? (u.$("#cls").value || "").trim() : "";
+    };
+    const showLop = () => {
+      if (!u.$("#lopSel")) return;
+      const v = u.$("#lopSel").value;
+      const l = curLop();
+      u.$("#manual").hidden = v !== "__tay";
+      const info = u.$("#clsInfo");
+      info.hidden = !l;
+      if (l) {
+        const sn = L360.Lop.shortNames(l.hs);
+        info.innerHTML = `<b>Lớp ${u.esc(l.ten)}</b> · Khối ${l.khoi || "?"} · Sĩ số <b>${l.hs.length}</b> · mã S01–${L360.Lop.code(l.hs.length - 1)}<div class="tiny muted" style="margin-top:4px">Học sinh vào lớp bằng tên: ${u.esc(sn.slice(0, 5).map((n, i) => L360.Lop.code(i) + " " + n).join(", "))}${l.hs.length > 5 ? "…" : ""}. Em nào chưa vào khi bắt đầu tiết sẽ được ghi vắng.</div>`;
+      }
+    };
     // Gợi ý tiết dạy tiếp theo của lớp (theo tiết gần nhất đã dạy lớp đó).
     async function suggest() {
       const box = u.$("#sug");
-      if (!box || !u.$("#cls")) return;
-      const cls = (u.$("#cls").value || "").trim().toUpperCase();
+      if (!box) return;
+      const cls = curClassName().toUpperCase();
       box.innerHTML = "";
       if (!cls) return;
       const last = recent.list().find((r) => (r.className || "").toUpperCase() === cls && r.ppct);
@@ -251,7 +283,9 @@
     }
     drawCols();
     u.$("#q").oninput = drawList;
-    u.$("#cls").addEventListener("input", u.debounce(suggest, 300));
+    if (u.$("#cls")) u.$("#cls").addEventListener("input", u.debounce(suggest, 300));
+    if (u.$("#lopSel")) u.$("#lopSel").addEventListener("change", () => (showLop(), suggest()));
+    showLop();
     suggest();
     L360.shell.bindUserMenu(teacher);
     u.$$("[data-drop]").forEach((b) => (b.onclick = () => (recent.drop(b.dataset.drop), setupView())));
@@ -263,11 +297,14 @@
       const v = Pack.validate(pack);
       if (v.errors.length) return u.toast("Bài học còn lỗi – mở trong Studio để sửa.", "bad");
       let room = (u.$("#rc").value || "").toUpperCase().replace(/[^A-Z0-9]/g, "") || u.roomCode();
-      const cls = u.$("#cls").value.trim();
-      const size = Number(u.$("#size").value) || 30;
+      const lop = curLop();
+      if (u.$("#lopSel") && !u.$("#lopSel").value) return u.toast("Chọn lớp sẽ dạy.", "bad");
+      const cls = lop ? lop.ten : (u.$("#cls").value || "").trim();
+      if (!cls) return u.toast("Nhập tên lớp.", "bad");
+      const size = lop ? lop.hs.length : Number(u.$("#size").value) || 30;
       const gc = Number(u.$("#gc").value) || 4;
-      localStorage.setItem("l360:lastClass", cls);
-      localStorage.setItem("l360:lastSize", size);
+      if (u.$("#lopSel")) localStorage.setItem("l360:lastLop", u.$("#lopSel").value);
+      if (!lop) localStorage.setItem("l360:lastClass", cls), localStorage.setItem("l360:lastSize", size);
       localStorage.setItem("l360:lastGroups", gc);
       try {
         const old = await S.get(`rooms/${room}/meta`).catch(() => null);
@@ -281,7 +318,7 @@
         }
         const lockOn = !!(u.$("#lock") && u.$("#lock").checked);
         localStorage.setItem("l360:lock", lockOn ? "1" : "0");
-        await Room.create({ pack, room, className: cls, classSize: size, groupCount: gc, teacher, lock: lockOn });
+        await Room.create({ pack, room, className: cls, classSize: size, groupCount: gc, teacher, lock: lockOn, lop: lop ? { nam, id: lop.id, ten: lop.ten, hs: lop.hs } : null });
         recent.add({ room, title: pack.title, className: cls, at: Date.now(), packId: pack.id, mon: pack.subjectId, lop: Number(pack.grade), thu: Number(pack.tiet && pack.tiet.so) || 1, ppct: pack.ppct ? { doc: pack.ppct.doc, bai: pack.ppct.bai, so: pack.ppct.so } : null });
         history.replaceState(null, "", `?phong=${room}${L360.isLocal && /che-do=dien-tap/.test(location.search) ? "&che-do=dien-tap" : ""}`);
         liveView(room, pack);
@@ -386,14 +423,21 @@
     const uid = (L360.Auth.teacher || {}).uid || "";
     const ms = NX.metrics(host.pack, host.data);
     if (!ms.length) return u.toast("Chưa có học sinh nào vào lớp để nhận xét.", "bad");
-    let names = await NX.roster(cls, uid);
+    // Lớp có danh sách: họ tên lấy từ danh sách lớp của quản trị viên; lớp nhập tay: danh sách thầy cô tự dán.
+    const fromList = host.meta.classId && L360.Lop ? await L360.Lop.get(...host.meta.classId.split("/")).catch(() => null) : null;
+    let names = fromList ? fromList.hs : await NX.roster(cls, uid);
+    const ab = Room.attendance(host.data).absent;
     let chosen = NX.choose(ms, host.meta.classSize, await NX.history(cls, uid));
     const text = {};
     chosen.forEach((m) => (text[m.code] = NX.comment(m, host.room)));
     const lvName = { tot: "Tích cực", kha: "Khá", nhac: "Cần cố gắng", roi: "Rời bài" };
     const md = u.modal(`<h2>Nhận xét học sinh sau tiết</h2><p class="small muted" style="margin-top:-4px">Lớp ${u.esc(cls)} · ${u.esc(host.pack.title)}. Hệ thống chọn ${Math.ceil(0.3 * (host.meta.classSize || ms.length))} em (≈30% sĩ số), ưu tiên em chưa được nhận xét ở các tiết gần đây; nhận xét dựa trên số liệu thật của tiết (tham gia, trả lời đúng, rời bài). Thầy cô sửa trực tiếp trước khi tải.</p>
-      <details class="card flat" style="margin:8px 0"><summary class="small"><b>Danh sách lớp ${u.esc(cls)}</b> ${names.length ? `(${names.length} em – đã lưu)` : "(chưa có – dán để hiện họ tên thay cho mã số)"}</summary>
-        <p class="tiny muted" style="margin:6px 0">Dán họ tên theo đúng số thứ tự (mã học sinh 01 là dòng 1…), mỗi dòng một em. Lưu theo tài khoản của thầy cô (chỉ thầy cô xem được), dùng được trên mọi máy.</p><textarea id="dsl" rows="5" placeholder="Nguyễn Văn An&#10;Trần Thị Bình&#10;…">${u.esc(names.join("\n"))}</textarea><button class="btn sm" id="dslSave" style="margin-top:6px">Lưu danh sách</button></details>
+      ${
+        fromList
+          ? `<p class="tiny muted" style="margin:6px 0">Họ tên theo danh sách lớp ${u.esc(cls)} (quản trị viên cập nhật).${ab.length ? ` Vắng ${ab.length} em: ${u.esc(ab.map((c) => NX.nameOf(c, names, {})).join(", "))} – không nhận xét.` : ""}</p>`
+          : `<details class="card flat" style="margin:8px 0"><summary class="small"><b>Danh sách lớp ${u.esc(cls)}</b> ${names.length ? `(${names.length} em – đã lưu)` : "(chưa có – dán để hiện họ tên thay cho mã số)"}</summary>
+        <p class="tiny muted" style="margin:6px 0">Dán họ tên theo đúng số thứ tự (mã học sinh 01 là dòng 1…), mỗi dòng một em. Lưu theo tài khoản của thầy cô (chỉ thầy cô xem được), dùng được trên mọi máy.</p><textarea id="dsl" rows="5" placeholder="Nguyễn Văn An&#10;Trần Thị Bình&#10;…">${u.esc(names.join("\n"))}</textarea><button class="btn sm" id="dslSave" style="margin-top:6px">Lưu danh sách</button></details>`
+      }
       <div id="nxList" class="nx-list"></div>
       <div class="row" style="margin-top:12px;gap:8px"><button class="btn ghost" id="nxAll">Chọn thêm / bớt học sinh</button><span class="spacer"></span><button class="btn" data-close>Đóng</button><button class="btn primary" id="nxDl">⬇ Tải Excel nhận xét</button></div>`);
     let showAll = false;
@@ -427,7 +471,7 @@
     };
     draw();
     u.$("#nxAll", md.el).onclick = () => ((showAll = !showAll), (u.$("#nxAll", md.el).textContent = showAll ? "Chỉ hiện học sinh đã chọn" : "Chọn thêm / bớt học sinh"), draw());
-    u.$("#dslSave", md.el).onclick = () => {
+    if (u.$("#dslSave", md.el)) u.$("#dslSave", md.el).onclick = () => {
       names = u.$("#dsl", md.el).value.split(/\r?\n/).map((x) => x.replace(/^\s*\d+[.)\s-]*/, "").trim()).filter((x, i, a) => x || i < a.length - 1);
       NX.saveRoster(cls, names, uid);
       u.toast(`Đã lưu danh sách ${names.filter(Boolean).length} học sinh lớp ${cls} vào tài khoản của thầy cô.`, "ok");
@@ -457,7 +501,7 @@
       <h1 style="margin-top:14px">Báo cáo tổng kết tiết học</h1>
       <p><b>${u.esc(host.pack.title)}</b><br>${u.esc([host.pack.subject, host.pack.grade && "lớp " + host.pack.grade].filter(Boolean).join(" · "))} · Lớp ${u.esc(host.meta.className || "")} · Phòng ${u.esc(
       host.room
-    )} · ${u.fmtDateTime(s.startedAt)} · GV ${u.esc(host.meta.teacherName || "")}</p>
+    )} · ${u.fmtDateTime(s.startedAt)} · GV ${u.esc(host.meta.teacherName || "")}</p>${s.absent && s.absent.length ? `<p><b>Vắng (${s.absent.length}):</b> ${u.esc(s.absent.map((x) => `${x.code} ${x.name}`.trim()).join(", "))}</p>` : ""}${s.late && s.late.length ? `<p><b>Vào muộn (${s.late.length}):</b> ${u.esc(s.late.map((x) => `${x.code} ${x.name}`.trim()).join(", "))}</p>` : ""}
       <div class="grid g4" style="margin:16px 0"><div class="card center"><h2>${s.joined}/${host.meta.classSize}</h2><span class="small">học sinh tham gia</span></div>
       <div class="card center"><h2>${s.participation == null ? "–" : s.participation + "%"}</h2><span class="small">tỉ lệ nộp bài TB</span></div>
       <div class="card center"><h2>${s.correctRate == null ? "–" : s.correctRate + "%"}</h2><span class="small">trả lời đúng</span></div>
@@ -534,7 +578,11 @@
     if (st.step < 0) {
       ctrl.innerHTML = `<div class="grid" style="grid-template-columns:260px 1fr;gap:20px;align-items:center"><div style="background:#fff;border-radius:14px;padding:6px">${u.qr(studentUrl(host.room), 5)}</div>
         <div><span class="pill">Phòng chờ</span><h2 style="margin-top:8px">${u.esc(host.pack.title)}</h2><p>Học sinh quét QR hoặc mở <b>${u.esc(studentUrl(host.room))}</b>, chọn mã và nhóm.</p>
-        <p class="big" style="font-size:1.4rem"><b>${joined.length}</b>/${meta.classSize} đã vào lớp</p>
+        <p class="big" style="font-size:1.4rem"><b>${joined.length}</b>/${meta.classSize} đã vào lớp</p>${(() => {
+          if (!meta.classId) return "";
+          const miss = Room.codes(meta.classSize).filter((c) => !(d.roster && d.roster[c] && d.roster[c].uid));
+          return miss.length ? `<p class="small muted" style="margin:-4px 0 8px">Chưa vào (${miss.length}): ${u.esc(miss.slice(0, 14).map((c) => `${c} ${((d.roster || {})[c] || {}).name || ""}`).join(", "))}${miss.length > 14 ? "…" : ""}. Bấm “Bắt đầu tiết học” thì các em chưa vào được ghi vắng.</p>` : `<p class="small" style="margin:-4px 0 8px;color:var(--ok)">Đủ sĩ số ✓</p>`;
+        })()}
         <div class="row"><button class="btn primary lg" id="start">Bắt đầu tiết học ›</button><a class="btn" href="${screenUrl(host.room)}" target="l360screen">Mở màn chiếu</a></div></div></div>`;
       u.$("#start").onclick = () => host.goto(0);
     } else if (!step) {
@@ -618,10 +666,13 @@
     const nDone = step && !host.type.noSubmit ? (gm ? Object.keys(gsubs).length : Object.keys(subs).length) : null;
     const focus = d.focus || {};
     const awayN = Object.values(focus).filter((f) => f && f.away).length;
+    const att = Room.attendance(d);
     u.$("#seats").innerHTML = `<div class="row"><h3 class="grow" style="margin:0">Lưới lớp học</h3><span class="pill">${joined.length}/${meta.classSize} vào lớp</span>${
+      att.absent.length ? `<span class="pill bad" title="Chưa vào lớp khi bắt đầu tiết">Vắng ${att.absent.length}</span>` : ""
+    }${att.late.length ? `<span class="pill warn" title="Vào lớp sau khi tiết đã bắt đầu">Muộn ${att.late.length}</span>` : ""}${
       nDone != null ? `<span class="pill ok">${nDone} ${gm ? "nhóm" : "HS"} đã nộp</span>` : ""
     }${awayN ? `<span class="pill bad" title="Học sinh đang rời khỏi trang học (chuyển tab/thoát toàn màn hình)">🔒 ${awayN} em rời bài</span>` : ""}</div>
-      <div class="seat-grid" style="margin-top:10px">${codes
+      <div class="seat-grid ${meta.classId ? "named" : ""}" style="margin-top:10px">${codes
         .map((c) => {
           const r = d.roster && d.roster[c];
           const on = r && r.uid;
@@ -629,7 +680,8 @@
           const done = on && (gm ? gsubs[r.group] : subs[c]);
           const off = on && !Room.online(d, c);
           const fo = focus[c];
-          return `<button class="seat ${on ? "in" : ""} ${done ? "done" : ""} ${off ? "off" : ""} ${fo && fo.away ? "away" : ""}" data-seat="${c}" style="${g ? `border-color:${g.color}` : ""}" title="${fo && fo.out ? `Rời bài ${fo.out} lần` : ""}">${c}<span class="nm">${u.esc((r && r.name) || "")}</span>${fo && fo.out ? `<span class="out-n">${fo.out}</span>` : ""}</button>`;
+          const abs = att.isAbsent(c);
+          return `<button class="seat ${on ? "in" : ""} ${done ? "done" : ""} ${off ? "off" : ""} ${fo && fo.away ? "away" : ""} ${abs ? "abs" : ""}" data-seat="${c}" style="${g ? `border-color:${g.color}` : ""}" title="${abs ? "Vắng" : att.isLate(c) ? "Vào muộn" : fo && fo.out ? `Rời bài ${fo.out} lần` : ""}">${c}<span class="nm">${u.esc((r && r.name) || "")}</span>${abs ? `<span class="abs-t">Vắng</span>` : ""}${att.isLate(c) ? `<span class="late-t">muộn</span>` : ""}${fo && fo.out ? `<span class="out-n">${fo.out}</span>` : ""}</button>`;
         })
         .join("")}</div>
       <p class="tiny muted" style="margin-top:8px">Xám: chưa vào · viền màu: nhóm · xanh: đã nộp · chấm đỏ: mất kết nối · nền cam 🔒: đang rời bài (số nhỏ = số lần rời). Bấm vào ô để đổi nhóm hoặc giải phóng mã.</p>

@@ -122,7 +122,11 @@ html,body{height:100%;overflow:hidden;background:#0B1220}
 .rb-seg.cur{box-shadow:inset 0 0 0 2px var(--c)}
 .rb-seg.cur.over{animation:rbOver 1.2s ease-in-out infinite}
 @keyframes rbOver{50%{box-shadow:inset 0 0 0 2px #D2453B,0 0 0 3px rgba(210,69,59,.35)}}
-.rb-head{position:absolute;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:var(--ink);border:3px solid #fff;box-shadow:0 2px 6px rgba(15,39,66,.35);pointer-events:none;will-change:left}
+.rb-head{position:absolute;top:50%;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px rgba(15,39,66,.12),0 3px 10px rgba(15,39,66,.28);display:grid;place-items:center;pointer-events:none;will-change:left;z-index:2}
+.rb-head img{width:28px;height:28px;display:block;animation:rbSpin 7s linear infinite;will-change:transform}
+.rb-head.over{box-shadow:0 0 0 3px #D2453B,0 3px 10px rgba(15,39,66,.28)}.rb-head.over img{animation-duration:2.4s}
+@keyframes rbSpin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.rb-head img{animation-duration:30s}}
 .rb-info{display:flex;align-items:baseline;gap:6px;font-variant-numeric:tabular-nums;white-space:nowrap;font-size:15px;color:var(--muted)}
 .rb-info b{font-size:20px;color:var(--ink)}
 .rb-k{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
@@ -130,7 +134,7 @@ html,body{height:100%;overflow:hidden;background:#0B1220}
 .rb-left.low{color:#C26A00}.rb-left.over{color:#B1352C}
 .rb-pace{margin-left:6px;font-size:14px;font-weight:700;padding:3px 10px;border-radius:999px;background:rgba(15,39,66,.06)}
 .rb-pace.ok{background:#E3F4EB;color:#16704A}.rb-pace.late{background:#FBE7E5;color:#B1352C}.rb-pace.early{background:#E6EEFC;color:#2458B8}
-.ds-dark .rb-head{background:#fff;border-color:var(--ink)}.ds-dark .rb-info b{color:#fff}.ds-dark .rb-seg::after{background:#0F2742}
+.ds-dark .rb-head{background:#fff}.ds-dark .rb-info b{color:#fff}.ds-dark .rb-seg::after{background:#0F2742}
 .side-clock{margin-top:auto;text-align:center}
 .side-clock .big{font-size:34px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink);line-height:1.1}
 .side-clock .big.low{color:#C26A00}.side-clock .big.over{color:#B1352C}
@@ -174,3 +178,7 @@ html,body{height:100%;overflow:hidden;background:#0B1220}
 .s-main .hd-num{width:220px;height:220px;font-size:120px;border-radius:56px}
 .s-main .blk-mm{font-size:20px}
 .s-main .mm-c{font-size:26px}
+
+.lobby-names{display:flex;flex-wrap:wrap;gap:6px;max-height:150px;overflow:hidden;margin:-8px 0 18px}
+.lobby-names span{font-size:15px;padding:4px 10px;border-radius:999px;background:rgba(15,39,66,.06)}
+.side-att{font-size:15px;color:#B1352C;line-height:1.35}

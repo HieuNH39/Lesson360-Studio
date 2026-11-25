@@ -73,7 +73,7 @@
           .catch(() => {});
       b.onclick = () => {
         const m = u.modal(`<div class="row" style="gap:12px">${L360.shell.avatar(t, 56)}<div><h2 style="margin:0">${u.esc(t.acc || t.name || "")}</h2><div class="small muted">${u.esc(t.acc && t.name ? t.name : "")}</div></div></div><p class="muted">${u.esc(t.email || "")}${t.subjects && t.subjects.length ? " · " + u.esc(t.subjects.map((s) => L360.Curr.subjectName(s)).join(", ")) : ""}</p>
-          <div class="col"><a class="btn" href="taikhoan.html${dt()}${b.querySelector(".req-dot") ? "#reqs" : ""}">${L360.icon("user")} Hồ sơ & quản trị${b.querySelector(".req-dot") ? ` <span class="req-dot">${b.querySelector(".req-dot").textContent}</span>` : ""}</a><a class="btn" href="insight.html${dt()}">${L360.icon("chart")} Dữ liệu của tôi</a>
+          <div class="col"><a class="btn" href="lophoc.html${dt()}">${L360.icon("users")} Danh sách lớp</a><a class="btn" href="taikhoan.html${dt()}${b.querySelector(".req-dot") ? "#reqs" : ""}">${L360.icon("user")} Hồ sơ & quản trị${b.querySelector(".req-dot") ? ` <span class="req-dot">${b.querySelector(".req-dot").textContent}</span>` : ""}</a><a class="btn" href="insight.html${dt()}">${L360.icon("chart")} Dữ liệu của tôi</a>
           <button class="btn" id="lo">${L360.icon("logout")} Đăng xuất</button></div>`);
         u.$("#lo", m.el).onclick = () => L360.Auth.signOut();
       };

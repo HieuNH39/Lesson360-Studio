@@ -190,6 +190,7 @@
       if (head) {
         setVar(head, "left", Math.min(100, (el0 / total) * 100).toFixed(2) + "%");
         if (head.hidden !== !s0) head.hidden = !s0;
+        setCls(head, "over", !!s0 && el0 > total);
       }
       const pace = el.querySelector("[data-pace]");
       const curSeg = el.querySelector(".rb-seg.cur");
@@ -231,7 +232,7 @@
     const total = steps.reduce((a, s) => a + (Number(s.minutes) || 0), 0) || 45;
     return `<div class="rb" data-ribbon><div class="rb-track">${steps
       .map((s, i) => `<span class="rb-seg ph-${s.phase} ${i < cur ? "done" : i === cur ? "cur" : ""}" style="flex:${Math.max(0.6, Number(s.minutes) || 1)}" title="${u.esc(s.title || "")} · ${s.minutes || 0} phút"></span>`)
-      .join("")}<span class="rb-head" hidden></span></div><div class="rb-info"><span class="rb-k">Đã học</span><b data-clock>0:00</b><span class="rb-sep">·</span><span class="rb-k">Còn</span><b class="rb-left" data-left>${total}:00</b><span class="rb-pace" data-pace></span></div></div>`;
+      .join("")}<span class="rb-head" hidden title="Thời điểm hiện tại của tiết học"><img src="assets/img/logo-l360-mark.svg" alt=""></span></div><div class="rb-info"><span class="rb-k">Đã học</span><b data-clock>0:00</b><span class="rb-sep">·</span><span class="rb-k">Còn</span><b class="rb-left" data-left>${total}:00</b><span class="rb-pace" data-pace></span></div></div>`;
   };
 
   ui.phaseLabel = (st, step) => {
