@@ -57,7 +57,7 @@
         : ""
     }
     <section class="card" style="margin-top:22px"><h2>Minh bạch về AI</h2>
-      <ul class="small"><li>Sản phẩm xây dựng bằng phương pháp <b>vibe coding</b> với trợ lý AI Claude (Anthropic): giáo viên mô tả yêu cầu bằng tiếng Việt, AI viết mã; giáo viên kiểm thử và quyết định.</li>
+      <ul class="small">
       <li>Lời nhắc của Studio dùng được với Claude, ChatGPT hoặc Gemini; nội dung do AI tạo luôn được giáo viên kiểm tra trước khi dạy. Studio yêu cầu AI không bịa số liệu, năm tháng, trích dẫn.</li>
       <li>Học sinh không trò chuyện với AI trong giờ học; dữ liệu tiết học chỉ giáo viên dạy và tổ trưởng xem được.</li>
       <li>Ảnh minh hoạ lấy từ Wikipedia/Wikimedia Commons (giấy phép mở) và ghi nguồn dưới ảnh.</li></ul></section>
