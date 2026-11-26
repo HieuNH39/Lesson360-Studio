@@ -803,7 +803,7 @@ label.chk{display:inline-flex;align-items:center;gap:6px;font-size:14px;cursor:p
 .bg-done>span{flex:1;min-width:220px;display:flex;align-items:center;gap:8px}
 .bg-done svg{width:18px;height:18px}
 
-/* ---- Menu dọc (bản thử, ?giaodien=doc) ---- */
+/* ---- Menu dọc (mặc định từ 26/11/2026; ?giaodien=ngang để dùng menu ngang) ---- */
 html.sb{--sbw:244px}
 html.sb.sb-mini{--sbw:76px}
 html.sb #app{padding-left:var(--sbw);transition:padding-left .22s ease}

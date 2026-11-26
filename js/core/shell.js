@@ -21,7 +21,7 @@
     ["Kiểm tra & hồ sơ", ["tronde", "ppct", "baogiang"]],
     ["Theo dõi", ["dulieu", "tiendo"]]
   ];
-  // Giao diện menu dọc (bản thử): mở bằng ?giaodien=doc, quay lại bằng ?giaodien=ngang; ghi nhớ trên máy.
+  // Menu dọc là mặc định (26/11/2026); ?giaodien=ngang dùng lại menu ngang trên máy đó, ?giaodien=doc quay về mặc định.
   const LS = (k, v) => {
     try {
       if (v === undefined) return localStorage.getItem(k);
@@ -32,8 +32,8 @@
   };
   const vertical = () => {
     const m = location.search.match(/giaodien=(doc|ngang)/);
-    if (m) LS("l360:giaodien", m[1]);
-    return (m ? m[1] : LS("l360:giaodien")) === "doc";
+    if (m) LS("l360:menu", m[1] === "ngang" ? "ngang" : null);
+    return (m ? m[1] : LS("l360:menu")) !== "ngang";
   };
   function sidebar(right, { sub, nav } = {}) {
     const live = /id="scr"/.test(right);
