@@ -77,7 +77,8 @@
       const rPr = child(r, "rPr");
       for (const c of kids(r)) {
         if (isW(c, "rPr") || isW(c, "lastRenderedPageBreak")) continue;
-        if (isW(c, "t")) out.push({ k: "t", rPr, text: c.textContent });
+        // Dấu cách không ngắt (thường gặp khi chép từ web/PDF) → dấu cách thường để Word xuống dòng, căn đều được; giữ nguyên khi nằm giữa hai chữ số (VD 10 000).
+        if (isW(c, "t")) out.push({ k: "t", rPr, text: c.textContent.replace(/\u00a0/g, (m, i, str) => (/\d/.test(str[i - 1] || "") && /\d/.test(str[i + 1] || "") ? m : " ")) });
         else if (isW(c, "tab")) out.push({ k: "tab", rPr });
         else if (isW(c, "noBreakHyphen")) out.push({ k: "t", rPr, text: "‑" });
         else if (isW(c, "softHyphen")) continue;
@@ -256,7 +257,7 @@
         const atStart = /^[\s\t]*$/.test(before);
         const prev = before.replace(/[ ]+$/, "");
         const gap = before.length - prev.length;
-        const ok = atStart || /\t\s*$/.test(before) || gap >= 2 || (gap >= 1 && /[.;,!?)\]…￼"”']$/.test(prev)) || (gap === 0 && /￼$/.test(prev));
+        const ok = atStart || /[\t\n]\s*$/.test(before) || gap >= 2 || (gap >= 1 && /[.;,!?)\]…￼"”']$/.test(prev)) || (gap === 0 && /￼$/.test(prev));
         const after = text.slice(m.index + m[0].length, m.index + m[0].length + 1);
         if (ok && (after === "" || /[\s\t￼]/.test(after) || /\S/.test(after))) {
           if (!hits.length && !atStart && want === from) break;
@@ -272,6 +273,27 @@
     return hits;
   }
 
+  // Một đoạn có ngắt dòng (Shift+Enter) mà dòng sau mở đầu bằng "Câu n.", "A.", "a)", "Đáp án:" → tách thành các dòng riêng.
+  const RE_LINE = /^[\s\t]*(Câu\s*\d+|[A-E]\s*[.)]|[a-e]\s*\)|Đáp\s*án\s*[:：.]|<\s*\/?\s*g\s*\d*\s*>)/i;
+  function splitLines(pcs) {
+    const text = ptext(pcs);
+    const cuts = [];
+    let pos = 0;
+    for (const x of pcs) {
+      const n = x.k === "tab" ? 1 : (x.text || "").length;
+      if (x.k === "node" && x.text === "\n" && RE_LINE.test(text.slice(pos + 1))) cuts.push(pos);
+      pos += n;
+    }
+    if (!cuts.length) return [pcs];
+    const out = [];
+    let a = 0;
+    for (const c of cuts) {
+      out.push(slice(pcs, a, c));
+      a = c + 1;
+    }
+    out.push(slice(pcs, a, text.length));
+    return out;
+  }
   function classifyBody(body) {
     const els = kids(body).filter((e) => !isW(e, "sectPr"));
     const groups = [];
@@ -286,29 +308,30 @@
     };
     for (const el of els) {
       if (isW(el, "p")) {
-        const pcs = pieces(el);
-        const text = ptext(pcs);
-        const gm = RE_G.exec(text.replace(OBJ, ""));
-        if (gm) {
-          if (!gm[1]) newGroup(gm[2] || String(groups.length + 1));
-          continue;
-        }
         const ppr = child(el, "pPr");
         if (ppr && child(ppr, "numPr")) numbered++;
-        const qm = RE_Q.exec(text);
-        if (qm) {
-          if (!g) newGroup("");
-          q = { no: Number(qm[1]), els: [], first: { el, pcs: slice(pcs, qm[0].length, text.length) } };
-          g.questions.push(q);
-          continue;
+        for (const pcs of splitLines(pieces(el))) {
+          const text = ptext(pcs);
+          const gm = RE_G.exec(text.replace(OBJ, ""));
+          if (gm) {
+            if (!gm[1]) newGroup(gm[2] || String(groups.length + 1));
+            continue;
+          }
+          const qm = RE_Q.exec(text);
+          if (qm) {
+            if (!g) newGroup("");
+            q = { no: Number(qm[1]), els: [], first: { el, pcs: slice(pcs, qm[0].length, text.length) } };
+            g.questions.push(q);
+            continue;
+          }
+          if (!text.trim() && !pcs.some((x) => x.k === "node" && x.text !== "\n")) {
+            if (q) q.els.push({ el, pcs, blank: true });
+            continue;
+          }
+          if (q) q.els.push({ el, pcs });
+          else if (g) g.pre.push(plainText(pcs));
+          else warns.push({ lv: "info", msg: `Bỏ qua nội dung trước câu đầu tiên: “${plainText(pcs).slice(0, 60)}”` });
         }
-        if (!text.trim() && !pcs.some((x) => x.k === "node" && x.text !== "\n")) {
-          if (q) q.els.push({ el, pcs, blank: true });
-          continue;
-        }
-        if (q) q.els.push({ el, pcs });
-        else if (g) g.pre.push(plainText(pcs));
-        else warns.push({ lv: "info", msg: `Bỏ qua nội dung trước câu đầu tiên: “${plainText(pcs).slice(0, 60)}”` });
       } else if (q) q.els.push({ el, tbl: true });
       else if (isW(el, "tbl")) warns.push({ lv: "warn", msg: "Có bảng nằm ngoài câu hỏi – đã bỏ qua." });
     }
