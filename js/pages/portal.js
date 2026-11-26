@@ -26,10 +26,9 @@
     L360.shell.topbar(`${L360.shell.modeBadge()}<a class="btn sm primary" href="${q("studio.html")}">${ic("spark")} Soạn bài</a><span id="ptAcc"><a class="btn sm ghost" href="${q("taikhoan.html")}">${ic("user")} Đăng nhập</a></span>`, { nav: "" }) +
     `<main class="wrap">
     <section class="pt-hero">
-      <div><span class="pill accent">AI Educamp 2027 · Trường học số</span>
-        <div class="row nowrap" style="margin-top:16px;gap:16px"><img src="assets/img/logo-l360.svg" alt="" class="pt-logo"><div><h1 class="pt-h1">Lesson 360° <span>Studio</span></h1>
+      <div><div class="row nowrap pt-brand"><img src="assets/img/logo-l360.svg" alt="" class="pt-logo"><div><h1 class="pt-h1">Lesson 360° <span>Studio</span></h1>
         <p class="pt-sub">Xưởng AI kiến tạo bài học số từ giáo án</p></div></div>
-        <div class="row" style="margin-top:16px"><a class="btn primary lg" href="${q("studio.html?tab=tao")}">${ic("spark")} Tạo tiết học từ SGK</a><a class="btn lg" href="${q("giaoan.html")}">${ic("doc")} Soạn giáo án (PL4)</a></div></div>
+        <div class="row" style="margin-top:26px"><a class="btn primary lg" href="${q("studio.html?tab=tao")}">${ic("spark")} Tạo tiết học từ SGK</a><a class="btn lg" href="${q("giaoan.html")}">${ic("doc")} Soạn giáo án (PL4)</a></div></div>
       <div class="card pt-join"><div class="row"><span class="pt-ji">${ic("users")}</span><div><h2 style="font-size:1.2rem;margin:0">Học sinh vào lớp</h2><p class="small muted" style="margin:0">Nhập mã phòng trên màn chiếu · laptop hoặc iPad</p></div></div>
         <div class="row nowrap" style="margin-top:12px"><input id="rc" type="text" placeholder="MÃ PHÒNG" autocomplete="off" style="text-transform:uppercase;font-weight:800;letter-spacing:.12em;font-size:1.25rem"><button class="btn primary lg" id="go">Vào</button></div>
         <p class="tiny muted" style="margin:10px 0 0">Không cần tài khoản. Học sinh chỉ nhập tên hiển thị; không thu thập email, số điện thoại.</p></div>

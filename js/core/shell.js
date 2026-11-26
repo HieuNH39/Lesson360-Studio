@@ -15,8 +15,54 @@
     ["tiendo", "tiendo.html", "Tiến độ", "trophy"]
   ];
   const dt = () => (/che-do=dien-tap/.test(location.search) ? "?che-do=dien-tap" : "");
+  // Nhóm mục cho menu dọc.
+  const GROUPS = [
+    ["Bài học", ["thuvien", "studio", "day", "giaoan"]],
+    ["Kiểm tra & hồ sơ", ["tronde", "ppct", "baogiang"]],
+    ["Theo dõi", ["dulieu", "tiendo"]]
+  ];
+  // Giao diện menu dọc (bản thử): mở bằng ?giaodien=doc, quay lại bằng ?giaodien=ngang; ghi nhớ trên máy.
+  const LS = (k, v) => {
+    try {
+      if (v === undefined) return localStorage.getItem(k);
+      if (v === null) localStorage.removeItem(k);
+      else localStorage.setItem(k, v);
+    } catch (e) {}
+    return null;
+  };
+  const vertical = () => {
+    const m = location.search.match(/giaodien=(doc|ngang)/);
+    if (m) LS("l360:giaodien", m[1]);
+    return (m ? m[1] : LS("l360:giaodien")) === "doc";
+  };
+  function sidebar(right, { sub, nav } = {}) {
+    const live = /id="scr"/.test(right);
+    const mini = live || LS("l360:sbmini") === "1";
+    const root = document.documentElement;
+    root.classList.add("sb");
+    root.classList.toggle("sb-mini", mini);
+    const item = ([id, href, label, ic]) => `<a href="${href}${dt()}" class="${nav === id ? "on" : ""}" title="${label}">${L360.icon(ic)}<span class="nl">${label}</span></a>`;
+    const byId = Object.fromEntries(NAV.map((n) => [n[0], n]));
+    return `<aside class="sidenav no-print">
+        <a class="sb-brand" href="index.html${dt()}" title="Trang chủ Lesson 360° Studio"><img src="assets/img/logo-l360.svg" alt=""><span><b>Lesson 360°</b><em>Studio</em></span></a>
+        <nav class="sb-nav">${item(["home", "index.html", "Trang chủ", "home"]).replace('class=""', `class="${nav === "" && /index\.html$|\/$/.test(location.pathname) ? "on" : ""}"`)}
+          ${GROUPS.map(([g, ids]) => `<div class="sb-g">${u.esc(g)}</div>${ids.map((id) => item(byId[id])).join("")}`).join("")}</nav>
+        <button class="sb-tog" id="sbTog" title="${mini ? "Mở rộng menu" : "Thu gọn menu"}">${L360.icon("arrow")}<span class="nl">Thu gọn</span></button>
+      </aside>
+      <header class="topbar sb-top no-print"><span class="sb-sub ellipsis">${u.esc(sub || "")}</span><span class="spacer"></span>${right}<img class="hsh" src="assets/img/logo-hsh-muc.png" alt="Học Sử Hữu Hiệu"></header>`;
+  }
+  // Nút thu gọn/mở rộng menu dọc (gắn một lần cho cả trang).
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest && e.target.closest("#sbTog");
+    if (!b) return;
+    const mini = !document.documentElement.classList.contains("sb-mini");
+    document.documentElement.classList.toggle("sb-mini", mini);
+    LS("l360:sbmini", mini ? "1" : null);
+    b.title = mini ? "Mở rộng menu" : "Thu gọn menu";
+  });
   L360.shell = {
     topbar(right = "", { sub, nav } = {}) {
+      if (vertical()) return sidebar(right, { sub, nav });
       return `<header class="topbar no-print">
         <a class="brand" href="index.html${dt()}" title="Trang chủ Lesson 360° Studio">
           <img class="mark" src="assets/img/logo-l360.svg" alt="">
@@ -80,7 +126,7 @@
       };
     },
     footer() {
-      return `<footer class="wrap no-print small muted" style="padding-top:0">${u.esc(cfg.school)} · ${u.esc(cfg.unit)} · Tác giả: ${u.esc(cfg.author)} · Lesson 360° Studio – sản phẩm dự thi AI Educamp 2027 “Trường học số”</footer>`;
+      return `<footer class="wrap no-print small muted" style="padding-top:0">Lesson 360° Studio · Tác giả: ${u.esc(cfg.author)}</footer>`;
     }
   };
 })();
