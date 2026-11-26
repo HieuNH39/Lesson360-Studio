@@ -8,11 +8,20 @@
   const app = u.$("#app");
   const ic = L360.icon;
   let teacher = null;
-  const st = { nam: BG.yearOf(), tpl: null, syl: {}, last: {}, src: {}, roles: {}, th: {}, off: {}, fix: {}, res: null, cal: [], prog: {}, idx: [] };
+  const st = { nam: BG.yearOf(), tpl: null, syl: {}, last: {}, src: {}, roles: {}, th: {}, off: {}, fix: {}, res: null, cal: [], prog: {}, idx: [], done: "" };
   const THU = { 2: "Thứ Hai", 3: "Thứ Ba", 4: "Thứ Tư", 5: "Thứ Năm", 6: "Thứ Sáu", 7: "Thứ Bảy", 8: "Chủ nhật", CN: "Chủ nhật" };
   const fmtD = (d) => (d ? `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}` : "");
   const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
+  // Tên tệp tải về: "Tuan19_HieuNH39" – số tuần đọc trong template, tên là tài khoản giáo viên trên Lesson 360°.
+  const plainName = (s) => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D");
+  function outName() {
+    const t = st.tpl;
+    const m = String(t.name || "").match(/tuan\s*_?(\d+)/i);
+    const tuan = t.tuan || (m ? Number(m[1]) : 0);
+    const who = String((teacher && teacher.acc) || plainName(t.gv).replace(/\s+/g, "") || "GiaoVien").replace(/[\\/:*?"<>|\s]+/g, "");
+    return `${tuan ? "Tuan" + tuan : "Tuan"}_${who}.xlsx`;
+  }
   function shell(inner) {
     app.innerHTML =
       L360.shell.topbar(`${L360.shell.modeBadge()}${L360.shell.userMenu(teacher)}`, { sub: "Báo giảng CSDL", nav: "baogiang" }) +
@@ -75,7 +84,7 @@
     const filled = st.res ? st.res.rows.filter((o) => o.mon && o.out).length : 0;
     shell(`<div class="row" style="align-items:flex-end;margin-bottom:14px;gap:12px"><div class="grow"><h1 style="margin:0">Báo giảng CSDL</h1>
         <p class="muted" style="margin:4px 0 0">Tải template báo giảng tuần (đã có thời khoá biểu) → hệ thống điền "Tiết theo PPCT" theo Syllabus của trường → tải lại tệp Excel giữ nguyên mẫu để nộp lên CSDL.</p></div>
-        <span class="pill">Năm học ${u.esc(st.nam.replace("-", "–"))}</span></div>
+        <span class="pill">Năm học ${u.esc(st.nam.replace("-", "–"))}</span>${t ? `<button class="btn ${st.done ? "primary" : ""}" id="newWeek" title="Xoá báo giảng vừa làm để chuyển sang tuần mới">↺ Báo giảng tuần mới</button>` : ""}</div>
       <div class="bg-grid">
       <div class="col" style="gap:16px;min-width:0">
         <section class="card"><h2>1. Template báo giảng tuần</h2>
@@ -125,7 +134,11 @@
                   return `<tr class="${o.flag ? (o.flag === "Ngày nghỉ" ? "off" : "warn") : ""}"><td>${u.esc(o.thu)}</td><td>${u.esc(o.buoi)}</td><td>${u.esc(o.tkb)}</td><td>${u.esc(o.kieuOut || "")}</td><td>${u.esc(o.mon)}</td><td><b>${u.esc(o.lop)}</b></td><td>${sel}</td><td class="small">${u.esc(o.ten || "")}${o.flag ? `<div class="bg-flag">${u.esc(o.flag)}${o.noteOut && o.flag === "Ngày nghỉ" ? ": " + u.esc(o.noteOut) : ""}</div>` : ""}</td></tr>`;
                 })
                 .join("")}</table></div>
-              <div class="row" style="margin-top:14px;gap:10px"><button class="btn primary lg" id="dlx">${ic("download")} Tải tệp Excel báo giảng</button><span class="small muted">Tệp giữ nguyên mẫu của CSDL (chỉ ghi các ô cần điền) – tải thẳng lên hệ thống. Sau khi tải, hệ thống nhớ tiết đã báo cho tuần sau.</span></div></section>`
+              <div class="row" style="margin-top:14px;gap:10px"><button class="btn primary lg" id="dlx">${ic("download")} Tải tệp Excel báo giảng</button><span class="small muted">Tệp <b>${u.esc(outName())}</b> giữ nguyên mẫu của CSDL (chỉ ghi các ô cần điền) – tải thẳng lên hệ thống. Sau khi tải, hệ thống nhớ tiết đã báo cho tuần sau.</span></div>${
+                st.done
+                  ? `<div class="bg-done"><span>${ic("check")}<span>Đã tải <b>${u.esc(st.done)}</b>. Làm tiếp tuần sau?</span></span><button class="btn primary" id="newWeek2">↺ Báo giảng tuần mới</button></div>`
+                  : ""
+              }</section>`
             : ""
         }
       </div>
@@ -160,6 +173,7 @@
       try {
         st.tpl = await BG.readTemplate(fs[0]);
         st.nam = st.tpl.nam;
+        st.done = "";
         st.fix = {};
         st.off = {};
         await loadSyl();
@@ -226,6 +240,15 @@
         u.toast(e.message || "Không đọc được tệp Syllabus.", "bad", 5000);
       }
     });
+    const nw = async () => {
+      if (!st.done && !(await u.confirm("Báo giảng tuần này **chưa tải về**. Vẫn xoá để làm báo giảng tuần mới?", "Làm tuần mới"))) return;
+      // Giữ lựa chọn GVCN/GVBM, tiết TH của từng lớp; tiết đã báo gần nhất đọc lại từ tiến độ đã lưu khi nạp template tuần mới.
+      Object.assign(st, { tpl: null, res: null, last: {}, src: {}, off: {}, fix: {}, prog: {}, done: "" });
+      render();
+      window.scrollTo(0, 0);
+      u.toast("Đã làm mới – tải template báo giảng của tuần mới.", "ok");
+    };
+    [u.$("#newWeek"), u.$("#newWeek2")].forEach((b) => b && (b.onclick = nw));
     const nt = u.$("#newTpl");
     if (nt) nt.onclick = () => ((st.tpl = null), (st.res = null), render());
     u.$$("[data-off]").forEach(
@@ -258,7 +281,9 @@
         try {
           BG.lastFallback = false;
           const blob = await BG.exportXlsx(st.tpl, st.res.rows);
-          u.downloadBlob(st.tpl.name.replace(/\.xlsx?$/i, "") + ".xlsx", blob);
+          const fname = outName();
+          u.downloadBlob(fname, blob);
+          st.done = fname;
           if (BG.lastFallback) u.toast("Đã ghi tệp bằng phương án dự phòng (dữ liệu đủ, định dạng có thể khác mẫu một chút). Thầy cô gửi template cho quản trị để kiểm tra.", "", 6000);
           let kept = true;
           try {
@@ -267,14 +292,15 @@
           } catch (e) {
             kept = false;
           }
-          if (kept) u.toast("Đã tải tệp báo giảng. Hệ thống đã nhớ tiết đã báo để điền tuần sau.", "ok", 4000);
+          render();
+          if (kept) u.toast(`Đã tải ${fname}. Hệ thống đã nhớ tiết đã báo để điền tuần sau.`, "ok", 4000);
           else
             u.modal(`<h2>Đã tải tệp, nhưng chưa lưu được tiến độ</h2><p>Tệp báo giảng vẫn đúng và dùng được. Tuy nhiên máy chủ chưa cho lưu tiết đã báo của tuần này, nên tuần sau hệ thống chưa tự biết tiết gần nhất.</p>
               <p class="small muted">Cách khắc phục: báo quản trị viên cập nhật luật bảo mật Firebase (tệp firebase/database.rules.json) rồi tải lại trang. Trong lúc chờ, tuần sau thầy cô nạp lại các tệp báo giảng đã làm ở mục 3 để hệ thống đọc tiết gần nhất.</p><div class="row" style="justify-content:flex-end"><button class="btn primary" data-close>Đã hiểu</button></div>`);
         } catch (e) {
           u.toast("Không tạo được tệp: " + (e.message || e), "bad", 5000);
         }
-        dl.disabled = false;
+        if (dl.isConnected) dl.disabled = false;
       };
     const ca = u.$("#calAdd");
     if (ca)
