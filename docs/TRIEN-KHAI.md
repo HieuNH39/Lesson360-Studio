@@ -47,6 +47,7 @@ Web là trang tĩnh: **GitHub Pages** (hoặc Netlify) phục vụ trang, **Fire
 
 - Tài khoản và phân quyền: 42/42 kiểm tra đạt, gồm các trường hợp giả mạo quyền quản trị, tổ trưởng; email ngoài tên miền công ty bị chặn.
 - Danh sách lớp: 16/16 kiểm tra đạt; phòng học chỉ chứa mã và tên gọi ngắn, họ tên đầy đủ chỉ giáo viên đã duyệt đọc được, học sinh không đổi được tên có sẵn.
+- Kho biểu mẫu, Lịch & ghi chú, Ghi chép họp: 29/29 kiểm tra đạt; chỉ quản trị viên thêm, sửa, xoá biểu mẫu; giáo viên đã duyệt mới xem, tải được; liên kết phải là https; lịch và ghi chép là dữ liệu riêng của từng giáo viên – giáo viên khác, tổ trưởng, quản trị đều không đọc được.
 - Học sinh không đọc được gói bài học có đáp án, không đọc được bài của bạn, không nộp thay bạn, không nộp khi đã khoá, không đổi được tiến trình tiết học.
 
 ## Thư viện chạy trên trình duyệt (không cần máy chủ)
@@ -54,6 +55,10 @@ Web là trang tĩnh: **GitHub Pages** (hoặc Netlify) phục vụ trang, **Fire
 - Chuyển Word sang PDF (`pdf.html`, nút "Giáo án PDF"): docx-preview (Apache-2.0) dựng trang, jsPDF (MIT) vẽ PDF dạng chữ, qpdf-wasm (Apache-2.0) đặt mật khẩu AES-256. Phông tương đương nhúng vào PDF ở `assets/fonts/` (Liberation, Carlito – SIL OFL 1.1; DejaVu Sans làm phông dự phòng), xem `assets/fonts/LICENSE-fonts.txt`.
 - Âm thanh đúng/sai trong PowerPoint: `assets/sound/dung.wav`, `sai.wav` (tự tổng hợp, không bản quyền).
 - Kiểm tra PowerPoint: mọi bài mẫu xuất ra đều qua kiểm tra lược đồ OOXML (chuyển cảnh, hiệu ứng, nút bấm, âm thanh).
+
+## Kho biểu mẫu – nơi lưu tệp
+
+Gói Firebase Spark không còn Cloud Storage miễn phí, nên tệp biểu mẫu được lưu thẳng trong Realtime Database: chia thành các khúc khoảng 500 KB (`forms/blob/<mã>/<số khúc>`), danh sách ở `forms/items`, nhóm ở `forms/groups`, lượt tải ở `forms/dl`. Mỗi tệp tối đa 10 MB; tệp lớn hơn dùng nút “Dán liên kết” (Google Drive, OneDrive). Với 1 GB của gói miễn phí, kho chứa được vài trăm biểu mẫu Word/Excel thông thường (50 KB – 2 MB mỗi tệp).
 
 ## Chi phí
 

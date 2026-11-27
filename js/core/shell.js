@@ -12,6 +12,9 @@
     ["pdf", "pdf.html", "Word → PDF", "print"],
     ["ppct", "ppct.html", "Phụ lục 1", "layers"],
     ["baogiang", "baogiang.html", "Báo giảng", "clock"],
+    ["lich", "lich.html", "Lịch & ghi chú", "cal"],
+    ["ghichep", "ghichep.html", "Ghi chép họp", "note"],
+    ["bieumau", "bieumau.html", "Kho biểu mẫu", "folder"],
     ["dulieu", "insight.html", "Dữ liệu", "chart"],
     ["tiendo", "tiendo.html", "Tiến độ", "trophy"]
   ];
@@ -20,6 +23,7 @@
   const GROUPS = [
     ["Bài học", ["thuvien", "studio", "day", "giaoan"]],
     ["Kiểm tra & hồ sơ", ["tronde", "pdf", "ppct", "baogiang"]],
+    ["Công việc", ["lich", "ghichep", "bieumau"]],
     ["Theo dõi", ["dulieu", "tiendo"]]
   ];
   // Menu dọc là mặc định (26/11/2026); ?giaodien=ngang dùng lại menu ngang trên máy đó, ?giaodien=doc quay về mặc định.
@@ -108,6 +112,8 @@
     bindUserMenu(t) {
       const b = u.$("#umenu");
       if (!b) return;
+      // Chuông nhắc việc (Lịch & ghi chú) trên mọi trang của giáo viên.
+      if (L360.Nhac) L360.Nhac.start(t);
       // Quản trị viên, tổ trưởng: báo số giáo viên đang chờ duyệt.
       if ((t.isAdmin || t.isLeader) && !L360.isLocal && L360.store)
         L360.store

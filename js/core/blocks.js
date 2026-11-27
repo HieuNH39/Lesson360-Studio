@@ -46,7 +46,28 @@
     upload: P('<path d="M12 20V8M6 13l6-6 6 6M4 4h16"/>'),
     info: P('<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>'),
     save: P('<path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/>'),
-    logout: P('<path d="M14 4h5v16h-5"/><path d="M10 8l-4 4 4 4M6 12h11"/>')
+    logout: P('<path d="M14 4h5v16h-5"/><path d="M10 8l-4 4 4 4M6 12h11"/>'),
+    cal: P('<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M7.5 14h2M11 14h2M14.5 14h2M7.5 17.5h2M11 17.5h2"/>'),
+    note: P('<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M9 12h7M9 15.5h7M9 19h4"/><path d="M3.5 6v14"/>'),
+    folder: P('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>'),
+    bell: P('<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>'),
+    mic: P('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/>'),
+    trash: P('<path d="M4 7h16M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13M9 7V4h6v3"/>'),
+    search: P('<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>'),
+    repeat: P('<path d="M4 11V9a3 3 0 0 1 3-3h12l-3-3M20 13v2a3 3 0 0 1-3 3H5l3 3"/>'),
+    more: P('<path d="M5 12h.01M12 12h.01M19 12h.01" stroke-width="3"/>'),
+    link: P('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.2 1.2"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.2-1.2"/>'),
+    eye: P('<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>'),
+    flagOn: P('<path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5z" fill="currentColor"/>'),
+    checkBox: P('<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8 12l3 3 5-6"/>'),
+    box: P('<rect x="4" y="4" width="16" height="16" rx="4"/>'),
+    list: P('<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01" stroke-width="2.6"/>'),
+    olist: P('<path d="M10 6h10M10 12h10M10 18h10"/><path d="M4 4.5h1.5V9M3.8 9h3.4M3.8 13.5a1.6 1.6 0 1 1 2.6 1.3l-2.6 2.2h3"/>'),
+    table: P('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M3 14.5h18M9 5v14M15 5v14"/>'),
+    undo: P('<path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/>'),
+    redo: P('<path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/>'),
+    hl: P('<path d="M4 20h16"/><path d="M14.5 4.5l5 5L11 18H6v-5z"/>'),
+    heading: P('<path d="M6 4v16M18 4v16M6 12h12"/>')
   };
   L360.icons = icons;
   L360.icon = (name, cls = "") => `<span class="ic ${cls}">${icons[name] || ""}</span>`;

@@ -247,6 +247,41 @@
             ".validate": "newData.hasChildren(['ten', 'hs']) && newData.child('ten').isString() && newData.child('ten').val().length <= 12"
           }
         }
+      },
+      "forms": {
+        "groups": {
+          ".read": "(auth != null && auth.provider !== 'anonymous' && root.child('l360/teachers/' + auth.uid).exists())",
+          ".write": "(auth != null && auth.provider !== 'anonymous' && root.child('l360/admins/' + auth.uid).val() === true)",
+          "$g": {
+            ".validate": "newData.hasChildren(['name']) && newData.child('name').isString() && newData.child('name').val().length <= 60 && $g.matches(/^[a-z0-9-]{1,40}$/)"
+          }
+        },
+        "items": {
+          ".read": "(auth != null && auth.provider !== 'anonymous' && root.child('l360/teachers/' + auth.uid).exists())",
+          "$id": {
+            ".write": "(auth != null && auth.provider !== 'anonymous' && root.child('l360/admins/' + auth.uid).val() === true)",
+            ".validate": "newData.hasChildren(['name', 'g']) && newData.child('name').isString() && newData.child('name').val().length <= 200 && (!newData.child('link').exists() || (newData.child('link').isString() && newData.child('link').val().matches(/^https:\\/\\//) && newData.child('link').val().length <= 1000))"
+          }
+        },
+        "blob": {
+          "$id": {
+            ".read": "(auth != null && auth.provider !== 'anonymous' && root.child('l360/teachers/' + auth.uid).exists())",
+            ".write": "(auth != null && auth.provider !== 'anonymous' && root.child('l360/admins/' + auth.uid).val() === true)",
+            "$k": {
+              ".validate": "$k.matches(/^[0-9]{1,3}$/) && newData.isString() && newData.val().length <= 800000"
+            }
+          }
+        },
+        "dl": {
+          ".read": "(auth != null && auth.provider !== 'anonymous' && (root.child('l360/admins/' + auth.uid).val() === true || root.child('l360/leaders/' + auth.uid).val() === true))",
+          "$id": {
+            "$uid": {
+              ".write": "(auth != null && auth.provider !== 'anonymous' && root.child('l360/teachers/' + auth.uid).exists()) && auth.uid === $uid",
+              ".validate": "newData.isNumber()"
+            },
+            ".write": "(auth != null && auth.provider !== 'anonymous' && root.child('l360/admins/' + auth.uid).val() === true)"
+          }
+        }
       }
     }
   }

@@ -81,6 +81,16 @@
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "")
       .slice(0, 48);
+  // Chuẩn hoá để tìm kiếm (bỏ dấu, chữ thường, không cắt độ dài).
+  u.fold = (s) =>
+    String(s || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/Đ/g, "D")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
   u.get = (obj, path) => {
     if (!path) return obj;
     const parts = String(path).split("/").filter(Boolean);

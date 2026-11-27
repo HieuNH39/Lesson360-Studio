@@ -573,7 +573,12 @@
     const off0 = 0;
     const P = (v) => v * K;
     const offOf = (i) => (single ? 0 : i.rg === "h" ? off0 : i.rg === "f" ? offF : offB);
-    const inSlice = (i) => single || i.rg || (i.bottom > y0 && i.top < y1);
+    // Đường kẻ ngang nằm đúng chỗ ngắt trang: chỉ vẽ ở trang trên (không thành vạch thừa đầu trang sau).
+    const inSlice = (i) => {
+      if (single || i.rg) return true;
+      if (i.t === "line" && Math.abs(i.y1 - i.y2) < 0.5) return i.y1 <= y1 + 0.5 && (idx ? i.y1 > y0 + 0.5 : i.y1 >= y0 - 0.5);
+      return i.bottom > y0 && i.top < y1;
+    };
     const rgb = (c) => [c.r, c.g, c.b];
     // Đầu trang, chân trang: vẽ trên mọi trang, không cắt.
     const shapes = (list, clip) => {
