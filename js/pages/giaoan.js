@@ -10,7 +10,7 @@
   const ic = L360.icon;
   const SKEY = "l360:ga";
   let teacher = null;
-  const st = { mon: "", lop: "", cd: false, baiId: "", tiets: [], src: "ai", docName: "", docText: "", extra: "", raw: "", v: 1, gaId: "", view: "ga", font: "Arial" };
+  const st = { mon: "", lop: "", cd: false, baiId: "", tiets: [], src: "ai", docName: "", docText: "", extra: "", raw: "", v: 1, gaId: "", view: "ga", font: "Arial", done: "" };
   let doc = null; // Phụ lục 1 của môn – lớp đang chọn
   let k = null; // giáo án đã đọc
   let built = null; // { packs, k, gaId }
@@ -204,8 +204,9 @@
           .join("")
       : "";
     const v = k ? K.validate(k) : null;
-    shell(`<div class="row" style="align-items:flex-end;gap:12px;margin-bottom:14px"><div class="grow"><h1 style="margin:0">Soạn giáo án <span class="muted" style="font-weight:600">(Phụ lục 4)</span></h1>
+    shell(`<div class="row" style="align-items:flex-end;gap:12px;margin-bottom:14px;flex-wrap:wrap"><div class="grow" style="flex:1 1 520px"><h1 style="margin:0">Soạn giáo án <span class="muted" style="font-weight:600">(Phụ lục 4)</span></h1>
         <p class="muted" style="margin:4px 0 0">Chọn bài theo Phụ lục 1 → trợ lý AI soạn giáo án đúng mẫu của tổ (hoặc chuyển giáo án Word có sẵn) → tải về Word, PDF và PowerPoint giảng dạy dùng offline.</p></div>
+        ${dirty() ? `<button class="btn ${st.done ? "primary" : ""}" id="gNew" style="flex:none;margin-left:auto" title="Xoá giáo án đang soạn để soạn bài khác (giữ môn, lớp đang chọn)">${ic("plus")} Giáo án mới</button>` : ""}
 </div>
       <div class="ga-grid"><aside class="col" style="gap:14px;min-width:0">
         <section class="card"><h2 style="margin-top:0">1. Bài dạy</h2>
@@ -262,6 +263,38 @@
       <section class="col" style="gap:14px;min-width:0">${k ? resultView() : emptyView()}</section></div>`);
     bind();
   }
+  // Còn nội dung của phiên soạn trước (bài, giáo án dán vào, tệp Word, yêu cầu thêm).
+  const dirty = () => !!(k || st.raw || st.baiId || st.docName || st.extra);
+  function doneBar() {
+    if (!st.done) return "";
+    const what = st.done === "Bản nháp" ? `Giáo án đã lưu trong <b>Bản nháp</b>.` : `Đã tải <b>${u.esc(st.done)}</b>.`; // st.done: "giáo án Word", "giáo án PDF", "PowerPoint giảng dạy" hoặc "Bản nháp"
+    return `<div class="bg-done"><span>${ic("check")}<span>${what} Soạn bài tiếp theo?</span></span><button class="btn primary" id="gNew2">${ic("plus")} Giáo án mới</button></div>`;
+  }
+  // Ghi nhận đã tải/lưu → hiện lời mời soạn bài tiếp, không cần hỏi lại khi bấm Giáo án mới.
+  function markDone(what) {
+    st.done = what;
+    save();
+    const el = u.$("#gDone");
+    if (el) el.innerHTML = doneBar();
+    const b = u.$("#gNew");
+    if (b) b.classList.add("primary");
+    const b2 = u.$("#gNew2");
+    if (b2) b2.onclick = newGa;
+  }
+  // Xoá phiên soạn hiện tại để soạn giáo án mới; giữ môn, lớp, chuyên đề, cách soạn và phông chữ.
+  async function newGa() {
+    if (k && !st.done && !(await u.confirm("Giáo án đang soạn **chưa tải về hoặc lưu**. Vẫn xoá để soạn giáo án mới?", "Soạn giáo án mới"))) return;
+    Object.assign(st, { baiId: "", tiets: [], docName: "", docText: "", extra: "", raw: "", v: 1, gaId: "", view: "ga", done: "" });
+    k = null;
+    built = null;
+    imgJob = null;
+    save();
+    render();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    u.toast("Đã xoá giáo án cũ. Chọn bài để soạn giáo án mới.", "ok");
+    const sel = u.$("#gBai");
+    if (sel) sel.focus();
+  }
   function emptyView() {
     return `<div class="card ga-empty"><div class="ga-flow">${[
       ["1", "Chọn bài", "Môn → lớp → bài theo Phụ lục 1; chọn các tiết cần soạn."],
@@ -281,7 +314,7 @@
           <label class="small row nowrap" style="gap:6px">Phông PowerPoint<select id="gFont">${["Arial", "Calibri", "Times New Roman"].map((x) => `<option ${st.font === x ? "selected" : ""}>${x}</option>`).join("")}</select></label><span class="spacer"></span>
           <span class="small muted">${k.tiet.length} tiết · ${slides} trang chiếu · ${sum} hoạt động</span></div>
         <div class="row ga-dl" style="gap:8px;margin-top:12px"><button class="btn primary" id="dWord">${ic("download")} Giáo án Word</button><button class="btn" id="dPdf">${ic("print")} Giáo án PDF</button><button class="btn" id="dPpt">${ic("slides")} PowerPoint giảng dạy</button><button class="btn ghost" id="dSave">${ic("save")} Lưu & mở trong Studio</button></div>
-        <div id="gProg" class="small muted" style="margin-top:8px"></div></div>
+        <div id="gProg" class="small muted" style="margin-top:8px"></div><div id="gDone">${doneBar()}</div></div>
       <div class="seg"><button data-view="ga" class="${st.view === "ga" ? "on" : ""}">Giáo án</button><button data-view="slides" class="${st.view === "slides" ? "on" : ""}">Bài giảng (trang chiếu)</button></div>
       <div class="card" id="gView" style="padding:0;overflow:hidden"></div>`;
   }
@@ -335,6 +368,7 @@
       st.raw = u.$("#gRaw").value;
       k = K.normalize(raw);
       st.gaId = "";
+      st.done = "";
       build();
       save();
       render();
@@ -380,6 +414,7 @@
       st.baiId = e.target.value;
       st.tiets = [];
       st.gaId = "";
+      st.done = "";
       if (k) build(), (imgJob = null), fillImages();
       save();
       render();
@@ -393,6 +428,7 @@
           let next = c.checked ? cur.concat([i]) : cur.filter((x) => x !== i);
           if (!next.length) next = [i];
           st.tiets = [...new Set(next)].sort((a, z) => a - z);
+          st.done = "";
           if (k) build(), (imgJob = null), fillImages();
           save();
           render();
@@ -428,6 +464,7 @@
     });
     on("#gRead", "onclick", readRaw);
     u.$$("[data-open]").forEach((x) => (x.onclick = () => openSaved(x.dataset.open)));
+    [u.$("#gNew"), u.$("#gNew2")].forEach((b) => b && (b.onclick = newGa));
     if (!k) return;
     u.$$("[data-view]").forEach((x) => (x.onclick = () => ((st.view = x.dataset.view), save(), u.$$("[data-view]").forEach((y) => y.classList.toggle("on", y === x)), drawView())));
     on("#gV", "onchange", (e) => ((st.v = Math.max(1, Number(e.target.value) || 1)), save(), (u.$("#gName").value = edoc())));
@@ -443,10 +480,16 @@
       btn.disabled = false;
       u.$("#gProg").textContent = "";
     };
-    on("#dWord", "onclick", (e) => busy(e.currentTarget, () => K.download(k, name() + ".docx")));
+    on("#dWord", "onclick", (e) =>
+      busy(e.currentTarget, async () => {
+        await K.download(k, name() + ".docx");
+        markDone("giáo án Word");
+      })
+    );
     on("#dPdf", "onclick", () => {
       try {
         K.pdf(k, name());
+        markDone("giáo án PDF");
       } catch (e) {
         u.toast(e.message, "bad", 5000);
       }
@@ -457,7 +500,9 @@
         const packs = built.packs;
         await (imgJob || fillImages());
         prog.textContent = "Đang dựng PowerPoint…";
-        await L360.Pptx.download(packs, { font: st.font, fileName: name().replace(/_KHBD_/, "_BaiGiang_") + ".pptx" });
+        const fn = name().replace(/_KHBD_/, "_BaiGiang_") + ".pptx";
+        await L360.Pptx.download(packs, { font: st.font, fileName: fn });
+        markDone("PowerPoint giảng dạy");
         u.toast("Đã tải PowerPoint giảng dạy (dùng offline).", "ok");
       })
     );
@@ -468,6 +513,8 @@
           await L360.Lib.drafts.save(p, teacher);
         }
         await loadSaved();
+        st.done = "Bản nháp";
+        save();
         u.toast(`Đã lưu ${built.packs.length} tiết vào Bản nháp.`, "ok");
         location.href = `studio.html?tab=soan&sua=${encodeURIComponent(built.packs[0].id)}`;
       })
@@ -497,6 +544,7 @@
     st.gaId = id;
     st.v = Number(p0.meta.khbdV) || 1;
     st.raw = JSON.stringify(p0.khbd, null, 1);
+    st.done = "Bản nháp";
     await loadDoc();
     const pb = doc && p0.bai.key ? doc.bai.find((x) => x.key === p0.bai.key) : null;
     st.baiId = pb ? "pl:" + pb.id : p0.bai.key ? "sgk:" + p0.bai.key : "";
@@ -518,6 +566,7 @@
         k = K.normalize(parseRaw(st.raw));
         build();
         setTimeout(fillImages, 300);
+        setTimeout(() => u.toast("Đang mở lại giáo án soạn lần trước. Bấm “Giáo án mới” để soạn bài khác.", "", 5000), 400);
       } catch (e) {
         k = null;
       }
