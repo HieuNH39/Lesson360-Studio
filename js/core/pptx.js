@@ -169,16 +169,21 @@
         const d = L360.describeStep ? L360.describeStep(s) : { notes: [] };
         notes = notes.concat(d.notes.filter(Boolean));
       });
-      // Ghi nhớ: chia trang theo độ dài (tối đa 6 ý, ~13 dòng chữ 16 pt mỗi trang) để chữ luôn đủ lớn khi chiếu.
-      const NL = (t) => Math.max(1, Math.ceil(t.length / 86));
+      // Ghi nhớ: chia trang theo độ dài (tối đa 5 ý, ~11 dòng chữ 20 pt mỗi trang) để chữ to, rõ khi chiếu.
+      const NL = (t) => Math.max(1, Math.ceil(t.length / 72));
       const items = [];
       notes.forEach((x) => {
-        const t = plain(x).replace(/^\s*[-•]\s*/gm, "").replace(/\n+/g, " ").trim();
+        // Nhiều dòng trong một ý ghi vở → nối bằng dấu chấm phẩy (không dính chữ).
+        const t = plain(x)
+          .split(/\n+/)
+          .map((l) => l.replace(/^\s*[-•]\s*/, "").trim())
+          .filter(Boolean)
+          .reduce((a, l) => (a ? a + (/[.;:!?]$/.test(a) ? " " : "; ") + l : l), "");
         if (!t) return;
-        if (NL(t) <= 11) return items.push(t);
+        if (NL(t) <= 9) return items.push(t);
         let cur = "";
         t.split(/(?<=[.;!?])\s+/).forEach((sx) => {
-          if (cur && NL(cur + " " + sx) > 11) {
+          if (cur && NL(cur + " " + sx) > 9) {
             items.push(cur);
             cur = sx;
           } else cur = cur ? cur + " " + sx : sx;
@@ -189,7 +194,7 @@
       let cur = [];
       let lines = 0;
       items.forEach((t) => {
-        if (cur.length && (cur.length >= 6 || lines + NL(t) > 12)) {
+        if (cur.length && (cur.length >= 5 || lines + NL(t) > 10)) {
           chunks.push(cur);
           cur = [];
           lines = 0;
@@ -204,6 +209,19 @@
     return { slides, range, packs };
   }
 
+  // Loại chuyển cảnh của từng trang chiếu.
+  const GAME_K = ["cw", "match", "order", "cards", "auction", "puzzle", "gift", "flash", "wheel", "stance", "kwl"];
+  function transKind(d) {
+    if (["title", "goals", "phase", "recap", "end"].includes(d.k)) return d.k;
+    if (d.k === "page") {
+      const bl = arr(d.pg && d.pg.blocks);
+      if (bl.length && bl.every((b) => ["chude", "tenbai", "muc"].includes(b.kind))) return "hero";
+      return d.i ? "page" : "page1";
+    }
+    if (d.k === "q") return d.s && d.s.mode === "rcv" ? "game" : "q";
+    if (GAME_K.includes(d.k)) return "game";
+    return "task";
+  }
   /* ---------- Đo chữ (ước lượng để chữ không tràn khung) ---------- */
   function fit(text, w, h, max = 24, min = 11, k = 0.52) {
     const paras = String(text || "").split("\n");
@@ -255,8 +273,10 @@
         return 0.8 + lineH(linesAt(PLAIN(b), w - 0.5, 16), 16);
       case "question":
       case "conclusion":
-      case "note":
         return 0.8 + lineH(linesAt(String(b.text || "").replace(/\*\*/g, ""), w - 0.45, 16), 16);
+      case "note":
+        // Ghi vào vở: chữ to (≥ 20 pt) để cả lớp chép rõ.
+        return 0.95 + lineH(linesAt(String(b.text || "").replace(/\*\*/g, ""), w - 0.5, 20), 20) * 1.12;
       case "keyterms":
         return 0.5 + lineH(linesAt(arr(b.items).map((x) => `${x.term}: ${x.def}`).join("\n"), w, 16), 16);
       default:
@@ -528,6 +548,14 @@
     };
     /* --- hiệu ứng (đánh dấu hình bằng tên; sau khi đóng gói sẽ dựng phần <p:timing> cho PowerPoint) --- */
     const click = (sl) => ++sl._click;
+    const trig = (sl) => ++sl._trig;
+    // Vùng bấm trong suốt phủ lên một phương án/ô: là "nút" (trigger) của chuỗi hiệu ứng riêng.
+    const hitArea = (sl, x, y, w, h, fn) => {
+      const t = trig(sl);
+      anim(sl, `T${t}`, "button", () => sl.addShape(S.rect, { x, y, w, h, fill: { color: "FFFFFF", transparency: 100 }, line: { type: "none" } }));
+      fn(t);
+      return t;
+    };
     const anim = (sl, k, fx, fn, dur) => {
       const prev = sl._an;
       sl._an = k ? { k, fx: fx || "fade", dur: dur || 0 } : null;
@@ -545,15 +573,15 @@
       const y = H - 0.78;
       const x = MX + 2.4;
       const w = W - 2 * MX - 2.4 - 1.5;
-      const k = 900 + ++sl._trig;
-      anim(sl, k, "button", () =>
+      const t = trig(sl);
+      anim(sl, `T${t}`, "button", () =>
         T(sl, `► Bắt đầu · ${m} phút`, { shape: S.roundRect, rectRadius: 0.2, x: MX, y: y - 0.14, w: 2.25, h: 0.42, fill: { color: col.accent2 }, line: { type: "none" }, color: "FFFFFF", fontSize: 13, bold: true, align: "center", valign: "middle", margin: 0 })
       );
       sl.addShape(S.roundRect, { x, y, w, h: 0.14, rectRadius: 0.07, fill: { color: col.line }, line: { type: "none" } });
-      anim(sl, k, "timer", () => sl.addShape(S.roundRect, { x, y, w, h: 0.14, rectRadius: 0.07, fill: { color: col.accent }, line: { type: "none" } }), m * 60000);
+      anim(sl, `T${t}.0`, "timer", () => sl.addShape(S.roundRect, { x, y, w, h: 0.14, rectRadius: 0.07, fill: { color: col.accent }, line: { type: "none" } }), m * 60000);
       // vạch chia từng phút để đọc nhanh số phút còn lại
       if (m > 1 && m <= 30) for (let i = 1; i < m; i++) sl.addShape(S.rect, { x: x + (w * i) / m - 0.01, y, w: 0.02, h: 0.14, fill: { color: "FFFFFF" }, line: { type: "none" } });
-      anim(sl, k, "after", () => T(sl, "Hết giờ!", { shape: S.roundRect, rectRadius: 0.19, x: W - MX - 1.35, y: y - 0.12, w: 1.35, h: 0.38, fill: { color: "D2453B" }, line: { type: "none" }, fontSize: 13, bold: true, color: "FFFFFF", align: "center", valign: "middle", margin: 0 }), m * 60000);
+      anim(sl, `T${t}.0`, "after", () => T(sl, "Hết giờ!", { shape: S.roundRect, rectRadius: 0.19, x: W - MX - 1.35, y: y - 0.12, w: 1.35, h: 0.38, fill: { color: "D2453B" }, line: { type: "none" }, fontSize: 13, bold: true, color: "FFFFFF", align: "center", valign: "middle", margin: 0 }), m * 60000);
     };
     const decorate = (sl, strong) => {
       if (decor === "circles") {
@@ -692,7 +720,7 @@
         const ly = y + ty + (h - ty) * 0.38;
         sl.addShape(S.rect, { x: x + 0.05, y: ly - 0.025, w: w - 0.1, h: 0.05, fill: { color: col.accent }, line: { type: "none" } });
         const fs = fit(it.map((t) => plain(t.label || t.title || "")).join("\n"), cw * n, (h - ty) * 0.55 * 2, 16, 11);
-        it.forEach((t, i) => anim(sl, sl._sub ? click(sl) : 0, "fade", () => {
+        it.forEach((t, i) => anim(sl, sl._sub ? click(sl) : 0, "zoom", () => {
           const cx = x + i * cw;
           sl.addShape(S.ellipse, { x: cx + cw / 2 - 0.13, y: ly - 0.13, w: 0.26, h: 0.26, fill: { color: col.card }, line: { color: col.accent, width: 2.5 } });
           T(sl, plain(t.time || t.year || ""), { x: cx + 0.04, y: ly - 0.62, w: cw - 0.08, h: 0.44, fontSize: Math.min(18, fs + 3), bold: true, color: col.accent2, align: "center", valign: "bottom" });
@@ -718,7 +746,7 @@
           const bh = Math.min(1.7, (h - (list.length - 1) * 0.15) / Math.max(1, list.length));
           const total = list.length * bh + (list.length - 1) * 0.15;
           // Hiện theo số thứ tự nhánh: bên phải từ trên xuống, bên trái từ dưới lên (chiều kim đồng hồ).
-          (isRight ? list.map((bb, i) => [bb, i]) : list.map((bb, i) => [bb, i]).reverse()).forEach(([bb, i]) => anim(sl, sl._sub ? click(sl) : 0, "fade", () => {
+          (isRight ? list.map((bb, i) => [bb, i]) : list.map((bb, i) => [bb, i]).reverse()).forEach(([bb, i]) => anim(sl, sl._sub ? click(sl) : 0, "zoom", () => {
             const bx = isRight ? x + w - bw : x;
             const by = cy - total / 2 + i * (bh + 0.15);
             const c = bb._c;
@@ -770,7 +798,7 @@
           const by = y + ty + (h - ty - bh) / 2;
           const txt = st.map((s) => plain(s.label) + (s.desc ? "\n" + plain(s.desc) : "")).join("\n");
           const fs = fit(txt, bw * n, bh * 1.6, 16, 11);
-          st.forEach((s, i) => anim(sl, sl._sub ? click(sl) : 0, "fade", () => {
+          st.forEach((s, i) => anim(sl, sl._sub ? click(sl) : 0, "wipeL", () => {
             const bx = x + i * (bw + gap);
             box(sl, bx, by, bw, bh, { fill: i % 2 ? col.soft : col.card, line: col.accent, lw: 1.25 });
             sl.addShape(S.ellipse, { x: bx + bw / 2 - 0.2, y: by - 0.2, w: 0.4, h: 0.4, fill: { color: col.accent }, line: { color: col.bg, width: 2 } });
@@ -793,7 +821,7 @@
           sl.addShape(S.ellipse, { x: cx - R, y: cy - R, w: 2 * R, h: 2 * R, fill: { type: "none" }, line: { color: col.accent, width: 2, dashType: "dash" } });
           if (b.center) T(sl, plain(b.center), { x: cx - R * 0.6, y: cy - 0.5, w: R * 1.2, h: 1, fontSize: 16, bold: true, align: "center", valign: "middle", color: col.accent2 });
           const nw = Math.min(2.4, R * 1.15);
-          st.forEach((s, i) => anim(sl, sl._sub ? click(sl) : 0, "fade", () => {
+          st.forEach((s, i) => anim(sl, sl._sub ? click(sl) : 0, "zoom", () => {
             const a = -Math.PI / 2 + (2 * Math.PI * i) / n;
             const nx = cx + R * Math.cos(a) - nw / 2;
             const ny = cy + R * Math.sin(a) - 0.42;
@@ -839,7 +867,7 @@
         const dW = w - pyW - 0.35;
         const fsD = hasD ? Math.min(...it.map((t) => fit(plain(t.desc || ""), dW, lh, 16, 11))) : 0;
         it.forEach((t, i) =>
-          anim(sl, sl._sub ? click(sl) : 0, "fade", () => {
+          anim(sl, sl._sub ? click(sl) : 0, "float", () => {
             const pw = pyW * (0.35 + (0.65 * (i + 1)) / n);
             const px = px0 + (pyW - pw) / 2;
             const py = top + i * (lh + gap);
@@ -907,12 +935,16 @@
         box(sl, x, y, w, h, { fill: cfg.fill, line: cfg.line, lw: 1.5, dash: cfg.dash });
         sl.addShape(S.ellipse, { x: x + 0.14, y: y + 0.12, w: 0.38, h: 0.38, fill: { color: cfg.line }, line: { type: "none" } });
         T(sl, cfg.icon, { x: x + 0.14, y: y + 0.12, w: 0.38, h: 0.38, fontSize: 14, bold: true, color: "FFFFFF", align: "center", valign: "middle", margin: 0 });
+        const isNote = k === "note";
         let ttl = plain(cfg.title).replace(/\s+/g, " ").toUpperCase();
-        const tmax = Math.floor((w - 0.8) / 0.105);
+        const tmax = Math.floor((w - 0.8) / (isNote ? 0.13 : 0.105));
         if (ttl.length > tmax) ttl = ttl.slice(0, tmax - 1).replace(/\s+\S*$/, "") + "…";
-        T(sl, ttl, { x: x + 0.62, y: y + 0.12, w: w - 0.8, h: 0.38, fontSize: 12, bold: true, color: cfg.tc, valign: "middle", charSpacing: 1 });
+        T(sl, ttl, { x: x + 0.62, y: y + 0.12, w: w - 0.8, h: 0.38, fontSize: isNote ? 15 : 12, bold: true, color: cfg.tc, valign: "middle", charSpacing: 1 });
         const txt = String(b.text || "");
-        T(sl, runs(txt), { x: x + 0.2, y: y + 0.56, w: w - 0.4, h: h - 0.66, fontSize: fit(plain(txt), w - 0.4, h - 0.66, 24, 14), color: col.ink, paraSpaceAfter: 4 });
+        if (isNote) {
+          // Ghi vào vở: chữ to (20–30 pt), mỗi ý một dòng có gạch đầu dòng, giãn dòng rộng để HS chép rõ.
+          T(sl, runs(txt, { color: dark ? "FFF4D6" : "3A2A00" }), { x: x + 0.25, y: y + 0.6, w: w - 0.5, h: h - 0.7, fontSize: fit(plain(txt), w - 0.5, h - 0.7, 30, 20, 0.5), color: dark ? "FFF4D6" : "3A2A00", paraSpaceAfter: 8, lineSpacingMultiple: 1.08 });
+        } else T(sl, runs(txt), { x: x + 0.2, y: y + 0.56, w: w - 0.4, h: h - 0.66, fontSize: fit(plain(txt), w - 0.4, h - 0.66, 24, 14), color: col.ink, paraSpaceAfter: 4 });
         return;
       }
       // text, list và mặc định
@@ -921,6 +953,7 @@
       T(sl, runs(md), { x, y: y + ty, w, h: h - ty, fontSize: fit(plain(md), w, h - ty, 24, 14), paraSpaceAfter: 6, lineSpacingMultiple: 1.05 });
     }
     const SUB = ["timeline", "mindmap", "flow", "cycle", "venn", "pyramid"];
+    const BLOCK_FX = { note: "wipe", conclusion: "wipeL", question: "zoom", text: "float", list: "float", keyterms: "float", compare: "fly", stats: "zoom", quote: "split", image: "zoom", gallery: "fade", map: "fade", video: "fade", timeline: "wipeL", flow: "wipeL", mindmap: "zoom", cycle: "zoom", venn: "fade", pyramid: "float" };
     function stackBlocks(sl, list, x, y, w, h, o = {}) {
       if (!list.length) return;
       const gap = 0.18;
@@ -936,7 +969,7 @@
         // Khối đầu hiện sẵn; các khối sau (kết luận, ghi vở…) hiện lần lượt khi bấm. Sơ đồ hiện từng nhánh/mốc.
         const k = o.anim && (i > 0 || o.all) ? click(sl) : 0;
         sl._sub = o.anim && SUB.includes(b.kind);
-        anim(sl, k, b.kind === "note" || b.kind === "conclusion" ? "wipe" : "fade", () => drawBlock(sl, b, x, cy, w, bh));
+        anim(sl, k, BLOCK_FX[b.kind] || "fade", () => drawBlock(sl, b, x, cy, w, bh));
         sl._sub = false;
         cy += bh + gap;
       });
@@ -958,27 +991,27 @@
       const tw = firstImg ? 7.2 : W - 2 * MX;
       if (firstImg) img(sl, firstImg, 7.75, 0, W - 7.75, H, { cover: true });
       const subj = (L360.Curr && L360.Curr.subjectName(p.subjectId, p.grade)) || p.subject || "";
-      pill(sl, `${subj.toUpperCase()}${p.grade ? " · LỚP " + p.grade : ""}`, MX + 0.05, 1.2, col.accent2, { size: 12, h: 0.38 });
+      anim(sl, -1, "fade", () => pill(sl, `${subj.toUpperCase()}${p.grade ? " · LỚP " + p.grade : ""}`, MX + 0.05, 1.2, col.accent2, { size: 12, h: 0.38 }));
       const b = p.bai || {};
       const big = plain(b.ten || p.title);
-      T(sl, b.so ? (/^(CĐ|Chủ đề)/i.test(b.so) ? b.so : "BÀI " + b.so) : "", { x: MX, y: 1.85, w: tw, h: 0.55, fontSize: 20, bold: true, color: "FFFFFF", charSpacing: 2 });
-      T(sl, big, { x: MX, y: 2.4, w: tw, h: 2.5, fontFace: HFONT, fontSize: fit(big, tw, 2.5, 46, 26, 0.55), bold: true, color: "FFFFFF", valign: "top" });
-      T(sl, p.tiet.tong > 1 ? `Tiết ${p.tiet.so}/${p.tiet.tong}${b.ten && p.title !== b.ten ? " – " + plain(p.title) : ""}` : b.ten && p.title !== b.ten ? plain(p.title) : "", {
+      anim(sl, -1, "fade", () => T(sl, b.so ? (/^(CĐ|Chủ đề)/i.test(b.so) ? b.so : "BÀI " + b.so) : "", { x: MX, y: 1.85, w: tw, h: 0.55, fontSize: 20, bold: true, color: "FFFFFF", charSpacing: 2 }));
+      anim(sl, -2, "zoom", () => T(sl, big, { x: MX, y: 2.4, w: tw, h: 2.5, fontFace: HFONT, fontSize: fit(big, tw, 2.5, 46, 26, 0.55), bold: true, color: "FFFFFF", valign: "top" }));
+      if (p.tiet.tong > 1 || (b.ten && p.title !== b.ten)) anim(sl, -3, "float", () => T(sl, p.tiet.tong > 1 ? `Tiết ${p.tiet.so}/${p.tiet.tong}${b.ten && p.title !== b.ten ? " – " + plain(p.title) : ""}` : b.ten && p.title !== b.ten ? plain(p.title) : "", {
         x: MX,
         y: 5.0,
         w: tw,
         h: 0.6,
         fontSize: 18,
         color: "FFFFFF"
-      });
+      }));
       const gv = opt.author || pptx.author;
-      T(sl, [gv ? "Giáo viên: " + gv : "", (L360.cfg && L360.cfg.school) || ""].filter(Boolean).join("\n"), { x: MX, y: 6.05, w: tw, h: 0.8, fontSize: 12, color: "FFFFFF", transparency: 15 });
+      anim(sl, -4, "fade", () => T(sl, [gv ? "Giáo viên: " + gv : "", (L360.cfg && L360.cfg.school) || ""].filter(Boolean).join("\n"), { x: MX, y: 6.05, w: tw, h: 0.8, fontSize: 12, color: "FFFFFF", transparency: 15 }));
     };
     R.goals = (sl, d, n) => {
       header(sl, d.p.steps[0] ? d.p.steps[0].phase : "khoi-dong", "Mục tiêu tiết học");
       const g = d.p.objectives.slice(0, 6);
       const rowH = Math.min(0.95, 5.0 / g.length);
-      g.forEach((o, i) => anim(sl, click(sl), "fade", () => {
+      g.forEach((o, i) => anim(sl, click(sl), "wipeL", () => {
         const y = 1.95 + i * (rowH + 0.08);
         box(sl, MX, y, W - 2 * MX, rowH, { fill: col.card, line: col.line });
         sl.addShape(S.ellipse, { x: MX + 0.18, y: y + rowH / 2 - 0.2, w: 0.4, h: 0.4, fill: { color: col.accent }, line: { type: "none" } });
@@ -993,8 +1026,8 @@
       sl.addShape(S.ellipse, { x: W - 5.2, y: -1.6, w: 7, h: 7, fill: { color: "FFFFFF", transparency: 88 }, line: { type: "none" } });
       sl.addShape(S.ellipse, { x: W - 3.4, y: 3.9, w: 4.4, h: 4.4, fill: { color: "FFFFFF", transparency: 92 }, line: { type: "none" } });
       const idx = ["khoi-dong", "hinh-thanh", "luyen-tap", "van-dung"].indexOf(d.phase) + 1;
-      T(sl, "0" + idx, { x: MX, y: 1.0, w: 4, h: 1.6, fontSize: 96, bold: true, color: "FFFFFF", transparency: 35, fontFace: HFONT });
-      T(sl, PH_NAME[d.phase] || "", { x: MX, y: 2.7, w: W - 2 * MX, h: 1.1, fontSize: 44, bold: true, color: "FFFFFF", fontFace: HFONT, charSpacing: 2 });
+      anim(sl, -1, "zoom", () => T(sl, "0" + idx, { x: MX, y: 1.0, w: 4, h: 1.6, fontSize: 96, bold: true, color: "FFFFFF", transparency: 35, fontFace: HFONT }));
+      anim(sl, -2, "wipeL", () => T(sl, PH_NAME[d.phase] || "", { x: MX, y: 2.7, w: W - 2 * MX, h: 1.1, fontSize: 44, bold: true, color: "FFFFFF", fontFace: HFONT, charSpacing: 2 }));
       // Gộp các bước trùng tên (ví dụ trang chiếu + câu hỏi của cùng một hoạt động).
       const seen = {};
       d.steps.forEach((s) => {
@@ -1002,7 +1035,7 @@
         seen[t] = (seen[t] || 0) + (Number(s.minutes) || 0);
       });
       const list = Object.entries(seen).map(([t, m]) => `${t}${m ? `  ·  ${m} phút` : ""}`);
-      T(sl, list.map((t, i) => ({ text: t, options: { bullet: { code: "25CF" }, breakLine: i < list.length - 1 } })), { x: MX + 0.1, y: 4.0, w: W - 2 * MX - 3, h: 2.6, fontSize: fit(list.join("\n"), W - 2 * MX - 3, 2.6, 22, 12), color: "FFFFFF", paraSpaceAfter: 6 });
+      anim(sl, -3, "float", () => T(sl, list.map((t, i) => ({ text: t, options: { bullet: { code: "25CF" }, breakLine: i < list.length - 1 } })), { x: MX + 0.1, y: 4.0, w: W - 2 * MX - 3, h: 2.6, fontSize: fit(list.join("\n"), W - 2 * MX - 3, 2.6, 22, 12), color: "FFFFFF", paraSpaceAfter: 6 }));
       footer(sl, d.p, n, true);
     };
     // Trang chủ đề / tên bài / tên mục: thiết kế toàn trang, có nhắc ghi vở.
@@ -1020,18 +1053,18 @@
         T(sl, k, { x: MX + 0.1, y: 1.3, w: 9, h: 0.55, fontSize: 18, bold: true, color: "FFFFFF", valign: "middle" });
         sl.addShape(S.rect, { x: MX + 0.12, y: 1.9, w: 1.2, h: 0.07, fill: { color: "FFFFFF" }, line: { type: "none" } });
         const t = plain(b.ten || b.title || "");
-        T(sl, t, { x: MX + 0.1, y: 2.1, w: 9.6, h: 2.0, fontFace: HFONT, fontSize: fit(t, 9.6, 2.0, 48, 26, 0.55), bold: true, color: "FFFFFF", valign: "middle" });
+        anim(sl, -1, "zoom", () => T(sl, t, { x: MX + 0.1, y: 2.1, w: 9.6, h: 2.0, fontFace: HFONT, fontSize: fit(t, 9.6, 2.0, 48, 26, 0.55), bold: true, color: "FFFFFF", valign: "middle" }));
         if (b.mota) T(sl, plain(b.mota), { x: MX + 0.1, y: 4.15, w: 9.2, h: 0.8, fontSize: fit(plain(b.mota), 9.2, 0.8, 18, 12), color: "FFFFFF", transparency: 10 });
         // Danh sách bài của chủ đề: mỗi bài một dòng (không cắt chữ, không tràn khung).
         const bai = arr(b.bai).slice(0, 3);
         let by = 5.0;
-        bai.forEach((x, i) => {
+        bai.forEach((x, i) => anim(sl, -2 - i, "float", () => {
           const tx = numbered(x) ? plain(x) : `${i + 1}  ${plain(x)}`;
           const cw = Math.min(W - 2 * MX - 4.0, 0.1 * tx.length + 0.6);
           sl.addShape(S.roundRect, { x: MX + 0.1, y: by, w: cw, h: 0.42, rectRadius: 0.12, fill: { color: "FFFFFF", transparency: 84 }, line: { type: "none" } });
           T(sl, tx, { x: MX + 0.22, y: by, w: cw - 0.24, h: 0.42, fontSize: fit(tx, cw - 0.24, 0.42, 14, 11), bold: true, color: "FFFFFF", valign: "middle", margin: 0 });
           by += 0.5;
-        });
+        }));
         ghi("Ghi tên chủ đề vào vở", W - MX - 3.3, 6.35, true);
       } else if (b.kind === "tenbai") {
         sl.background = { color: "FFFFFF" };
@@ -1040,27 +1073,30 @@
         if (b.chude) T(sl, plain(b.chude), { x: 1.2, y: 1.2, w: 10, h: 0.45, fontSize: 15, bold: true, color: col.muted });
         pill(sl, plain(b.so || "Bài học").toUpperCase(), 1.2, 1.75, col.accent, { size: 14, h: 0.42 });
         const t = plain(b.ten || b.title || "");
-        T(sl, t, { x: 1.2, y: 2.35, w: 10.6, h: 2.2, fontFace: HFONT, fontSize: fit(t, 10.6, 2.2, 46, 24, 0.55), bold: true, color: col.ink, valign: "middle" });
+        anim(sl, -1, "zoom", () => T(sl, t, { x: 1.2, y: 2.35, w: 10.6, h: 2.2, fontFace: HFONT, fontSize: fit(t, 10.6, 2.2, 46, 24, 0.55), bold: true, color: col.ink, valign: "middle" }));
         const mucs = arr(b.muc).slice(0, 4);
         let my = 4.7;
         const mh = mucs.length > 3 ? 0.38 : 0.44;
         mucs.forEach((x, i) => {
           const tx = numbered(x) ? plain(x) : `${i + 1}. ${plain(x)}`;
           const cw = Math.min(W - 1.2 - MX - 1.0, 0.1 * tx.length + 0.6);
-          box(sl, 1.2, my, cw, mh, { fill: col.soft });
-          T(sl, tx, { x: 1.32, y: my, w: cw - 0.24, h: mh, fontSize: fit(tx, cw - 0.24, mh, 14, 11), bold: true, color: col.accent2, valign: "middle", margin: 0 });
+          const yy = my;
+          anim(sl, -2 - i, "wipeL", () => {
+            box(sl, 1.2, yy, cw, mh, { fill: col.soft });
+            T(sl, tx, { x: 1.32, y: yy, w: cw - 0.24, h: mh, fontSize: fit(tx, cw - 0.24, mh, 14, 11), bold: true, color: col.accent2, valign: "middle", margin: 0 });
+          });
           my += mh + 0.08;
         });
         ghi("Ghi tên bài vào vở", 1.2, Math.max(5.75, my + 0.1), false);
       } else {
         sl.background = { color: col.soft };
         sl.addShape(S.roundRect, { x: MX + 0.3, y: 2.0, w: 3.0, h: 3.0, rectRadius: 0.6, fill: { color: col.accent }, line: { type: "none" }, shadow: { type: "outer", blur: 10, offset: 3, angle: 90, color: "000000", opacity: 0.18 } });
-        T(sl, plain(b.so || ""), { x: MX + 0.3, y: 2.0, w: 3.0, h: 3.0, fontFace: HFONT, fontSize: 110, bold: true, color: "FFFFFF", align: "center", valign: "middle", margin: 0 });
+        anim(sl, -1, "zoom", () => T(sl, plain(b.so || ""), { x: MX + 0.3, y: 2.0, w: 3.0, h: 3.0, fontFace: HFONT, fontSize: 110, bold: true, color: "FFFFFF", align: "center", valign: "middle", margin: 0 }));
         T(sl, `MỤC ${plain(b.so || "")}`, { x: 4.4, y: 2.0, w: 8, h: 0.5, fontSize: 18, bold: true, color: col.accent, charSpacing: 2 });
         const t = plain(b.ten || b.title || "");
-        T(sl, t, { x: 4.4, y: 2.5, w: W - 4.4 - MX, h: 1.7, fontFace: HFONT, fontSize: fit(t, W - 4.4 - MX, 1.7, 42, 22, 0.55), bold: true, color: col.ink, valign: "middle" });
+        anim(sl, -2, "wipeL", () => T(sl, t, { x: 4.4, y: 2.5, w: W - 4.4 - MX, h: 1.7, fontFace: HFONT, fontSize: fit(t, W - 4.4 - MX, 1.7, 42, 22, 0.55), bold: true, color: col.ink, valign: "middle" }));
         const ys = arr(b.y).map(plain).slice(0, 4);
-        if (ys.length) T(sl, ys.map((x, i) => ({ text: x, options: { bullet: true, breakLine: i < ys.length - 1 } })), { x: 4.4, y: 4.3, w: W - 4.4 - MX, h: 1.4, fontSize: fit(ys.join("\n"), W - 4.4 - MX, 1.4, 18, 12), color: col.muted });
+        if (ys.length) anim(sl, -3, "float", () => T(sl, ys.map((x, i) => ({ text: x, options: { bullet: true, breakLine: i < ys.length - 1 } })), { x: 4.4, y: 4.3, w: W - 4.4 - MX, h: 1.4, fontSize: fit(ys.join("\n"), W - 4.4 - MX, 1.4, 18, 12), color: col.muted }));
         ghi("Ghi tên mục vào vở", 4.4, 5.9, false);
       }
       footer(sl, d.p, n, b.kind === "chude");
@@ -1120,13 +1156,22 @@
             sl.addShape(S.roundRect, { x: MX + ow - 1.5 + j * 0.7, y: y + 0.12, w: 0.55, h: 0.44, rectRadius: 0.08, fill: { color: col.card }, line: { color: col.accent, width: 1 } });
             T(sl, lab, { x: MX + ow - 1.5 + j * 0.7, y: y + 0.12, w: 0.55, h: 0.44, fontSize: 14, bold: true, align: "center", valign: "middle", color: col.accent2, margin: 0 });
           });
+          // Bấm thẳng vào ô Đ hoặc S: đúng thì xanh + tiếng vỗ tay, sai thì đỏ + tiếng "rè".
+          ["Đ", "S"].forEach((lab, j) => {
+            const good = (j === 0) === !!x.answer;
+            const bx = MX + ow - 1.5 + j * 0.7;
+            hitArea(sl, bx, y + 0.12, 0.55, 0.44, (t) => {
+              anim(sl, `T${t}.0`, good ? "popOk" : "popNo", () => sl.addShape(S.roundRect, { x: bx, y: y + 0.12, w: 0.55, h: 0.44, rectRadius: 0.08, fill: { color: good ? "1E8E5A" : "D2453B" }, line: { type: "none" } }));
+              anim(sl, `T${t}.0`, "pop", () => T(sl, good ? "✓" : "✗", { x: bx, y: y + 0.12, w: 0.55, h: 0.44, fontSize: 16, bold: true, align: "center", valign: "middle", color: "FFFFFF", margin: 0 }));
+            });
+          });
         });
         // Bấm: hiện đáp án từng ý (ô Đ/S đúng tô xanh).
         const kA = click(sl);
         st.forEach((x, i) => {
           const y = optTop + i * 0.8;
           const j = x.answer ? 0 : 1;
-          anim(sl, kA, "appear", () => {
+          anim(sl, kA, "zoom", () => {
             sl.addShape(S.roundRect, { x: MX + ow - 1.5 + j * 0.7, y: y + 0.12, w: 0.55, h: 0.44, rectRadius: 0.08, fill: { color: "1E8E5A" }, line: { color: "1E8E5A", width: 1 } });
             T(sl, j ? "S" : "Đ", { x: MX + ow - 1.5 + j * 0.7, y: y + 0.12, w: 0.55, h: 0.44, fontSize: 14, bold: true, align: "center", valign: "middle", color: "FFFFFF", margin: 0 });
           });
@@ -1150,8 +1195,9 @@
           T(sl, w, { x: cx, y: cy, w: cw, h: 0.46, fontSize: 14, bold: true, align: "center", valign: "middle", margin: 0 });
           cx += cw + 0.12;
         });
-        anim(sl, click(sl), "appear", () => {
-          box(sl, MX, by - 0.02, ow, 0.66, { fill: "E3F4EB", line: "1E8E5A" });
+        const kF = click(sl);
+        anim(sl, kF, "wipeLOk", () => box(sl, MX, by - 0.02, ow, 0.66, { fill: "E3F4EB", line: "1E8E5A" }));
+        anim(sl, kF, "wipeL", () => {
           const at = f.blanks.map((b, i) => `(${i + 1}) ${plain(b.answer)}`).join("   ");
           T(sl, [{ text: "Đáp án:  ", options: { bold: true, color: "1E8E5A" } }, { text: at, options: { bold: true, color: "0F2742" } }], { x: MX + 0.2, y: by - 0.02, w: ow - 0.4, h: 0.66, fontSize: fit("Đáp án:  " + at, ow - 0.4, 0.66, 18, 11), valign: "middle" });
         });
@@ -1180,19 +1226,22 @@
           T(sl, g, { x: gx, y: gy, w: gw, h: 0.5, fontSize: fit(g, gw, 0.5, 17, 11), bold: true, color: "FFFFFF", align: "center", valign: "middle" });
         });
         const kS = click(sl);
+        let firstS = true;
         groups.forEach((g, gi) => {
           const its = items.map((it, i) => ({ t: `${i + 1}. ${plain(it.text)}`, g: Number(it.group) || 0 })).filter((x) => x.g === gi);
           if (!its.length) return;
           const gx = MX + gi * (gw + 0.2);
-          anim(sl, kS, "appear", () => {
+          anim(sl, kS, firstS ? "fadeOk" : "fade", () => {
+            firstS = false;
             T(sl, its.map((x, j) => ({ text: x.t, options: { breakLine: j < its.length - 1, bullet: false, paraSpaceAfter: 4 } })), { x: gx + 0.15, y: gy + 0.58, w: gw - 0.3, h: gh - 0.66, fontSize: fit(its.map((x) => x.t).join("\n"), gw - 0.3, gh - 0.66, 16, 10), color: "0F2742" });
           });
         });
       } else if (q.kind === "short") {
         box(sl, MX, optTop + 0.15, ow, 1.1, { fill: col.card, line: col.accent, dash: "dash" });
         T(sl, `Trả lời ngắn${q.unit ? " (đơn vị: " + q.unit + ")" : ""}: ……………………………`, { x: MX + 0.25, y: optTop + 0.15, w: ow - 0.5, h: 1.1, fontSize: 22, color: col.muted, valign: "middle" });
-        anim(sl, click(sl), "appear", () => {
-          box(sl, MX, optTop + 0.15, ow, 1.1, { fill: "E3F4EB", line: "1E8E5A", lw: 1.5 });
+        const kH = click(sl);
+        anim(sl, kH, "zoomOk", () => box(sl, MX, optTop + 0.15, ow, 1.1, { fill: "E3F4EB", line: "1E8E5A", lw: 1.5 }));
+        anim(sl, kH, "zoom", () => {
           T(sl, [{ text: "Đáp án: ", options: { color: "1E8E5A" } }, { text: String(q.answer == null ? "" : q.answer) + (q.unit ? " " + q.unit : ""), options: { color: "0F2742" } }], { x: MX + 0.25, y: optTop + 0.15, w: ow - 0.5, h: 1.1, fontSize: 26, bold: true, valign: "middle" });
         });
       } else {
@@ -1213,20 +1262,31 @@
           T(sl, LET[i], { x: x + 0.12, y: y + ohh / 2 - 0.27, w: 0.54, h: 0.54, fontSize: 18, bold: true, color: "FFFFFF", align: "center", valign: "middle", margin: 0 });
           T(sl, plain(o), { x: x + 0.8, y, w: cw - 0.95, h: ohh, fontSize: ofs, valign: "middle", fit: "shrink" });
         });
-        // Bấm: khoanh đáp án đúng (câu hỏi ý kiến thì không có đáp án).
         const ai = Number(q.answer);
-        if (!q.opinion && q.answer != null && ai >= 0 && ai < op.length)
-          anim(sl, click(sl), "appear", () => {
-            const x = MX + (ai % cols) * (cw + 0.2);
-            const y = optTop + Math.floor(ai / cols) * (ohh + 0.15);
-            sl.addShape(S.roundRect, { x: x - 0.04, y: y - 0.04, w: cw + 0.08, h: ohh + 0.08, rectRadius: 0.14, fill: { type: "none" }, line: { color: "1E8E5A", width: 4 } });
-            sl.addShape(S.ellipse, { x: x + cw - 0.5, y: y + ohh / 2 - 0.2, w: 0.4, h: 0.4, fill: { color: "1E8E5A" }, line: { type: "none" } });
-            T(sl, "✓", { x: x + cw - 0.5, y: y + ohh / 2 - 0.2, w: 0.4, h: 0.4, fontSize: 15, bold: true, color: "FFFFFF", align: "center", valign: "middle", margin: 0 });
+        const hasAns = !q.opinion && q.answer != null && ai >= 0 && ai < op.length;
+        const mark = (i, good, k, fx) => {
+          const x = MX + (i % cols) * (cw + 0.2);
+          const y = optTop + Math.floor(i / cols) * (ohh + 0.15);
+          const c = good ? "1E8E5A" : "D2453B";
+          anim(sl, k, fx, () => sl.addShape(S.roundRect, { x: x - 0.04, y: y - 0.04, w: cw + 0.08, h: ohh + 0.08, rectRadius: 0.14, fill: { type: "none" }, line: { color: c, width: 4 } }));
+          anim(sl, k, "pop", () => {
+            sl.addShape(S.ellipse, { x: x + cw - 0.52, y: y + ohh / 2 - 0.22, w: 0.44, h: 0.44, fill: { color: c }, line: { type: "none" } });
+            T(sl, good ? "✓" : "✗", { x: x + cw - 0.52, y: y + ohh / 2 - 0.22, w: 0.44, h: 0.44, fontSize: 16, bold: true, color: "FFFFFF", align: "center", valign: "middle", margin: 0 });
           });
+        };
+        // Học sinh chọn – giáo viên bấm thẳng vào phương án đó: đúng thì viền xanh + tiếng đúng, sai thì viền đỏ + tiếng sai.
+        if (hasAns)
+          op.forEach((o, i) => {
+            const x = MX + (i % cols) * (cw + 0.2);
+            const y = optTop + Math.floor(i / cols) * (ohh + 0.15);
+            hitArea(sl, x, y, cw, ohh, (t) => mark(i, i === ai, `T${t}.0`, i === ai ? "popOk" : "popNo"));
+          });
+        // Hoặc bấm ra ngoài (lần bấm tiếp theo của trang): khoanh đáp án đúng.
+        if (hasAns) mark(ai, true, click(sl), "zoomOk");
       }
       // Bấm tiếp: giải thích.
       if (q.explain && !q.opinion)
-        anim(sl, click(sl), "fade", () => {
+        anim(sl, click(sl), "float", () => {
           const ex = plain(q.explain);
           box(sl, MX, H - 1.12, W - 2 * MX, 0.62, { fill: "E3F4EB", line: "1E8E5A" });
           T(sl, [{ text: "Giải thích: ", options: { bold: true, color: "1E8E5A" } }, { text: ex, options: { color: "123B2A" } }], { x: MX + 0.15, y: H - 1.12, w: W - 2 * MX - 0.3, h: 0.62, fontSize: fit(ex + "Giải thích: ", W - 2 * MX - 0.3, 0.62, 15, 11), valign: "middle", fit: "shrink" });
@@ -1269,7 +1329,7 @@
       T(sl, cl, { x: CX, y: 1.95, w: W - CX - MX, h: 4.0, fontSize: fit(cl, W - CX - MX, 4.0, 17, 11), paraSpaceAfter: 5 });
       // Mỗi lần bấm lật một hàng ngang; lần bấm cuối hiện từ khoá.
       rows.forEach((r, i) =>
-        anim(sl, click(sl), "fade", () =>
+        anim(sl, click(sl), "wipeL", () =>
           r.answer.split("").forEach((ch, j) => {
             const isKey = left[i] + j === keyCol;
             sl.addShape(S.rect, { x: gx + (left[i] + j) * cell, y: gy + i * cell, w: cell, h: cell, fill: { color: isKey ? col.accent : col.card }, line: { color: col.accent2, width: 1 } });
@@ -1277,8 +1337,9 @@
           })
         )
       );
-      anim(sl, click(sl), "wipe", () => {
-        box(sl, CX, 6.05, W - CX - MX, 0.6, { fill: col.accent });
+      const kK = click(sl);
+      anim(sl, kK, "zoomOk", () => box(sl, CX, 6.05, W - CX - MX, 0.6, { fill: col.accent }));
+      anim(sl, kK, "zoom", () => {
         T(sl, [{ text: "Từ khoá: ", options: { bold: true, color: "FFFFFF" } }, { text: s.keyword, options: { bold: true, color: "FFFFFF" } }], { x: CX + 0.1, y: 6.05, w: W - CX - 0.1 - MX, h: 0.6, fontSize: 20, valign: "middle" });
       });
       timerBar(sl, s.minutes);
@@ -1302,14 +1363,14 @@
       });
       // Mỗi lần bấm hiện đáp án của một cặp.
       pairs.forEach((p, i) =>
-        anim(sl, click(sl), "fade", () => {
+        anim(sl, click(sl), "zoom", () => {
           const y = 2.5 + i * (rh + 0.08);
           const L = LET[order.findIndex((o) => o[1] === i)];
           sl.addShape(S.roundRect, { x: MX + cw + 0.2, y: y + rh / 2 - 0.25, w: 0.8, h: 0.5, rectRadius: 0.12, fill: { color: "1E8E5A" }, line: { type: "none" } });
           T(sl, "→ " + L, { x: MX + cw + 0.2, y: y + rh / 2 - 0.25, w: 0.8, h: 0.5, fontSize: 16, bold: true, color: "FFFFFF", align: "center", valign: "middle", margin: 0 });
         })
       );
-      if (s.explain) anim(sl, click(sl), "fade", () => T(sl, plain(s.explain), { x: MX, y: H - 1.0, w: W - 2 * MX, h: 0.5, fontSize: 14, italic: true, color: col.accent2 }));
+      if (s.explain) anim(sl, click(sl), "float", () => T(sl, plain(s.explain), { x: MX, y: H - 1.0, w: W - 2 * MX, h: 0.5, fontSize: 14, italic: true, color: col.accent2 }));
       footer(sl, d.p, n);
     };
     R.order = (sl, d, n) => {
@@ -1328,7 +1389,7 @@
       });
       // Bấm theo thứ tự đúng: số thứ tự hiện cạnh từng mục.
       items.forEach((t, pos) =>
-        anim(sl, click(sl), "appear", () => {
+        anim(sl, click(sl), "zoom", () => {
           const i = list.findIndex((x) => x[1] === pos);
           const y = 2.5 + i * (rh + 0.08);
           sl.addShape(S.ellipse, { x: W - MX - 0.85, y: y + rh / 2 - 0.3, w: 0.6, h: 0.6, fill: { color: "1E8E5A" }, line: { type: "none" } });
@@ -1445,14 +1506,14 @@
       box(sl, MX, 1.95, W - 2 * MX, 4.85, { fill: dark ? "3A3214" : "FFF8E1", line: "E0A100", lw: 1.5, dash: "dash" });
       const wts = t.map((x) => 1 + x.length / 90);
       const sum = wts.reduce((a, b) => a + b, 0) || 1;
-      const fs = Math.max(16, Math.min(...t.map((x, i) => fit(x, W - 2 * MX - 1.3, (4.55 * wts[i]) / sum, 24, 16))));
+      const fs = Math.max(20, Math.min(...t.map((x, i) => fit(x, W - 2 * MX - 1.3, (4.55 * wts[i]) / sum, 28, 20, 0.5))));
       let y = 2.1;
       t.forEach((x, i) => {
         const h = (4.55 * wts[i]) / sum;
-        anim(sl, click(sl), "fade", () => {
-          sl.addShape(S.ellipse, { x: MX + 0.3, y: y + 0.05, w: 0.42, h: 0.42, fill: { color: "E0A100" }, line: { type: "none" } });
-          T(sl, String(i + 1), { x: MX + 0.3, y: y + 0.05, w: 0.42, h: 0.42, fontSize: 14, bold: true, color: "FFFFFF", align: "center", valign: "middle", margin: 0 });
-          T(sl, x, { x: MX + 0.9, y, w: W - 2 * MX - 1.2, h, fontSize: fs, color: col.ink, valign: "top" });
+        anim(sl, click(sl), "float", () => {
+          sl.addShape(S.ellipse, { x: MX + 0.3, y: y + 0.07, w: 0.48, h: 0.48, fill: { color: "E0A100" }, line: { type: "none" } });
+          T(sl, String(i + 1), { x: MX + 0.3, y: y + 0.07, w: 0.48, h: 0.48, fontSize: 16, bold: true, color: "FFFFFF", align: "center", valign: "middle", margin: 0 });
+          T(sl, runs(x, { color: dark ? "FFF4D6" : "3A2A00" }), { x: MX + 0.95, y, w: W - 2 * MX - 1.25, h, fontSize: fs, color: dark ? "FFF4D6" : "3A2A00", valign: "top", lineSpacingMultiple: 1.05 });
         });
         y += h;
       });
@@ -1468,7 +1529,7 @@
       PH.forEach((c, i) => sl.addShape(S.rect, { x: (W / 4) * i, y: H - 0.12, w: W / 4, h: 0.12, fill: { color: c }, line: { type: "none" } }));
       // Bên trái: lời cảm ơn.
       pill(sl, "KẾT THÚC TIẾT HỌC", MX, 1.0, "FFFFFF", { color: col.accent2, size: 12 });
-      T(sl, "Cảm ơn các em!", { x: MX, y: 1.5, w: 6.4, h: 1.35, fontFace: HFONT, fontSize: 50, bold: true, color: "FFFFFF", valign: "middle" });
+      anim(sl, -1, "zoom", () => T(sl, "Cảm ơn các em!", { x: MX, y: 1.5, w: 6.4, h: 1.35, fontFace: HFONT, fontSize: 50, bold: true, color: "FFFFFF", valign: "middle" }));
       T(sl, "Hẹn gặp lại các em ở tiết học sau.", { x: MX, y: 2.85, w: 6.4, h: 0.55, fontSize: 20, color: "FFFFFF", transparency: 10 });
       const lbl = [L360.Pack.label(d.p), d.p.bai && d.p.bai.ten].filter(Boolean).join(" · ");
       T(sl, lbl, { x: MX, y: 3.5, w: 6.4, h: 0.8, fontSize: fit(lbl, 6.4, 0.8, 16, 11), color: "FFFFFF", transparency: 25 });
@@ -1552,27 +1613,56 @@
       const nt = notes(d);
       if (nt) sl.addNotes(nt);
     });
-    return { pptx, count: pl.slides.length };
+    // Loại chuyển cảnh cho từng trang (theo thứ tự trang trong tệp).
+    const trans = pl.slides.filter((d, i) => !opt.only || opt.only.includes(i)).map(transKind);
+    return { pptx, count: pl.slides.length, trans };
   }
 
-  /* ---------- Hiệu ứng PowerPoint: dựng <p:transition> + <p:timing> từ các hình đã đánh dấu ---------- */
+  /* ---------- Hiệu ứng PowerPoint: dựng <p:transition> + <p:timing> từ các hình đã đánh dấu ----------
+     Khoá hiệu ứng (k): số dương = lần bấm trên trang; số âm = tự chạy khi mở trang (-1, -2… nối tiếp nhau);
+     "Tn.m" = chuỗi riêng của nút bấm (trigger) n, bước m (bấm nút lần 1 → bước 0, lần 2 → bước 1…).
+     Hiệu ứng có hậu tố Ok/No phát tiếng đúng/sai (tệp WAV nhúng trong bài). */
+  const DUR = { fade: 500, wipe: 500, wipeL: 500, fly: 500, float: 700, zoom: 450, split: 500, wheel: 700, appear: 1, after: 1, out: 400, pop: 450 };
+  const SND = { ok: { file: "l360-dung.wav", name: "dung.wav", rid: "rIdL360snd1" }, no: { file: "l360-sai.wav", name: "sai.wav", rid: "rIdL360snd2" } };
+  const fxBase = (fx) => String(fx).replace(/(Ok|No)$/, "");
+  const fxSnd = (fx) => (/Ok$/.test(fx) ? "ok" : /No$/.test(fx) ? "no" : "");
   function timingXml(items, buttons = {}) {
     let id = 2;
     const nid = () => ++id;
     const tgt = (spid) => `<p:tgtEl><p:spTgt spid="${spid}"/></p:tgtEl>`;
     const vis = (spid, val, delay) =>
       `<p:set><p:cBhvr><p:cTn id="${nid()}" dur="1" fill="hold"><p:stCondLst><p:cond delay="${delay || 0}"/></p:stCondLst></p:cTn>${tgt(spid)}<p:attrNameLst><p:attrName>style.visibility</p:attrName></p:attrNameLst></p:cBhvr><p:to><p:strVal val="${val}"/></p:to></p:set>`;
-    const effect = (it, node) => {
-      const head = (preset, cls, sub) => `<p:par><p:cTn id="${nid()}" presetID="${preset}" presetClass="${cls}" presetSubtype="${sub}" fill="hold" grpId="0" nodeType="${node}"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>`;
-      const tail = `</p:childTnLst></p:cTn></p:par>`;
-      if (it.fx === "timer") {
-        const ms = Math.max(1000, it.dur || 60000);
-        return head(22, "exit", 2) + `<p:animEffect transition="out" filter="wipe(right)"><p:cBhvr><p:cTn id="${nid()}" dur="${ms}"/>${tgt(it.id)}</p:cBhvr></p:animEffect>` + vis(it.id, "hidden", ms - 1) + tail;
-      }
-      if (it.fx === "appear" || it.fx === "after") return head(1, "entr", 0) + vis(it.id, "visible") + tail;
-      if (it.fx === "wipe") return head(22, "entr", 4) + vis(it.id, "visible") + `<p:animEffect transition="in" filter="wipe(down)"><p:cBhvr><p:cTn id="${nid()}" dur="500"/>${tgt(it.id)}</p:cBhvr></p:animEffect>` + tail;
-      return head(10, "entr", 0) + vis(it.id, "visible") + `<p:animEffect transition="in" filter="fade"><p:cBhvr><p:cTn id="${nid()}" dur="500"/>${tgt(it.id)}</p:cBhvr></p:animEffect>` + tail;
+    const tav = (spid, attr, from, to, dur) =>
+      `<p:anim calcmode="lin" valueType="num"><p:cBhvr additive="base"><p:cTn id="${nid()}" dur="${dur}" fill="hold"/>${tgt(spid)}<p:attrNameLst><p:attrName>${attr}</p:attrName></p:attrNameLst></p:cBhvr><p:tavLst><p:tav tm="0"><p:val>${from}</p:val></p:tav><p:tav tm="100000"><p:val>${to}</p:val></p:tav></p:tavLst></p:anim>`;
+    const sv = (v) => `<p:strVal val="${v}"/>`;
+    const filt = (spid, dir, filter, dur) => `<p:animEffect transition="${dir}" filter="${filter}"><p:cBhvr><p:cTn id="${nid()}" dur="${dur}"/>${tgt(spid)}</p:cBhvr></p:animEffect>`;
+    const audio = (snd) => {
+      const S = SND[snd];
+      return S ? `<p:subTnLst><p:audio><p:cMediaNode vol="80000" showWhenStopped="0"><p:cTn id="${nid()}" display="0" masterRel="sameClick"><p:stCondLst><p:cond delay="0"/></p:stCondLst></p:cTn><p:tgtEl><p:sndTgt r:embed="${S.rid}" name="${S.name}"/></p:tgtEl></p:cMediaNode></p:audio></p:subTnLst>` : "";
     };
+    const effect = (it, node) => {
+      const fx = fxBase(it.fx);
+      const head = (preset, cls, sub) => `<p:par><p:cTn id="${nid()}" presetID="${preset}" presetClass="${cls}" presetSubtype="${sub}" fill="hold"${cls === "exit" ? "" : ' grpId="0"'} nodeType="${node}"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>`;
+      const tail = `</p:childTnLst>${audio(fxSnd(it.fx))}</p:cTn></p:par>`;
+      const d = it.id;
+      if (fx === "timer") {
+        const ms = Math.max(1000, it.dur || 60000);
+        return head(22, "exit", 2) + filt(d, "out", "wipe(right)", ms) + vis(d, "hidden", ms - 1) + tail;
+      }
+      if (fx === "out") return head(10, "exit", 0) + filt(d, "out", "fade", DUR.out) + vis(d, "hidden", DUR.out - 1) + tail;
+      if (fx === "appear" || fx === "after") return head(1, "entr", 0) + vis(d, "visible") + tail;
+      if (fx === "wipe") return head(22, "entr", 4) + vis(d, "visible") + filt(d, "in", "wipe(down)", DUR.wipe) + tail;
+      if (fx === "wipeL") return head(22, "entr", 8) + vis(d, "visible") + filt(d, "in", "wipe(left)", DUR.wipeL) + tail;
+      if (fx === "split") return head(16, "entr", 21) + vis(d, "visible") + filt(d, "in", "barn(inVertical)", DUR.split) + tail;
+      if (fx === "wheel") return head(21, "entr", 1) + vis(d, "visible") + filt(d, "in", "wheel(1)", DUR.wheel) + tail;
+      if (fx === "fly") return head(2, "entr", 4) + vis(d, "visible") + tav(d, "ppt_x", sv("#ppt_x"), sv("#ppt_x"), DUR.fly) + tav(d, "ppt_y", sv("1+#ppt_h/2"), sv("#ppt_y"), DUR.fly) + tail;
+      if (fx === "float")
+        return head(42, "entr", 0) + vis(d, "visible") + filt(d, "in", "fade", DUR.float) + tav(d, "ppt_x", sv("#ppt_x"), sv("#ppt_x"), DUR.float) + tav(d, "ppt_y", sv("#ppt_y+.1"), sv("#ppt_y"), DUR.float) + tail;
+      if (fx === "zoom" || fx === "pop")
+        return head(53, "entr", 16) + vis(d, "visible") + tav(d, "ppt_w", `<p:fltVal val="0"/>`, sv("#ppt_w"), DUR.zoom) + tav(d, "ppt_h", `<p:fltVal val="0"/>`, sv("#ppt_h"), DUR.zoom) + filt(d, "in", "fade", DUR.zoom) + tail;
+      return head(10, "entr", 0) + vis(d, "visible") + filt(d, "in", "fade", DUR.fade) + tail;
+    };
+    const len = (g) => Math.max(1, ...g.map((x) => (fxBase(x.fx) === "timer" ? Math.max(1000, x.dur || 60000) : DUR[fxBase(x.fx)] || 500)));
     // Một nhóm bấm: các hiệu ứng chạy ngay (bấm/cùng lúc) rồi các hiệu ứng "sau" (chờ hiệu ứng trước xong).
     const group = (g, start) => {
       const now = g.filter((x) => x.fx !== "after");
@@ -1581,43 +1671,105 @@
       let inner = "";
       if (now.length) inner += `<p:par><p:cTn id="${nid()}" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>${now.map((x, i) => effect(x, i ? "withEffect" : "clickEffect")).join("")}</p:childTnLst></p:cTn></p:par>`;
       if (later.length) {
-        const wait = Math.max(0, ...now.map((x) => (x.fx === "timer" ? Math.max(1000, x.dur || 60000) : 500)));
-        inner += `<p:par><p:cTn id="${nid()}" fill="hold"><p:stCondLst><p:cond delay="${now.length ? wait : 0}"/></p:stCondLst><p:childTnLst>${later.map((x, i) => effect(x, i ? "withEffect" : now.length ? "afterEffect" : "clickEffect")).join("")}</p:childTnLst></p:cTn></p:par>`;
+        const wait = now.length ? len(now) : 0;
+        inner += `<p:par><p:cTn id="${nid()}" fill="hold"><p:stCondLst><p:cond delay="${wait}"/></p:stCondLst><p:childTnLst>${later.map((x, i) => effect(x, i ? "withEffect" : now.length ? "afterEffect" : "clickEffect")).join("")}</p:childTnLst></p:cTn></p:par>`;
       }
       return `<p:par><p:cTn id="${outer}" fill="hold"><p:stCondLst><p:cond delay="${start}"/></p:stCondLst><p:childTnLst>${inner}</p:childTnLst></p:cTn></p:par>`;
     };
+    // Chuỗi tự chạy khi mở trang: các nhóm nối tiếp nhau (sau hiệu ứng trước).
+    const autoChain = (groups) => {
+      let t = 0;
+      const pars = groups
+        .map((g) => {
+          const x = `<p:par><p:cTn id="${nid()}" fill="hold"><p:stCondLst><p:cond delay="${t}"/></p:stCondLst><p:childTnLst>${g.map((e, i) => effect(e, i ? "withEffect" : "afterEffect")).join("")}</p:childTnLst></p:cTn></p:par>`;
+          t += len(g);
+          return x;
+        })
+        .join("");
+      return `<p:par><p:cTn id="${nid()}" fill="hold"><p:stCondLst><p:cond delay="indefinite"/><p:cond evt="onBegin" delay="0"><p:tn val="2"/></p:cond></p:stCondLst><p:childTnLst>${pars}</p:childTnLst></p:cTn></p:par>`;
+    };
     const byK = {};
-    items.forEach((it) => (byK[it.k] = byK[it.k] || []).push(it));
-    const keys = Object.keys(byK).map(Number).sort((a, b) => a - b);
-    // nhóm có nút bấm riêng (trigger) chạy thành chuỗi độc lập; còn lại theo thứ tự bấm của trang
-    const trig = keys.filter((k) => buttons[k]);
-    const main = keys.filter((k) => !buttons[k]);
-    const mainXml = main.length
-      ? `<p:seq concurrent="1" nextAc="seek"><p:cTn id="2" dur="indefinite" nodeType="mainSeq"><p:childTnLst>${main.map((k) => group(byK[k], "indefinite")).join("")}</p:childTnLst></p:cTn><p:prevCondLst><p:cond evt="onPrev" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:prevCondLst><p:nextCondLst><p:cond evt="onNext" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:nextCondLst></p:seq>`
-      : "";
-    const trigXml = trig
-      .map((k) => {
-        const b = `<p:tgtEl><p:spTgt spid="${buttons[k]}"/></p:tgtEl>`;
-        return `<p:seq concurrent="1" nextAc="seek"><p:cTn id="${nid()}" restart="whenNotActive" fill="hold" evtFilter="cancelBubble" nodeType="interactiveSeq"><p:stCondLst><p:cond evt="onClick" delay="0">${b}</p:cond></p:stCondLst><p:endSync evt="end" delay="0"><p:rtn val="all"/></p:endSync><p:childTnLst>${group(byK[k], "0")}</p:childTnLst></p:cTn><p:nextCondLst><p:cond evt="onClick" delay="0">${b}</p:cond></p:nextCondLst></p:seq>`;
+    const byT = {};
+    items.forEach((it) => {
+      const m = String(it.k).match(/^T(\d+)\.(\d+)$/);
+      if (m) {
+        if (!buttons[m[1]]) return;
+        const t = (byT[m[1]] = byT[m[1]] || {});
+        (t[m[2]] = t[m[2]] || []).push(it);
+      } else (byK[it.k] = byK[it.k] || []).push(it);
+    });
+    const keys = Object.keys(byK).map(Number);
+    const autoK = keys.filter((k) => k < 0).sort((a, b) => b - a);
+    const clickK = keys.filter((k) => k > 0).sort((a, b) => a - b);
+    const mainXml =
+      autoK.length || clickK.length
+        ? `<p:seq concurrent="1" nextAc="seek"><p:cTn id="2" dur="indefinite" nodeType="mainSeq"><p:childTnLst>${autoK.length ? autoChain(autoK.map((k) => byK[k])) : ""}${clickK.map((k) => group(byK[k], "indefinite")).join("")}</p:childTnLst></p:cTn><p:prevCondLst><p:cond evt="onPrev" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:prevCondLst><p:nextCondLst><p:cond evt="onNext" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:nextCondLst></p:seq>`
+        : "";
+    // Mỗi nút bấm là một chuỗi riêng: bấm nút lần 1 chạy bước 0, lần 2 chạy bước 1…
+    const trigXml = Object.keys(byT)
+      .sort((a, b) => a - b)
+      .map((t) => {
+        const b = `<p:tgtEl><p:spTgt spid="${buttons[t]}"/></p:tgtEl>`;
+        const steps = Object.keys(byT[t]).map(Number).sort((a, c) => a - c);
+        return `<p:seq concurrent="1" nextAc="seek"><p:cTn id="${nid()}" restart="whenNotActive" fill="hold" evtFilter="cancelBubble" nodeType="interactiveSeq"><p:stCondLst><p:cond evt="onClick" delay="0">${b}</p:cond></p:stCondLst><p:endSync evt="end" delay="0"><p:rtn val="all"/></p:endSync><p:childTnLst>${steps
+          .map((st, i) => group(byT[t][st], i ? "indefinite" : "0"))
+          .join("")}</p:childTnLst></p:cTn><p:nextCondLst><p:cond evt="onClick" delay="0">${b}</p:cond></p:nextCondLst></p:seq>`;
       })
       .join("");
-    const bld = items.filter((x) => x.sp).map((x) => `<p:bldP spid="${x.id}" grpId="0" animBg="1"/>`);
+    const bld = items.filter((x) => x.sp && fxBase(x.fx) !== "out").map((x) => `<p:bldP spid="${x.id}" grpId="0" animBg="1"/>`);
     return `<p:timing><p:tnLst><p:par><p:cTn id="1" dur="indefinite" restart="never" nodeType="tmRoot"><p:childTnLst>${mainXml}${trigXml}</p:childTnLst></p:cTn></p:par></p:tnLst>${
       bld.length ? `<p:bldLst>${bld.join("")}</p:bldLst>` : ""
     }</p:timing>`;
   }
-  async function animateZip(buf) {
+  /* Chuyển cảnh theo loại trang: hiệu ứng PowerPoint 2010+ (p14), bản PowerPoint cũ/LibreOffice dùng hiệu ứng dự phòng. */
+  const TRANS = {
+    title: ["vortex", ' dir="r"', 1600, "fade"],
+    goals: ["ripple", "", 1100, "fade"],
+    phase: ["doors", ' dir="vert"', 1300, "split"],
+    hero: ["gallery", ' dir="l"', 1300, "push"],
+    page1: ["conveyor", ' dir="l"', 1100, "push"],
+    page: ["pan", ' dir="u"', 800, "pushU"],
+    q: ["switch", ' dir="r"', 1000, "fade"],
+    game: ["honeycomb", "", 1800, "fade"],
+    task: ["window", ' dir="vert"', 1000, "fade"],
+    recap: ["ferris", ' dir="l"', 1200, "push"],
+    end: ["flythrough", "", 1200, "fade"]
+  };
+  const FALLBACK = { fade: "<p:fade/>", push: '<p:push dir="l"/>', pushU: '<p:push dir="u"/>', split: '<p:split orient="vert" dir="out"/>' };
+  function transitionXml(kind) {
+    const t = TRANS[kind];
+    if (!t) return `<p:transition spd="med"><p:fade/></p:transition>`;
+    return `<mc:AlternateContent xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"><mc:Choice xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main" Requires="p14"><p:transition spd="slow" p14:dur="${t[2]}"><p14:${t[0]}${t[1]}/></p:transition></mc:Choice><mc:Fallback><p:transition spd="med">${FALLBACK[t[3]] || FALLBACK.fade}</p:transition></mc:Fallback></mc:AlternateContent>`;
+  }
+  async function soundData() {
+    const out = {};
+    await Promise.all(
+      Object.entries({ ok: "assets/sound/dung.wav", no: "assets/sound/sai.wav" }).map(async ([k, src]) => {
+        try {
+          const r = await fetch(src);
+          if (r.ok) out[k] = await r.arrayBuffer();
+        } catch (e) {}
+      })
+    );
+    return out;
+  }
+  async function animateZip(buf, opt = {}) {
     const zip = await window.JSZip.loadAsync(buf);
-    const files = Object.keys(zip.files).filter((f) => /^ppt\/slides\/slide\d+\.xml$/.test(f));
+    const files = Object.keys(zip.files)
+      .filter((f) => /^ppt\/slides\/slide\d+\.xml$/.test(f))
+      .sort((a, b) => Number(a.match(/(\d+)\.xml$/)[1]) - Number(b.match(/(\d+)\.xml$/)[1]));
+    const sounds = opt.sounds || {};
+    const usedSnd = new Set();
     let total = 0;
     for (const f of files) {
+      const no = Number(f.match(/(\d+)\.xml$/)[1]);
       let xml = await zip.file(f).async("string");
       // Id hình phải duy nhất trong một trang (PptxGenJS đôi khi cấp trùng id cho bảng) – trùng là PowerPoint báo lỗi cần sửa tệp.
       let nid = 0;
       xml = xml.replace(/<p:cNvPr id="\d+"/g, () => `<p:cNvPr id="${++nid}"`);
       const items = [];
       const buttons = {};
-      xml = xml.replace(/<p:cNvPr id="(\d+)" name="L360A\|(\d+)\|(\w+)\|(\d+)\|(\d+)"/g, (m, id, k, fx, dur, seq, off) => {
+      xml = xml.replace(/<p:cNvPr id="(\d+)" name="L360A\|([\w.-]+)\|(\w+)\|(\d+)\|(\d+)"/g, (m, id, k, fx, dur, seq, off) => {
         // PowerPoint chỉ ghi bldP cho hình có chữ; hình không có chữ, ảnh, đường nối thì không.
         const before = xml.slice(Math.max(0, off - 400), off);
         const isSp = before.lastIndexOf("<p:sp>") > Math.max(before.lastIndexOf("<p:pic>"), before.lastIndexOf("<p:cxnSp>"));
@@ -1625,17 +1777,37 @@
         const body = isSp && end > 0 ? xml.slice(off, end) : "";
         const sp = isSp && /<a:t>[^<]*\S[^<]*<\/a:t>/.test(body) && body.indexOf("<p:pic>") < 0;
         if (fx === "button") {
-          buttons[k] = id;
-          return `<p:cNvPr id="${id}" name="Nút bắt đầu đồng hồ ${k - 900}"`;
+          const t = String(k).replace(/^T/, "");
+          buttons[t] = id;
+          return `<p:cNvPr id="${id}" name="Nút bấm ${t}"`;
         }
-        items.push({ id, k: Number(k), fx, dur: Number(dur), sp });
-        return `<p:cNvPr id="${id}" name="${Number(k) >= 900 ? "Đồng hồ " + (k - 900) : "Hiệu ứng " + k}.${seq}"`;
+        items.push({ id, k, fx, dur: Number(dur), sp });
+        if (fxSnd(fx) && sounds[fxSnd(fx)]) usedSnd.add(fxSnd(fx));
+        return `<p:cNvPr id="${id}" name="${/^T/.test(k) ? "Nút " + String(k).replace(/^T/, "") : "Hiệu ứng " + k}.${seq}"`;
       });
-      const tr = `<p:transition spd="med"><p:fade/></p:transition>`;
+      // Âm thanh: chỉ giữ hiệu ứng có tệp âm thanh thật; gắn quan hệ âm thanh vào trang.
+      const need = [...new Set(items.map((x) => fxSnd(x.fx)).filter((x) => x && sounds[x]))];
+      items.forEach((x) => fxSnd(x.fx) && !sounds[fxSnd(x.fx)] && (x.fx = fxBase(x.fx)));
+      if (need.length) {
+        const rf = `ppt/slides/_rels/slide${no}.xml.rels`;
+        let rels = zip.file(rf) ? await zip.file(rf).async("string") : `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>`;
+        need.forEach((k) => {
+          if (rels.indexOf(`Id="${SND[k].rid}"`) < 0) rels = rels.replace("</Relationships>", `<Relationship Id="${SND[k].rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/audio" Target="../media/${SND[k].file}"/></Relationships>`);
+        });
+        zip.file(rf, rels);
+      }
+      const tr = transitionXml(opt.trans ? opt.trans[no - 1] : "");
       const tm = items.length ? timingXml(items, buttons) : "";
       total += items.length;
       xml = xml.replace(/<\/p:clrMapOvr>/, `</p:clrMapOvr>${tr}${tm}`);
       zip.file(f, xml);
+    }
+    if (usedSnd.size) {
+      usedSnd.forEach((k) => zip.file(`ppt/media/${SND[k].file}`, sounds[k]));
+      const ct = "[Content_Types].xml";
+      let x = await zip.file(ct).async("string");
+      if (!/Extension="wav"/i.test(x)) x = x.replace(/<Types([^>]*)>/, `<Types$1><Default Extension="wav" ContentType="audio/wav"/>`);
+      zip.file(ct, x);
     }
     // Bỏ các mục thư mục trong gói (một số dịch vụ đám mây không mở được tệp có mục thư mục).
     Object.keys(zip.files).forEach((k) => zip.files[k].dir && delete zip.files[k]);
@@ -1643,16 +1815,16 @@
   }
 
   async function download(packs, opt = {}) {
-    const { pptx, count } = await build(packs, opt);
+    const { pptx, count, trans } = await build(packs, opt);
     const p = plan(packs).packs[0];
     const b = p.bai || {};
     const cut = (t, n) => (t.length <= n ? t : t.slice(0, n).replace(/\s+\S*$/, "").replace(/[\s.,;:–-]+$/, ""));
     const name = `${b.so ? "Bài " + b.so + " - " : ""}${cut((b.ten || p.title).replace(/[\\/:*?"<>|]+/g, " "), 90)}${packs.length === 1 && p.tiet.tong > 1 ? ` - Tiết ${p.tiet.so}` : ""}.pptx`;
     const buf = await pptx.write({ outputType: "arraybuffer" });
-    const { blob } = await animateZip(buf);
+    const { blob } = await animateZip(buf, { trans, sounds: await soundData() });
     u.downloadBlob(opt.fileName || name, blob);
     return count;
   }
 
-  L360.Pptx = { plan, build, download, fit, animateZip };
+  L360.Pptx = { plan, build, download, fit, animateZip, timingXml, transitionXml, soundData };
 })();

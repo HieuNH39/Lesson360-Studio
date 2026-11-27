@@ -27,6 +27,83 @@
   L360.PHASES = PHASES;
   L360.phase = (id) => PHASES.find((p) => p.id === id) || PHASES[1];
 
+  /* Rải đều đáp án đúng của câu nhiều lựa chọn (A/B/C/D) – trợ lý AI hay để đáp án ở A.
+     Ổn định theo nội dung: gọi lại nhiều lần cho cùng kết quả, nên giáo án Word, PowerPoint và bài dạy online luôn khớp.
+     Không xáo câu có phương án dẫn chiếu ("Cả A và B", "Tất cả các ý trên"); câu toàn số/năm thì xếp tăng dần. */
+  const REF_OPT = /(cả\s+[A-H]\s*(và|,|lẫn)|[A-H]\s+và\s+[A-H]\b|(tất\s+)?cả\s+(các\s+)?(phương án|đáp án|ý|câu)\s*(trên|đều)|các\s+(phương án|đáp án|ý)\s+trên|không\s+(có\s+)?(phương án|đáp án|ý)\s+nào|tất cả đều|đều (đúng|sai)$)/i;
+  const NUM_OPT = /^\s*(?:năm\s+|khoảng\s+|thế kỉ\s+)?[-–]?\d[\d.,]*(?:\s*(?:%|km²?|m|kg|tấn|năm|tuổi|người|triệu|nghìn|tỉ|lần|ngày))?\s*(?:TCN|SCN)?\s*\.?$/i;
+  const numVal = (t) => {
+    const m = String(t).replace(/\.(?=\d{3}\b)/g, "").replace(",", ".").match(/-?\d+(?:\.\d+)?/);
+    const v = m ? Number(m[0]) : 0;
+    return /TCN/i.test(t) ? -v : v;
+  };
+  L360.balanceMcq = (qs, seed) => {
+    const list = (qs || []).filter((q) => {
+      if (!q || typeof q !== "object" || (q.kind && q.kind !== "mcq") || !Array.isArray(q.options)) return false;
+      const n = q.options.length;
+      const a = Number(q.answer);
+      return n >= 3 && n <= 6 && q.answer != null && q.answer !== "" && Number.isInteger(a) && a >= 0 && a < n && q.options.every((o) => typeof o === "string" && o.trim());
+    });
+    const rel = (q, map) => {
+      if (typeof q.explain !== "string" || !q.explain) return;
+      q.explain = q.explain.replace(/((?:đáp án|phương án|lựa chọn|chọn|ý)\s+)([A-H])\b/gi, (m, pre, L) => {
+        const i = "ABCDEFGH".indexOf(L.toUpperCase());
+        return map[i] != null ? pre + "ABCDEFGH"[map[i]] : m;
+      });
+    };
+    const free = [];
+    list.forEach((q) => {
+      if (q.options.some((o) => REF_OPT.test(o))) return;
+      if (q.options.every((o) => NUM_OPT.test(o))) {
+        // Phương án là số/năm: xếp tăng dần (theo thói quen ra đề), đáp án đi theo.
+        const idx = q.options.map((o, i) => i).sort((x, y) => numVal(q.options[x]) - numVal(q.options[y]) || x - y);
+        const map = [];
+        idx.forEach((oi, ni) => (map[oi] = ni));
+        q.answer = map[Number(q.answer)];
+        q.options = idx.map((i) => q.options[i]);
+        rel(q, map);
+        return;
+      }
+      free.push(q);
+    });
+    // Mỗi nhóm câu cùng số phương án: dãy vị trí đáp án là các khối hoán vị nối tiếp nhau (không lặp quá 2 lần liền).
+    const byN = {};
+    free.forEach((q) => (byN[q.options.length] = byN[q.options.length] || []).push(q));
+    Object.entries(byN).forEach(([n, group]) => {
+      n = Number(n);
+      const targets = [];
+      let b = 0;
+      while (targets.length < group.length) {
+        let blk = u.shuffle(Array.from({ length: n }, (_, i) => i), `${seed}|${n}|${b++}`);
+        if (targets.length && blk[0] === targets[targets.length - 1]) blk = blk.slice(1).concat(blk[0]);
+        targets.push(...blk);
+      }
+      group.forEach((q, qi) => {
+        const a = Number(q.answer);
+        const right = q.options[a];
+        const others = q.options.map((o, i) => i).filter((i) => i !== a);
+        others.sort((x, y) => u.hash(`${seed}|${q.options[x]}`) - u.hash(`${seed}|${q.options[y]}`) || x - y);
+        const t = targets[qi];
+        const order = others.slice(0, t).concat([a], others.slice(t));
+        const map = [];
+        order.forEach((oi, ni) => (map[oi] = ni));
+        q.options = order.map((i) => q.options[i]);
+        q.answer = t;
+        if (right !== q.options[t]) q.answer = q.options.indexOf(right);
+        rel(q, map);
+      });
+    });
+    return qs;
+  };
+  // Mọi câu hỏi nhiều lựa chọn trong một gói tiết học (để rải đều đáp án khi nhập từ trợ lý AI).
+  L360.packQuestions = (p) =>
+    ((p && p.steps) || []).flatMap((s) => {
+      if (!s || typeof s !== "object") return [];
+      const qs = Array.isArray(s.questions) ? s.questions.slice() : [];
+      if (s.type === "poll2" && s.answer != null) qs.push(s);
+      return qs;
+    });
+
   L360.subKey = (step, state) => {
     const t = L360.types[step.type];
     return t && t.subKey ? t.subKey(step, state || {}) : step.id;
@@ -221,7 +298,10 @@
       const a = s.indexOf("{");
       const b = s.lastIndexOf("}");
       if (a > 0 || (b >= 0 && b < s.length - 1)) s = s.slice(a, b + 1);
-      return JSON.parse(s);
+      const o = JSON.parse(s);
+      // Gói tiết học do AI soạn: rải đều đáp án đúng A/B/C/D.
+      if (o && Array.isArray(o.steps)) L360.balanceMcq(L360.packQuestions(o), `${o.title || ""}|${(o.tiet && o.tiet.so) || 1}`);
+      return o;
     },
     groups(pack, count) {
       const n = Math.max(2, Math.min(6, Number(count) || L360.cfg.defaultGroupCount || 4));

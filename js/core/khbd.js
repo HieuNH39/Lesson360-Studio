@@ -92,7 +92,25 @@
       return { ten: str(ti.ten || `TIẾT ${i + 1}`), hoatDong: arr(ti.hoatDong).map(hd), veNha: { tasks: arr(vn.tasks).map(str).filter(Boolean), prepare: str(vn.prepare) } };
     });
     k.phuLuc = arr(k.phuLuc).map((p) => ({ ten: str(p.ten), moTa: str(p.moTa), items: arr(p.items).map(str), bang: table(p.bang), dapAn: table(p.dapAn) }));
+    // Rải đều đáp án đúng A/B/C/D cho mọi câu hỏi của giáo án (ổn định – Word, PowerPoint, dạy online khớp nhau).
+    if (L360.balanceMcq) L360.balanceMcq(allQuestions(k), k.tenBai);
     return k;
+  }
+  function allQuestions(k) {
+    const out = [];
+    const take = (x) => {
+      if (!x) return;
+      out.push(...arr(x.cauHoi));
+      arr(x.tuongTac).forEach((s) => s && typeof s === "object" && out.push(...arr(s.questions)));
+    };
+    k.tiet.forEach((ti) =>
+      ti.hoatDong.forEach((h) => {
+        take(h);
+        h.nhiemVu.forEach(take);
+        h.muc.forEach((m) => m.nhiemVu.forEach(take));
+      })
+    );
+    return out;
   }
   function pair(x) {
     if (typeof x === "string") {
@@ -146,10 +164,16 @@
 
   /* ---------- Mô hình trang (dùng chung HTML/Word) ---------- */
   // Chuỗi có thể chứa **đậm** và *nghiêng*; xuống dòng bằng \n.
+  // Giáo án theo mẫu của Bộ: không ghi số slide, số phút trong nội dung.
+  const noMeta = (t) =>
+    String(t == null ? "" : t)
+      .replace(/\s*[[(]\s*(?:slide|slides|trang chiếu)\s*\d+(?:\s*[-–,]\s*\d+)*\s*[\])]/gi, "")
+      .replace(/\s*[[(]\s*\d+(?:\s*[-–]\s*\d+)?\s*phút\s*[\])]/gi, "")
+      .replace(/\s*[–-]\s*\d+(?:\s*[-–]\s*\d+)?\s*phút\s*$/i, "");
   function runs(s, base) {
     base = base || {};
     const out = [];
-    String(s == null ? "" : s)
+    noMeta(s)
       .split(/(\*\*[^*]+\*\*|\*[^*\s][^*]*\*)/)
       .forEach((part) => {
         if (!part) return;
@@ -159,7 +183,7 @@
       });
     return out;
   }
-  const R = (text, o) => Object.assign({ text: str(text) }, o || {});
+  const R = (text, o) => Object.assign({ text: noMeta(str(text)) }, o || {});
 
   function build(raw) {
     const k = normalize(raw);
@@ -209,7 +233,7 @@
       });
     const chotBlock = (c) => {
       if (!c) return;
-      P([R("Chốt kiến thức – ghi bài", { b: true }), R(`${c.slide ? ` [${c.slide}]` : ""}${c.phut ? ` (${c.phut} phút)` : ""}:`)], { before: 80, keep: true });
+      P([R("Chốt kiến thức – ghi bài:", { b: true })], { before: 80, keep: true });
       c.items.forEach((x) => LI(runs(x)));
       if (c.bang) {
         const cols = c.bang.dong.reduce((m, r) => Math.max(m, r.length), c.bang.cot.length || 0) || 2;
@@ -217,7 +241,7 @@
       }
     };
     const nvBlock = (x) => {
-      P([R(x.ten, { b: true }), R(`${x.phut ? ` (${x.phut} phút)` : ""}${x.slide ? ` [${x.slide}]` : ""}`)], { before: 100, keep: true });
+      P([R(x.ten, { b: true })], { before: 100, keep: true });
       steps(x.buoc);
       exprs(x.nls, "nls");
       exprs(x.ai, "ai");
@@ -267,11 +291,11 @@
     k.tiet.forEach((ti) => {
       M.push({ t: "p", runs: [R(ti.ten.toUpperCase(), { b: true, color: C.head })], align: "center", before: 240, after: 120, keep: true, border: C.head });
       ti.hoatDong.forEach((h) => {
-        M.push({ t: "p", runs: [R(`${h.ten}${h.phut ? ` – ${h.phut} phút` : ""}`, { b: true, color: C.head })], align: "left", before: 200, after: 80, keep: true, shade: C.headBg });
+        M.push({ t: "p", runs: [R(h.ten, { b: true, color: C.head })], align: "left", before: 200, after: 80, keep: true, shade: C.headBg });
         field("a) Mục tiêu", h.mucTieu);
         field("b) Nội dung", h.noiDung);
         field("c) Sản phẩm", h.sanPham);
-        P([R("d) Tổ chức thực hiện:", { b: true }), R(h.slide ? ` [${h.slide}]` : "")], { keep: true });
+        P([R("d) Tổ chức thực hiện:", { b: true })], { keep: true });
         steps(h.buoc);
         h.nhiemVu.forEach(nvBlock);
         h.muc.forEach((mc) => {
@@ -902,7 +926,7 @@
             .map((s) => {
               const d = describe(s);
               const r = plan && plan.range[s.id];
-              return `  - [${L360.phase(s.phase).name}] ${s.title} (${d.label}, ${s.minutes || "?"} phút${r ? `, Slide ${r[0]}${r[1] !== r[0] ? "–" + r[1] : ""}` : ""})${d.task ? ` – nhiệm vụ: ${d.task}` : ""}${
+              return `  - [${L360.phase(s.phase).name}] ${s.title} (${d.label}, ${s.minutes || "?"} phút)${d.task ? ` – nhiệm vụ: ${d.task}` : ""}${
                 d.lines.length ? `\n      Nội dung: ${d.lines.slice(0, 6).join(" | ").slice(0, 600)}` : ""
               }${d.questions.length ? `\n      Câu hỏi: ${d.questions.map(qLine).join(" | ").slice(0, 900)}` : ""}${d.notes.length ? `\n      Ghi vở: ${d.notes.join(" ").slice(0, 300)}` : ""}`;
             })
@@ -939,7 +963,6 @@
               mucTieu: "…",
               noiDung: "…",
               sanPham: "…",
-              slide: "Slide 2–3",
               buoc: [["GV …"], ["HS …"], ["GV mời …"], ["GV nhận xét, dẫn vào bài: …"]],
               ...(o.slides
                 ? {
@@ -959,7 +982,7 @@
                   ten: "2.1. …",
                   nhiemVu: [
                     Object.assign(
-                      { ten: "Nhiệm vụ 1. …", phut: "8", slide: "Slide 4–6", buoc: [["…"], ["…"], ["…"], ["…"]], nls: [{ ma: `1.1.${lv}a`, nd: "HS …" }], ai: [] },
+                      { ten: "Nhiệm vụ 1. …", phut: "8", buoc: [["…"], ["…"], ["…"], ["…"]], nls: [{ ma: `1.1.${lv}a`, nd: "HS …" }], ai: [] },
                       o.slides
                         ? {
                             trinhChieu: [
@@ -970,7 +993,7 @@
                         : {}
                     )
                   ],
-                  chot: { slide: "Slide 7", phut: "3", bang: { tieuDe: "1. …", cot: [], dong: [["Ý", "Nội dung ghi vở"]] } }
+                  chot: { phut: "3", bang: { tieuDe: "1. …", cot: [], dong: [["Ý", "Nội dung ghi vở"]] } }
                 }
               ]
             }
@@ -992,13 +1015,13 @@ THÔNG TIN BÀI
 
 ${
   acts
-    ? `TIẾN TRÌNH ĐÃ THIẾT KẾ TRÊN LESSON 360° (giữ đúng thứ tự, tên, thời lượng và số slide; mỗi hoạt động dưới đây là một "Nhiệm vụ")\n${acts}\n`
+    ? `TIẾN TRÌNH ĐÃ THIẾT KẾ TRÊN LESSON 360° (giữ đúng thứ tự, tên và thời lượng; mỗi hoạt động dưới đây là một "Nhiệm vụ")\n${acts}\n`
     : "TIẾN TRÌNH: tự thiết kế theo đúng quy tắc dưới đây.\n"
 }
 QUY TẮC
 1. Cấu trúc đúng CV 5512: I. Mục tiêu (kiến thức; năng lực chung; ${dac.ten.toLowerCase()}${dac.items.length ? " (" + dac.items.join(", ") + ")" : ""}; năng lực số; năng lực AI; phẩm chất) – II. Thiết bị dạy học và học liệu – III. Tiến trình dạy học – IV. Phụ lục.
 2. Mỗi bài CHỈ có 1 hoạt động Mở đầu (khởi động, ở tiết đầu), 1 hoạt động Luyện tập và 1 hoạt động Vận dụng (ở tiết cuối; vận dụng có thể giao về nhà). Hình thành kiến thức chia mục 2.1, 2.2… Tối đa 1 nhiệm vụ nhóm cho cả bài.
-3. Mỗi hoạt động có a) Mục tiêu, b) Nội dung, c) Sản phẩm, d) Tổ chức thực hiện; mỗi nhiệm vụ đủ 4 bước: Chuyển giao – Thực hiện – Báo cáo, thảo luận – Kết luận, nhận định. Ghi rõ [Slide n] khớp với bài giảng.
+3. Mỗi hoạt động có a) Mục tiêu, b) Nội dung, c) Sản phẩm, d) Tổ chức thực hiện; mỗi nhiệm vụ đủ 4 bước: Chuyển giao – Thực hiện – Báo cáo, thảo luận – Kết luận, nhận định. KHÔNG ghi số slide, số phút trong nội dung giáo án (trường "phut" chỉ để ứng dụng đặt đồng hồ trên trang chiếu).
 4. Cuối mỗi mục hình thành kiến thức có "chot" (Chốt kiến thức – ghi bài) dạng bảng 2 cột: cột trái là ý, cột phải là nội dung HS ghi vở; "tieuDe" là tên mục.
 5. Năng lực số: XÁC ĐỊNH TỪ CHÍNH CÁC HOẠT ĐỘNG CỦA GIÁO ÁN NÀY (nội dung năng lực số ghi trong Phụ lục 1 của tổ chỉ để tham khảo, không chép lại). Chọn 3–5 năng lực thành phần thật sự có trong bài, mức ${LEVEL_NAME[lv]} (mã dạng "1.1.${lv}a" = năng lực thành phần + mức + chữ cái yêu cầu cần đạt). Mỗi mã khai báo ở mục tiêu phải có ít nhất một "Biểu hiện năng lực số" (trường "nls") ở nhiệm vụ cụ thể. Danh mục năng lực thành phần:
 ${nlsCatalog()}
@@ -1033,7 +1056,7 @@ ${A.MAPRULES || ""}
 ${A.MEDIA || ""}
 11. Câu hỏi tương tác (khởi động, củng cố, luyện tập, trò chơi) ghi trong "cauHoi" của hoạt động/nhiệm vụ đó, theo các dạng:
 ${A.QUESTIONS || '- {"kind":"mcq","q":"…","options":["…","…","…","…"],"answer":0,"explain":"…"}'}
-12. KHÔNG cần tạo trang tên bài, tên chủ đề, tên mục, trang ghi vở, nhiệm vụ về nhà, trang kết: ứng dụng tự dựng từ "tenBai", "muc", "chot", "veNha" và tự đánh số slide vào giáo án (trường "slide" có thể để trống).
+12. KHÔNG cần tạo trang tên bài, tên chủ đề, tên mục, trang ghi vở, nhiệm vụ về nhà, trang kết: ứng dụng tự dựng từ "tenBai", "muc", "chot", "veNha". Giáo án Word không ghi số slide.
 `;
   }
   // Dựng các tiết học (gói bài học) từ giáo án: dùng để xuất PowerPoint offline và dạy tương tác.
