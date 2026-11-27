@@ -31,6 +31,9 @@
     { id: "binh-chon", phase: "khoi-dong", type: "poll2", label: "Bình chọn – dự đoán nhanh", hint: "Cả lớp chọn ý kiến, màn chiếu hiện tỉ lệ", ask: 'MỘT câu hỏi dự đoán/ý kiến (type "poll2", "answer": null nếu là câu hỏi ý kiến) gây tò mò về bài mới' },
     { id: "video-kd", phase: "khoi-dong", type: "video", label: "Video mở đầu có câu hỏi", hint: "Video EduHistory/YouTube dừng lại hỏi", ask: 'MỘT video ngắn (type "video") có 1–2 câu hỏi xen giữa để khởi động' },
     { id: "chon-the", phase: "khoi-dong", type: "cards", label: "Chọn thẻ – đoán nhanh", hint: "Học sinh chọn thẻ phù hợp, nêu giả thuyết", ask: 'MỘT hoạt động chọn thẻ (type "cards") để học sinh đoán/nêu giả thuyết' },
+    { id: "vong-quay", phase: "khoi-dong", type: "wheel", label: "Vòng quay may mắn", hint: "Quay chọn câu hỏi/nhiệm vụ cho cả lớp", ask: 'MỘT vòng quay may mắn (type "wheel") 5–8 ô là câu hỏi khởi động ngắn hoặc nhiệm vụ vui' },
+    { id: "quan-diem", phase: "khoi-dong", type: "stance", label: "Bày tỏ quan điểm (bốn góc)", hint: "Chọn góc đồng ý – phân vân – không đồng ý, nêu lí do", ask: 'MỘT hoạt động bày tỏ quan điểm (type "stance") với nhận định gây tranh luận gắn với bài' },
+    { id: "kwl", phase: "khoi-dong", type: "kwl", label: "Bảng KWL (đầu – cuối giờ)", hint: "Đã biết – muốn biết – đã học được", ask: 'MỘT bảng KWL đầu giờ (type "kwl", "stage":"kw") ở khởi động và MỘT bảng KWL cuối giờ (type "kwl", "stage":"l", "from": id bước đầu giờ) ở vận dụng' },
     { id: "web-kd", phase: "khoi-dong", type: "web", label: "Trò chơi web (Wordwall, Blooket…)", hint: "Vòng quay, mở hộp bí mật, lật thẻ – nhúng lên màn chiếu", ask: 'MỘT trò chơi web khởi động (type "web") – xem mục TRÒ CHƠI WEB' },
     { id: "bai-giang", phase: "hinh-thanh", type: "slide", label: "Bài giảng trực quan", hint: "Ảnh, dòng thời gian, sơ đồ, bảng so sánh, kết luận, ghi vở", always: true, ask: 'các bước bài giảng trực quan (type "slide", 2–4 trang mỗi bước) cho TỪNG nội dung kiến thức' },
     { id: "hoc-tu-ban", phase: "hinh-thanh", type: "poll2", label: "Học từ bạn – hai vòng", hint: "Tự chọn → trao đổi → chọn lại; thấy tiến bộ ngay", ask: '1–2 hoạt động hai vòng học từ bạn (type "poll2") cho khái niệm dễ nhầm' },
@@ -40,6 +43,10 @@
     { id: "video-ht", phase: "hinh-thanh", type: "video", label: "Video có câu hỏi xen giữa", hint: "EduHistory Studio (Lịch sử 6–9) hoặc YouTube", ask: 'MỘT video (type "video") có 2–3 câu hỏi tại các mốc thời gian' },
     { id: "trac-nghiem", phase: "luyen-tap", type: "quiz", label: "Trắc nghiệm tổng hợp", hint: "4 lựa chọn · Đúng/Sai 4 ý · Trả lời ngắn; bảng xếp hạng", kinds: true, ask: 'MỘT bước trắc nghiệm (type "quiz") 6–10 câu' },
     { id: "ghep-sap", phase: "luyen-tap", type: "match", label: "Ghép nối / Sắp xếp", hint: "Ghép khái niệm – nội dung hoặc sắp xếp tiến trình", ask: 'MỘT hoạt động ghép nối (type "match") hoặc sắp xếp (type "order") – chọn dạng hợp nội dung hơn' },
+    { id: "manh-ghep", phase: "luyen-tap", type: "quiz", mode: "puzzle", label: "Mảnh ghép bí ẩn", hint: "Trả lời đúng mở mảnh ghép, đoán bức tranh", kinds: true, ask: 'MỘT trò chơi Mảnh ghép bí ẩn (type "quiz", "mode":"puzzle", có "keyword", "keyClue", "query" tìm ảnh) 4–9 câu' },
+    { id: "hop-qua", phase: "luyen-tap", type: "quiz", mode: "gift", label: "Hộp quà bí mật", hint: "Lớp chọn hộp quà, mỗi hộp một câu hỏi", kinds: true, ask: 'MỘT trò chơi Hộp quà bí mật (type "quiz", "mode":"gift") 4–8 câu' },
+    { id: "rcv", phase: "luyen-tap", type: "quiz", mode: "rcv", label: "Rung chuông vàng", hint: "Sai là dừng cuộc chơi, ai trụ đến cuối thắng", kinds: true, ask: 'MỘT trò chơi Rung chuông vàng (type "quiz", "mode":"rcv", "timer":20) 6–10 câu tăng dần độ khó' },
+    { id: "the-lat", phase: "luyen-tap", type: "flash", label: "Thẻ ghi nhớ lật", hint: "Mặt trước – mặt sau, HS tự kiểm tra trí nhớ", ask: 'MỘT bộ thẻ ghi nhớ lật (type "flash") 6–10 thẻ: thuật ngữ, mốc thời gian, nhân vật – giải thích ngắn' },
     { id: "dau-gia", phase: "luyen-tap", type: "auction", label: "Đấu giá kiến thức (nhóm)", hint: "Nhóm chọn phương án và lí do, giáo viên trao giải", ask: 'MỘT hoạt động đấu giá/lựa chọn của nhóm (type "auction")' },
     { id: "web-lt", phase: "luyen-tap", type: "web", label: "Trò chơi web luyện tập", hint: "Wordwall, LearningApps, Quizizz, Kahoot, Blooket – HS chơi trên máy", ask: 'MỘT trò chơi web luyện tập (type "web") – xem mục TRÒ CHƠI WEB' },
     { id: "phieu-thoat", phase: "van-dung", type: "text", label: "Phiếu thoát + tự đánh giá", hint: "Viết ngắn, tự đánh giá 3 mức, hỏi điều băn khoăn", ask: 'MỘT phiếu thoát (type "text", selfAssess: true, askDoubt: true) yêu cầu vận dụng vào thực tế' },
@@ -136,6 +143,7 @@ YÊU CẦU CHẤT LƯỢNG CÂU 4 LỰA CHỌN: đúng nội dung SGK; câu dẫ
       const acts = ACTS.filter((a) => (a.always || (o.acts || []).includes(a.id)) && allowed.includes(a.phase));
       const kinds = (o.qkinds && o.qkinds.length ? o.qkinds : ["mcq"]).map((k) => (QKINDS.find((x) => x[0] === k) || [k, k])[1]);
       const types = [...new Set(acts.flatMap((a) => (a.id === "ghep-sap" ? ["match", "order"] : a.id === "nhom" ? ["groupwork", "expo"] : [a.type])))];
+      // Học sinh làm KWL cuối giờ ở pha vận dụng (cùng tiết).
       const plan = L360.PHASES.filter((p) => allowed.includes(p.id))
         .map((p) => {
           const list = acts.filter((a) => a.phase === p.id);

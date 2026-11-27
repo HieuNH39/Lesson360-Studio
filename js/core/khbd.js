@@ -140,8 +140,10 @@
   // "trinhChieu" (trang chiếu cho học sinh) và "cauHoi" (câu hỏi tương tác) dùng để dựng PowerPoint từ giáo án.
   const slidesOf = (x) => arr(x && x.trinhChieu).filter((pg) => pg && typeof pg === "object");
   const qsOf = (x) => arr(x && x.cauHoi).filter((q) => q && typeof q === "object");
+  // "tuongTac": hoạt động/trò chơi tương tác (gói Lesson 360°) gắn với hoạt động/nhiệm vụ – dựng thành bước dạy và trang PowerPoint.
+  const actsOf = (x) => arr(x && x.tuongTac).filter((a) => a && typeof a === "object" && a.type && L360.types && L360.types[a.type] && a.type !== "slide");
   function nv(x) {
-    return { ten: str(x.ten), phut: str(x.phut), slide: str(x.slide), buoc: buoc(x.buoc), nls: expr(x.nls), ai: expr(x.ai), chot: chot(x.chot), trinhChieu: slidesOf(x), cauHoi: qsOf(x) };
+    return { ten: str(x.ten), phut: str(x.phut), slide: str(x.slide), buoc: buoc(x.buoc), nls: expr(x.nls), ai: expr(x.ai), chot: chot(x.chot), trinhChieu: slidesOf(x), cauHoi: qsOf(x), tuongTac: actsOf(x) };
   }
   function hd(x) {
     return {
@@ -158,7 +160,8 @@
       ai: expr(x.ai),
       chot: chot(x.chot),
       trinhChieu: slidesOf(x),
-      cauHoi: qsOf(x)
+      cauHoi: qsOf(x),
+      tuongTac: actsOf(x)
     };
   }
 
@@ -426,7 +429,7 @@
       new D.Paragraph({
         children: runsOf(rs, o.base),
         alignment: AL[o.align || "both"],
-        spacing: { before: o.before || 0, after: o.after != null ? o.after : 60, line: 276 },
+        spacing: { before: o.before || 0, after: o.after != null ? o.after : 60, line: 276, lineRule: D.LineRuleType ? D.LineRuleType.AUTO : "auto" },
         keepNext: !!o.keep,
         indent: o.indent ? { left: o.indent } : undefined,
         shading: o.shade ? { type: D.ShadingType.CLEAR, color: "auto", fill: o.shade } : undefined,
@@ -646,7 +649,26 @@
         break;
       case "quiz":
       case "video":
-        (s.questions || []).forEach((q) => out.questions.push(q));
+        if (s.type === "quiz" && s.mode && s.mode !== "classic") {
+          out.label = L360.quizModeName ? L360.quizModeName(s) : out.label;
+          if (s.mode === "puzzle") out.lines.push(`Trò chơi Mảnh ghép bí ẩn: ${(s.questions || []).filter((q) => !q.kw).length} mảnh ghép che bức tranh, mỗi câu trả lời đúng mở một mảnh; cuối cùng đoán bức tranh${s.keyword ? ` (đáp án: ${s.keyword})` : ""}.`);
+          if (s.mode === "gift") out.lines.push(`Trò chơi Hộp quà bí mật: ${(s.questions || []).length} hộp quà, lớp chọn hộp, mỗi hộp là một câu hỏi.`);
+          if (s.mode === "rcv") out.lines.push("Trò chơi Rung chuông vàng: HS trả lời từng câu trong thời gian quy định, trả lời sai thì dừng cuộc chơi; HS trụ vững đến câu cuối là người thắng.");
+        }
+        (s.questions || []).forEach((q) => !q.kw && out.questions.push(q));
+        break;
+      case "flash":
+        out.lines.push(`Thẻ ghi nhớ lật (${(s.pairs || []).length} thẻ): ` + (s.pairs || []).map((p) => `${p.left} – ${p.right}`).join("; "));
+        break;
+      case "wheel":
+        out.lines.push(`Vòng quay may mắn: ${(s.items || []).join("; ")}`);
+        break;
+      case "stance":
+        out.lines.push(`Bày tỏ quan điểm về nhận định: "${s.question || ""}" – các góc: ${(s.options || []).join(" / ")}; HS nêu lí do, tranh luận.`);
+        if (s.conclusion) out.lines.push(`Kết luận: ${s.conclusion}`);
+        break;
+      case "kwl":
+        out.lines.push(s.stage === "l" ? `Bảng KWL (cuối giờ): HS ghi điều đã học được (L) về "${s.question || ""}", đối chiếu với K, W đầu giờ.` : `Bảng KWL (đầu giờ): HS ghi điều đã biết (K) và muốn biết (W) về "${s.question || ""}".`);
         break;
       case "poll2":
         out.questions.push({ kind: "mcq", q: s.question, options: s.options || [], answer: s.answer, explain: s.explain });
@@ -717,7 +739,11 @@
     expo: ["2.4", "HS xem sản phẩm số của nhóm bạn trên thiết bị, nhận xét và bình chọn theo tiêu chí."],
     auction: ["2.4", "Nhóm thảo luận, thống nhất lựa chọn và gửi kèm lập luận trên thiết bị."],
     explore: ["1.1", "HS tìm kiếm, chọn lọc thông tin, hình ảnh di sản/tư liệu số theo nhiệm vụ và ghi nguồn."],
-    web: ["2.1", "HS tham gia trò chơi học tập trên nền tảng web mở theo đường dẫn/mã QR của GV."]
+    web: ["2.1", "HS tham gia trò chơi học tập trên nền tảng web mở theo đường dẫn/mã QR của GV."],
+    flash: ["2.1", "HS lật thẻ ghi nhớ trên thiết bị, tự đánh giá mức độ ghi nhớ và gửi kết quả."],
+    wheel: ["2.1", "HS quan sát vòng quay trực tuyến trên màn chiếu, thực hiện nhiệm vụ của ô được chọn."],
+    stance: ["2.2", "HS chọn quan điểm và gửi lí do lên bảng chung của lớp; tranh luận có văn hoá, tôn trọng ý kiến khác."],
+    kwl: ["2.2", "HS ghi điều đã biết, muốn biết, đã học được lên bảng KWL trực tuyến của lớp."]
   };
   function derive(packs, lv) {
     const byStep = {};
@@ -1056,6 +1082,18 @@ ${A.MAPRULES || ""}
 ${A.MEDIA || ""}
 11. Câu hỏi tương tác (khởi động, củng cố, luyện tập, trò chơi) ghi trong "cauHoi" của hoạt động/nhiệm vụ đó, theo các dạng:
 ${A.QUESTIONS || '- {"kind":"mcq","q":"…","options":["…","…","…","…"],"answer":0,"explain":"…"}'}
+13. TRÒ CHƠI, HOẠT ĐỘNG TƯƠNG TÁC – đa dạng hình thức, ưu tiên ở Mở đầu, Luyện tập, Vận dụng (mỗi bài 2–4 hoạt động, không lặp một kiểu; tổng thời gian vẫn đúng 45 phút/tiết). Đặt trong trường "tuongTac" (mảng) của hoạt động/nhiệm vụ; mỗi phần tử là một hoạt động:
+- Mảnh ghép bí ẩn: {"type":"quiz","mode":"puzzle","title":"…","keyword":"đáp án bức tranh","keyClue":"câu hỏi đoán bức tranh","query":"từ khoá tìm ảnh tiếng Anh","questions":[4–9 câu]}
+- Hộp quà bí mật: {"type":"quiz","mode":"gift","title":"…","questions":[4–8 câu]}
+- Rung chuông vàng: {"type":"quiz","mode":"rcv","title":"…","timer":20,"questions":[6–10 câu]}
+- Ô chữ: {"type":"crossword","keyword":"TUKHOA","keyClue":"…","rows":[{"answer":"VIETHOA","clue":"… (7 chữ cái)"}]} (hàng thứ i chứa chữ thứ i của từ khoá)
+- Ghép nối: {"type":"match","question":"…","pairs":[{"left":"…","right":"…"}]} · Sắp xếp: {"type":"order","question":"…","items":["theo thứ tự ĐÚNG"]}
+- Thẻ ghi nhớ lật: {"type":"flash","question":"…","pairs":[{"left":"mặt trước (thuật ngữ, mốc, nhân vật)","right":"mặt sau (giải thích ngắn)"}]}
+- Vòng quay may mắn: {"type":"wheel","question":"…","items":["ô 1","ô 2","…"]} (4–8 ô: câu hỏi ngắn, nhiệm vụ, phần thưởng)
+- Bày tỏ quan điểm: {"type":"stance","question":"Nhận định …","options":["Đồng ý","Phân vân","Không đồng ý"],"reasonPrompt":"Vì sao?","conclusion":"GV chốt …"}
+- Bảng KWL: {"type":"kwl","question":"Chủ đề …","stage":"kw"} ở Mở đầu và {"type":"kwl","question":"…","stage":"l"} ở Vận dụng/củng cố
+- Học từ bạn hai vòng: {"type":"poll2","question":"…","options":["…","…"],"answer":0,"explain":"…"}
+Câu hỏi trong "questions" theo đúng các dạng ở mục 11. Bốn bước của hoạt động mô tả rõ cách tổ chức trò chơi.
 12. KHÔNG cần tạo trang tên bài, tên chủ đề, tên mục, trang ghi vở, nhiệm vụ về nhà, trang kết: ứng dụng tự dựng từ "tenBai", "muc", "chot", "veNha". Giáo án Word không ghi số slide.
 `;
   }
@@ -1104,7 +1142,7 @@ ${A.QUESTIONS || '- {"kind":"mcq","q":"…","options":["…","…","…","…"],
         .filter((pg) => pg.blocks.length);
       if (tc.length) return tc;
       // Hoạt động chỉ gồm câu hỏi (trò chơi, luyện tập) thì trang câu hỏi đã đủ, không thêm trang nhiệm vụ.
-      if (arr(x.cauHoi).length) return [];
+      if (arr(x.cauHoi).length || arr(x.tuongTac).length) return [];
       const a = autoPage(x, title);
       return a ? [a] : [];
     };
@@ -1116,12 +1154,17 @@ ${A.QUESTIONS || '- {"kind":"mcq","q":"…","options":["…","…","…","…"],
       const sid = () => `t${i + 1}s${++n}`;
       const quiz = (x, phase, title) => {
         const qs = arr(x.cauHoi);
-        if (!qs.length) return null;
-        const st = { id: sid(), type: "quiz", phase, title: title || "Câu hỏi", minutes: Math.max(2, qs.length), questions: qs };
-        steps.push(st);
+        const st = qs.length ? { id: sid(), type: "quiz", phase, title: title || "Câu hỏi", minutes: Math.max(2, qs.length), questions: qs } : null;
+        if (st) steps.push(st);
+        // Trò chơi / hoạt động tương tác gắn với hoạt động – nhiệm vụ này.
+        arr(x.tuongTac).forEach((a) => {
+          const T = L360.types[a.type] || {};
+          steps.push(Object.assign(u.clone(a), { id: sid(), phase, title: md(a.title) || (T.label ? `${T.label}${x.ten ? " – " + clean(x.ten) : ""}` : clean(x.ten)), minutes: Number(a.minutes) || 4 }));
+        });
         return st;
       };
-      ti.hoatDong.forEach((h) => {
+      ti.hoatDong.forEach((h, hi) => {
+        const s0 = steps.length;
         const phase = phaseOf(h.ten);
         if (h.muc.length) {
           h.muc.forEach((m, j) => {
@@ -1175,7 +1218,12 @@ ${A.QUESTIONS || '- {"kind":"mcq","q":"…","options":["…","…","…","…"],
           if (q && st) st.minutes = Math.max(1, st.minutes - q.minutes);
           q && links.push({ id: q.id, target: h, extend: pages.length > 0 });
         }
+        // Mọi bước dựng từ cùng một hoạt động của giáo án thuộc một "hoạt động" (quy tắc 1 khởi động – 1 luyện tập – 1 vận dụng).
+        steps.slice(s0).forEach((x) => (x.hd = x.hd || `t${i + 1}h${hi + 1}`));
       });
+      // Bảng KWL cuối giờ đối chiếu với bảng KWL đầu giờ của cùng tiết.
+      const kw0 = steps.find((x) => x.type === "kwl" && x.stage !== "l");
+      steps.forEach((x) => x.type === "kwl" && x.stage === "l" && !x.from && kw0 && (x.from = kw0.id));
       const p = L360.Pack.normalize({
         schema: "l360-pack/2",
         id: `${gaId}-t${i + 1}`,

@@ -203,6 +203,21 @@
         })
       )
     );
+    // Ảnh bí ẩn của trò chơi Mảnh ghép (lưu ở bước: image, query, keyword).
+    (pack.steps || []).forEach((s) => {
+      if (s.type !== "quiz" || s.mode !== "puzzle") return;
+      const blk = {
+        kind: "image",
+        get src() { return s.image || ""; },
+        set src(v) { s.image = v; },
+        get verified() { return !!s.imageOk; },
+        set verified(v) { s.imageOk = !!v; },
+        query: s.query || s.keyword || "",
+        alt: s.keyword || "",
+        caption: s.keyword || ""
+      };
+      out.push({ step: s, block: blk });
+    });
     return out;
   }
   /* ---------- Xác minh ảnh do trợ lý AI đưa vào ---------- */

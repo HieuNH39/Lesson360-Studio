@@ -236,7 +236,15 @@
     },
     phaseCount(p) {
       const c = { "khoi-dong": 0, "hinh-thanh": 0, "luyen-tap": 0, "van-dung": 0 };
-      p.steps.forEach((s) => isActivity(s) && (c[s.phase] = (c[s.phase] || 0) + 1));
+      // Các bước cùng một hoạt động của giáo án (cùng "hd", ví dụ câu hỏi + trò chơi khởi động) tính là một hoạt động.
+      const seen = new Set();
+      p.steps.forEach((s) => {
+        if (!isActivity(s)) return;
+        const g = s.hd ? `${s.phase}|${s.hd}` : "";
+        if (g && seen.has(g)) return;
+        if (g) seen.add(g);
+        c[s.phase] = (c[s.phase] || 0) + 1;
+      });
       return c;
     },
     validate(raw) {
@@ -339,7 +347,9 @@
             pages: s.type === "slide" ? (s.pages || []).length : 0,
             noSubmit: !!t.noSubmit,
             groupMode: !!t.groupMode,
-            ghiBai: !!(s.ghiBai || (s.pages || []).some((pg) => L360.blocks && L360.blocks.hasNote(pg)))
+            ghiBai: !!(s.ghiBai || (s.pages || []).some((pg) => L360.blocks && L360.blocks.hasNote(pg))),
+            // Thông tin công khai riêng của từng loại (không chứa đáp án) – để màn chiếu dựng bảng trò chơi, thẻ, vòng quay…
+            ...(t.publicMeta ? t.publicMeta(s) : {})
           };
         })
       };

@@ -9,6 +9,7 @@
     ["day", "giaovien.html", "Dạy học", "play"],
     ["giaoan", "giaoan.html", "Giáo án", "doc"],
     ["tronde", "tronde.html", "Trộn đề", "dice"],
+    ["pdf", "pdf.html", "Word → PDF", "print"],
     ["ppct", "ppct.html", "Phụ lục 1", "layers"],
     ["baogiang", "baogiang.html", "Báo giảng", "clock"],
     ["dulieu", "insight.html", "Dữ liệu", "chart"],
@@ -18,7 +19,7 @@
   // Nhóm mục cho menu dọc.
   const GROUPS = [
     ["Bài học", ["thuvien", "studio", "day", "giaoan"]],
-    ["Kiểm tra & hồ sơ", ["tronde", "ppct", "baogiang"]],
+    ["Kiểm tra & hồ sơ", ["tronde", "pdf", "ppct", "baogiang"]],
     ["Theo dõi", ["dulieu", "tiendo"]]
   ];
   // Menu dọc là mặc định (26/11/2026); ?giaodien=ngang dùng lại menu ngang trên máy đó, ?giaodien=doc quay về mặc định.

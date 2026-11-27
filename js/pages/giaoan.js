@@ -486,14 +486,24 @@
         markDone("giáo án Word");
       })
     );
-    on("#dPdf", "onclick", () => {
-      try {
-        K.pdf(k, name());
+    // Giáo án PDF: chuyển chính tệp Word sang PDF (giống hệt bản Word, tải thẳng về máy); lỗi thì mở bản in của trình duyệt.
+    on("#dPdf", "onclick", (e) =>
+      busy(e.currentTarget, async () => {
+        const prog = u.$("#gProg");
+        try {
+          prog.textContent = "Đang tạo giáo án PDF…";
+          await u.loadScript("js/core/word2pdf.js");
+          const blob = await K.docxBlob(k);
+          const r = await L360.Word2Pdf.convert(await blob.arrayBuffer(), { title: name(), onProgress: (t) => (prog.textContent = t) });
+          u.downloadBlob(name() + ".pdf", new Blob([r.bytes], { type: "application/pdf" }));
+          u.toast(`Đã tải giáo án PDF (${r.pages} trang).`, "ok");
+        } catch (err) {
+          console.warn(err);
+          K.pdf(k, name());
+        }
         markDone("giáo án PDF");
-      } catch (e) {
-        u.toast(e.message, "bad", 5000);
-      }
-    });
+      })
+    );
     on("#dPpt", "onclick", (e) =>
       busy(e.currentTarget, async () => {
         const prog = u.$("#gProg");

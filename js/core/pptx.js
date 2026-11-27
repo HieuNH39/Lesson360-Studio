@@ -150,12 +150,20 @@
           const pages = (s.pages || []).flatMap(splitPage);
           pages.forEach((pg, i) => add({ k: "page", p, s, pg, i, n: pages.length }));
         }
-        else if (T === "quiz" || T === "video") {
+        else if (T === "quiz" && (s.mode === "puzzle" || s.mode === "gift") && (s.questions || []).some((q) => !q.kw)) {
+          // Mảnh ghép / Hộp quà: một trang trò chơi – bấm mảnh/hộp hiện thẻ câu hỏi, bấm thẻ hiện đáp án rồi mở mảnh.
+          const qs = (s.questions || []).filter((q) => !q.kw);
+          for (let i = 0; i < qs.length; i += 12) add({ k: s.mode, p, s, qs: qs.slice(i, i + 12), off: i, last: i + 12 >= qs.length });
+        } else if (T === "quiz" || T === "video") {
           if (T === "video") add({ k: "video", p, s });
+          if (T === "quiz" && s.mode === "rcv") add({ k: "rcv", p, s });
           const qs = s.questions || [];
           // Mỗi câu một trang; đáp án và giải thích hiện ra khi giáo viên bấm (hiệu ứng), không cần trang đáp án riêng.
           qs.forEach((q, i) => add({ k: "q", p, s, q, i, n: qs.length }));
-        } else if (T === "poll2") {
+        } else if (T === "flash") {
+          const ps = s.pairs || [];
+          for (let i = 0; i < ps.length; i += 8) add({ k: "flash", p, s, off: i, part: ps.length > 8 ? `${i / 8 + 1}/${Math.ceil(ps.length / 8)}` : "" });
+        } else if (["wheel", "stance", "kwl"].includes(T)) add({ k: T, p, s }); else if (T === "poll2") {
           const q = { kind: "mcq", q: s.question, options: s.options || [], answer: s.answer, explain: s.explain, opinion: s.answer == null };
           add({ k: "q", p, s, q, i: 0, n: 1 });
         } else if (T === "crossword") add({ k: "cw", p, s });
@@ -437,6 +445,51 @@
       return null;
     }
   }
+  // Vòng quay may mắn: vẽ thành ảnh PNG (để quay bằng hiệu ứng PowerPoint).
+  function wheelPng(items) {
+    try {
+      const N = Math.max(2, items.length);
+      const S0 = 1000, R0 = S0 / 2;
+      const c = document.createElement("canvas");
+      c.width = c.height = S0;
+      const g = c.getContext("2d");
+      const COL = ["#2F6FDB", "#E8930C", "#1E8E5A", "#D2453B", "#0C9A9A", "#8A5A2B", "#6B7A1F", "#C77700"];
+      const a = (2 * Math.PI) / N;
+      for (let i = 0; i < N; i++) {
+        const st = -Math.PI / 2 + i * a - a / 2;
+        g.beginPath();
+        g.moveTo(R0, R0);
+        g.arc(R0, R0, R0 - 6, st, st + a);
+        g.closePath();
+        g.fillStyle = COL[i % COL.length];
+        g.fill();
+        g.lineWidth = 6;
+        g.strokeStyle = "#FFFFFF";
+        g.stroke();
+        g.save();
+        g.translate(R0, R0);
+        g.rotate(st + a / 2);
+        g.fillStyle = "#FFFFFF";
+        g.textAlign = "right";
+        g.textBaseline = "middle";
+        let t = String(items[i] || "");
+        if (t.length > 24) t = t.slice(0, 23) + "…";
+        let fs = Math.min(56, Math.max(22, 760 / Math.max(6, t.length)), (a * R0 * 0.62) / 1.1);
+        g.font = `bold ${fs}px Arial, sans-serif`;
+        while (g.measureText(t).width > R0 * 0.72 && fs > 16) g.font = `bold ${--fs}px Arial, sans-serif`;
+        g.fillText(t, R0 - 34, 0);
+        g.restore();
+      }
+      g.beginPath();
+      g.arc(R0, R0, R0 - 3, 0, 2 * Math.PI);
+      g.lineWidth = 6;
+      g.strokeStyle = "#0F2742";
+      g.stroke();
+      return { data: c.toDataURL("image/png"), w: S0, h: S0 };
+    } catch (e) {
+      return null;
+    }
+  }
   function imageSrcs(packs) {
     const out = new Set();
     packs.forEach((p) =>
@@ -452,6 +505,7 @@
           })
         );
         (s.questions || []).forEach((q) => q.image && out.add(q.image));
+        if (s.type === "quiz" && s.mode === "puzzle" && s.image) out.add(s.image);
         if (s.type === "auction") (s.items || []).forEach((x) => x.image && out.add(x.image));
         if (s.type === "video") {
           const v = L360.videoSource ? L360.videoSource(s.source || {}) : {};
@@ -498,6 +552,7 @@
       })
     );
 
+    packs.forEach((p) => p.steps.forEach((s) => s.type === "wheel" && (imgs["__wheel__" + s.id] = wheelPng(arr(s.items)))));
     const pptx = new window.PptxGenJS();
     pptx.layout = "LAYOUT_WIDE";
     // PptxGenJS không thoát kí tự XML trong thuộc tính tệp (&, <, >) → làm sạch trước.
@@ -549,6 +604,16 @@
     /* --- hiệu ứng (đánh dấu hình bằng tên; sau khi đóng gói sẽ dựng phần <p:timing> cho PowerPoint) --- */
     const click = (sl) => ++sl._click;
     const trig = (sl) => ++sl._trig;
+    // Một hình nhiều vai: vừa là nút bấm, vừa có hiệu ứng trong các chuỗi khác nhau. list: [[khoá, hiệu ứng, thời lượng]…]
+    const roles = (sl, list, fn) => {
+      const prev = sl._roles;
+      sl._roles = list;
+      try {
+        return fn();
+      } finally {
+        sl._roles = prev;
+      }
+    };
     // Vùng bấm trong suốt phủ lên một phương án/ô: là "nút" (trigger) của chuỗi hiệu ứng riêng.
     const hitArea = (sl, x, y, w, h, fn) => {
       const t = trig(sl);
@@ -1133,7 +1198,7 @@
     };
     R.q = (sl, d, n) => {
       const q = d.q;
-      header(sl, d.s.phase, d.s.title, { chip: d.n > 1 ? `Câu ${d.i + 1}/${d.n}` : "Câu hỏi" });
+      header(sl, d.s.phase, d.s.title, { chip: `${d.s.mode === "rcv" ? "🔔 " : ""}${d.n > 1 ? `Câu ${d.i + 1}/${d.n}` : "Câu hỏi"}` });
       const qt = plain(q.q);
       const hasImg = q.image && imgs[q.image];
       const qw = hasImg ? 7.4 : W - 2 * MX;
@@ -1567,6 +1632,263 @@
       footer(sl, d.p, n, true);
     };
 
+    /* --- Trò chơi trên một trang: Mảnh ghép bí ẩn, Hộp quà bí mật --- */
+    const GCOL = ["2F6FDB", "E8930C", "1E8E5A", "D2453B", "0C9A9A", "8A5A2B", "6B7A1F", "C77700"];
+    // Nội dung thẻ câu hỏi (để hiện trên thẻ bật lên) và dòng đáp án.
+    function qCard(q) {
+      const k = q.kind || "mcq";
+      const lines = [];
+      let ans = "";
+      if (k === "tf") {
+        arr(q.statements).forEach((x, j) => lines.push(`${"abcd"[j]}) ${plain(x.text).replace(/^[a-d]\)\s*/i, "")}`));
+        ans = arr(q.statements).map((x, j) => `${"abcd"[j]}) ${x.answer ? "Đúng" : "Sai"}`).join("   ");
+      } else if (k === "short") {
+        ans = String(q.answer == null ? "" : q.answer) + (q.unit ? " " + q.unit : "");
+      } else if (k === "fill") {
+        const f = L360.fillParse(q.text);
+        lines.push(f.parts.map((t, i) => plain(t) + (i < f.blanks.length ? ` (${i + 1}) ……… ` : "")).join(""));
+        ans = f.blanks.map((b, i) => `(${i + 1}) ${plain(b.answer)}`).join("   ");
+      } else if (k === "sort") {
+        lines.push("Các mục: " + arr(q.items).map((x, i) => `${i + 1}. ${plain(x.text)}`).join("; "));
+        lines.push("Nhóm: " + arr(q.groups).map(plain).join(" | "));
+        ans = arr(q.groups).map((g, gi) => `${plain(g)}: ${arr(q.items).map((x, i) => (Number(x.group) === gi ? i + 1 : null)).filter((x) => x != null).join(", ")}`).join("   ");
+      } else {
+        arr(q.options).forEach((o, j) => lines.push(`${LET[j]}. ${plain(o)}`));
+        const a = Number(q.answer) || 0;
+        ans = `${LET[a]}. ${plain(arr(q.options)[a] || "")}`;
+      }
+      return { q: plain(q.q || ""), lines, ans };
+    }
+    // Thẻ câu hỏi bật lên: bấm mảnh/hộp (nút tt) → thẻ hiện; bấm thẻ lần 1 → đáp án (tiếng đúng); lần 2 → thẻ, đáp án và mảnh/hộp cùng biến mất.
+    function popCard(sl, q, no, tt, ct, title) {
+      const c = qCard(q);
+      const cx = MX + 0.25, cy = 1.85, cw = W - 2 * MX - 0.5, ch = 4.15;
+      const body = [{ text: `${title} ${no}`, options: { bold: true, color: col.accent2, fontSize: 14, breakLine: true } }, { text: c.q, options: { bold: true, fontSize: 22, breakLine: !!c.lines.length } }].concat(
+        c.lines.map((t, i) => ({ text: t, options: { fontSize: 18, breakLine: i < c.lines.length - 1, paraSpaceBefore: 4 } }))
+      );
+      const allTxt = [c.q].concat(c.lines).join("\n");
+      const fs = fit(allTxt, cw - 0.6, ch - 0.9, 24, 12);
+      roles(sl, [[`T${tt}.0`, "zoom"], [`T${ct}`, "button"], [`T${ct}.1`, "out"]], () =>
+        T(sl, body.map((r, i) => (i === 0 ? r : Object.assign({}, r, { options: Object.assign({}, r.options, { fontSize: Math.min(r.options.fontSize, i === 1 ? fs + 2 : fs) }) }))), {
+          shape: S.roundRect,
+          rectRadius: 0.18,
+          x: cx,
+          y: cy,
+          w: cw,
+          h: ch,
+          fill: { color: "FFFFFF" },
+          line: { color: col.accent, width: 3 },
+          shadow: { type: "outer", blur: 14, offset: 4, angle: 90, color: "000000", opacity: 0.25 },
+          margin: 18,
+          valign: "top",
+          color: col.ink === "F4F7FB" ? "0F2742" : col.ink
+        })
+      );
+      roles(sl, [[`T${ct}.0`, "zoomOk"], [`T${ct}.1`, "out"]], () =>
+        T(sl, [{ text: "Đáp án:  ", options: { bold: true, color: "FFFFFF" } }, { text: c.ans, options: { bold: true, color: "FFFFFF" } }], {
+          shape: S.roundRect,
+          rectRadius: 0.14,
+          x: cx,
+          y: cy + ch + 0.1,
+          w: cw,
+          h: 0.62,
+          fill: { color: "1E8E5A" },
+          line: { type: "none" },
+          fontSize: fit("Đáp án:  " + c.ans, cw - 0.4, 0.62, 20, 11),
+          valign: "middle",
+          margin: 10
+        })
+      );
+    }
+    R.puzzle = (sl, d, n) => {
+      const s = d.s;
+      header(sl, s.phase, s.title, { chip: "🧩 Mảnh ghép bí ẩn" });
+      const qs = d.qs;
+      const nT = qs.length;
+      const cols = nT <= 4 ? 2 : nT <= 6 ? 3 : nT <= 9 ? 3 : 4;
+      const rows = Math.ceil(nT / cols);
+      const bx = MX, by = 1.95, bw = 7.6, bh = H - 1.95 - 0.62;
+      if (s.image && imgs[s.image]) img(sl, s.image, bx, by, bw, bh, { cover: true });
+      else {
+        box(sl, bx, by, bw, bh, { fill: col.accent2 });
+        T(sl, "?", { x: bx, y: by, w: bw, h: bh, fontSize: 160, bold: true, color: "FFFFFF", transparency: 60, align: "center", valign: "middle" });
+      }
+      const kEnd = s.keyword && d.last ? 1 : 0;
+      const tw = bw / cols, th = bh / Math.max(1, rows);
+      const ts = qs.map((q, i) => ({ q, i, tt: trig(sl), ct: trig(sl) }));
+      ts.forEach(({ i, tt, ct }) => {
+        const x = bx + (i % cols) * tw, y = by + Math.floor(i / cols) * th;
+        roles(sl, [[`T${tt}`, "button"], [`T${ct}.1`, "out"]].concat(kEnd ? [[kEnd, "out"]] : []), () =>
+          T(sl, String(d.off + i + 1), { shape: S.rect, x, y, w: tw, h: th, fill: { color: GCOL[i % GCOL.length] }, line: { color: "FFFFFF", width: 3 }, fontSize: Math.min(60, th * 34), bold: true, color: "FFFFFF", align: "center", valign: "middle", margin: 0 })
+        );
+      });
+      const rx = bx + bw + 0.35, rw = W - MX - rx;
+      T(sl, "Cách chơi", { x: rx, y: 1.95, w: rw, h: 0.4, fontSize: 16, bold: true, color: col.accent2 });
+      const rules = "Chọn một mảnh ghép → trả lời câu hỏi trên thẻ → bấm thẻ để xem đáp án → bấm thẻ lần nữa để mở mảnh ghép.";
+      T(sl, rules, { x: rx, y: 2.38, w: rw, h: 1.5, fontSize: fit(rules, rw, 1.5, 16, 11), color: col.ink });
+      if (s.keyword || s.keyClue) {
+        box(sl, rx, 4.0, rw, 1.6, { fill: col.soft, line: col.accent, dash: "dash" });
+        const kc = plain(s.keyClue || "Bức tranh bí ẩn là gì?");
+        T(sl, [{ text: "🖼 Câu hỏi bức tranh\n", options: { bold: true, color: col.accent2, fontSize: 14 } }, { text: kc, options: { bold: true } }], { x: rx + 0.15, y: 4.05, w: rw - 0.3, h: 1.5, fontSize: fit(kc, rw - 0.3, 1.0, 18, 11), valign: "middle" });
+      }
+      if (kEnd) {
+        const kw = plain(s.keyword);
+        roles(sl, [[kEnd, "zoomOk"]], () =>
+          T(sl, kw, { shape: S.roundRect, rectRadius: 0.16, x: bx + 0.5, y: by + bh / 2 - 0.55, w: bw - 1.0, h: 1.1, fill: { color: "1E8E5A" }, line: { color: "FFFFFF", width: 3 }, fontSize: fit(kw, bw - 1.2, 1.1, 36, 16), bold: true, color: "FFFFFF", align: "center", valign: "middle" })
+        );
+      }
+      ts.forEach(({ q, i, tt, ct }) => popCard(sl, q, d.off + i + 1, tt, ct, "MẢNH GHÉP SỐ"));
+      footer(sl, d.p, n);
+    };
+    R.gift = (sl, d, n) => {
+      const s = d.s;
+      header(sl, s.phase, s.title, { chip: "🎁 Hộp quà bí mật" });
+      const qs = d.qs;
+      const nB = qs.length;
+      const cols = nB <= 4 ? nB : nB <= 8 ? 4 : nB <= 10 ? 5 : 6;
+      const rows = Math.ceil(nB / cols);
+      const gap = 0.3;
+      const top = 2.0, avH = H - top - 0.75;
+      const bs = Math.min((W - 2 * MX - (cols - 1) * gap) / cols, (avH - (rows - 1) * gap) / rows);
+      const x0 = (W - (cols * bs + (cols - 1) * gap)) / 2;
+      const ts = qs.map((q, i) => ({ q, i, tt: trig(sl), ct: trig(sl) }));
+      ts.forEach(({ i, tt, ct }) => {
+        const x = x0 + (i % cols) * (bs + gap), y = top + Math.floor(i / cols) * (bs + gap);
+        // Dưới hộp: dấu đã mở (hiện ra khi hộp biến mất).
+        box(sl, x, y, bs, bs, { fill: "E3F4EB", line: "1E8E5A", dash: "dash" });
+        T(sl, `✓ ${d.off + i + 1}`, { x, y, w: bs, h: bs, fontSize: Math.min(32, bs * 16), bold: true, color: "1E8E5A", align: "center", valign: "middle" });
+        roles(sl, [[`T${tt}`, "button"], [`T${ct}.1`, "out"]], () =>
+          T(sl, [{ text: "🎁", options: { fontSize: Math.min(54, bs * 26), breakLine: true } }, { text: String(d.off + i + 1), options: { fontSize: Math.min(34, bs * 17), bold: true } }], {
+            shape: S.roundRect,
+            rectRadius: 0.18,
+            x,
+            y,
+            w: bs,
+            h: bs,
+            fill: { color: GCOL[i % GCOL.length] },
+            line: { color: "FFFFFF", width: 3 },
+            shadow: { type: "outer", blur: 8, offset: 3, angle: 90, color: "000000", opacity: 0.2 },
+            color: "FFFFFF",
+            align: "center",
+            valign: "middle",
+            margin: 0
+          })
+        );
+      });
+      ts.forEach(({ q, i, tt, ct }) => popCard(sl, q, d.off + i + 1, tt, ct, "HỘP QUÀ SỐ"));
+      footer(sl, d.p, n);
+    };
+    R.rcv = (sl, d, n) => {
+      const s = d.s;
+      sl.background = { color: "FFF4D6" };
+      sl.addShape(S.ellipse, { x: W - 5.6, y: -1.8, w: 7.2, h: 7.2, fill: { color: "FFD978", transparency: 40 }, line: { type: "none" } });
+      sl.addShape(S.ellipse, { x: -1.6, y: 4.6, w: 4.6, h: 4.6, fill: { color: "FFE3A3", transparency: 30 }, line: { type: "none" } });
+      anim(sl, -1, "zoom", () => T(sl, "🔔", { x: W - 4.3, y: 1.1, w: 3.4, h: 3.4, fontSize: 150, align: "center", valign: "middle" }));
+      anim(sl, -2, "wipeL", () => T(sl, "RUNG CHUÔNG VÀNG", { x: MX, y: 1.3, w: 8.6, h: 1.2, fontFace: HFONT, fontSize: 50, bold: true, color: "8A5A00" }));
+      const qn = arr(s.questions).length;
+      const rules = [`${qn} câu hỏi, mỗi câu ${Number(s.timer) || 20} giây; ghi đáp án vào bảng con/giấy rồi giơ lên khi hết giờ.`, "Trả lời sai là dừng cuộc chơi, tiếp tục theo dõi và cổ vũ các bạn.", "Bạn trụ vững đến câu cuối cùng là người chiến thắng!"];
+      anim(sl, -3, "float", () => T(sl, rules.map((t, i) => ({ text: t, options: { bullet: { type: "number" }, breakLine: i < rules.length - 1, paraSpaceAfter: 10 } })), { x: MX, y: 2.75, w: 8.6, h: 3.2, fontSize: 22, color: "3A2A00" }));
+      footer(sl, d.p, n);
+    };
+    R.flash = (sl, d, n) => {
+      const s = d.s;
+      header(sl, s.phase, s.title, { chip: `🂠 Thẻ ghi nhớ${d.part ? " " + d.part : ""}` });
+      const ps = arr(s.pairs).slice(d.off, d.off + 8);
+      if (s.question) T(sl, plain(s.question) + "  (Bấm vào thẻ để lật)", { x: MX, y: 1.85, w: W - 2 * MX, h: 0.45, fontSize: 16, italic: true, color: col.muted });
+      const cols = ps.length <= 3 ? ps.length : 4;
+      const rows = Math.ceil(ps.length / cols);
+      const gap = 0.25, top = 2.4, avH = H - top - 0.7;
+      const cw = (W - 2 * MX - (cols - 1) * gap) / cols, chh = (avH - (rows - 1) * gap) / rows;
+      ps.forEach((p, i) => {
+        const x = MX + (i % cols) * (cw + gap), y = top + Math.floor(i / cols) * (chh + gap);
+        const t = trig(sl);
+        const back = plain(p.right);
+        roles(sl, [[`T${t}.0`, "zoom"]], () =>
+          T(sl, back, { shape: S.roundRect, rectRadius: 0.16, x, y, w: cw, h: chh, fill: { color: "FFF8E1" }, line: { color: "E0A100", width: 2 }, fontSize: fit(back, cw - 0.3, chh - 0.2, 20, 11), color: "3A2A00", align: "center", valign: "middle", margin: 8 })
+        );
+        const front = plain(p.left);
+        roles(sl, [[`T${t}`, "button"], [`T${t}.0`, "out"]], () =>
+          T(sl, [{ text: `${d.off + i + 1}\n`, options: { fontSize: 12, color: "FFFFFF" } }, { text: front, options: { bold: true } }], {
+            shape: S.roundRect,
+            rectRadius: 0.16,
+            x,
+            y,
+            w: cw,
+            h: chh,
+            fill: { color: GCOL[i % GCOL.length] },
+            line: { color: "FFFFFF", width: 2 },
+            shadow: { type: "outer", blur: 6, offset: 2, angle: 90, color: "000000", opacity: 0.18 },
+            fontSize: fit(front, cw - 0.3, chh - 0.5, 26, 12),
+            color: "FFFFFF",
+            align: "center",
+            valign: "middle",
+            margin: 8
+          })
+        );
+      });
+      footer(sl, d.p, n);
+    };
+    R.wheel = (sl, d, n) => {
+      const s = d.s;
+      header(sl, s.phase, s.title, { chip: "🎡 Vòng quay may mắn" });
+      const items = arr(s.items);
+      const lw = 5.6;
+      const q = plain(s.question || "Bấm vào vòng quay để quay.");
+      T(sl, q, { x: MX, y: 1.95, w: lw, h: 0.9, fontSize: fit(q, lw, 0.9, 20, 12), bold: true });
+      const lst = items.map((t, i) => `${i + 1}. ${plain(t)}`).join("\n");
+      T(sl, lst, { x: MX, y: 2.95, w: lw, h: 3.4, fontSize: fit(lst, lw, 3.4, 18, 11), paraSpaceAfter: 4 });
+      T(sl, "Bấm vào vòng quay: mỗi lần bấm quay một lượt.", { x: MX, y: 6.4, w: lw, h: 0.35, fontSize: 12, italic: true, color: col.muted });
+      const sz = 4.9, wx = W - MX - sz - 0.4, wy = 2.0;
+      const im = imgs["__wheel__" + s.id];
+      // Mỗi lần bấm quay thêm một góc khác nhau → dừng ở ô khác nhau (10 lượt).
+      const spins = Array.from({ length: 10 }, (_, j) => 360 * 3 + (u.hash(`${s.id}|${j}`) % 360) + 17);
+      const t = trig(sl);
+      if (im) roles(sl, spins.map((deg, j) => [`T${t}.${j}`, "spin", deg]), () => sl.addImage({ data: im.data.replace(/^data:/, ""), x: wx, y: wy, w: sz, h: sz }));
+      else box(sl, wx, wy, sz, sz, { fill: col.soft });
+      sl.addShape(S.triangle, { x: wx + sz / 2 - 0.28, y: wy - 0.3, w: 0.56, h: 0.55, rotate: 180, fill: { color: "D2453B" }, line: { color: "FFFFFF", width: 2 } });
+      sl.addShape(S.ellipse, { x: wx + sz / 2 - 0.3, y: wy + sz / 2 - 0.3, w: 0.6, h: 0.6, fill: { color: "FFFFFF" }, line: { color: "0F2742", width: 3 } });
+      anim(sl, `T${t}`, "button", () => sl.addShape(S.ellipse, { x: wx, y: wy, w: sz, h: sz, fill: { color: "FFFFFF", transparency: 100 }, line: { type: "none" } }));
+      footer(sl, d.p, n);
+    };
+    R.stance = (sl, d, n) => {
+      const s = d.s;
+      header(sl, s.phase, s.title, { chip: "⚖ Bày tỏ quan điểm" });
+      const q = plain(s.question);
+      box(sl, MX, 1.95, W - 2 * MX, 1.35, { fill: col.soft, line: col.accent, lw: 1.5 });
+      T(sl, q, { x: MX + 0.25, y: 1.98, w: W - 2 * MX - 0.5, h: 1.3, fontSize: fit(q, W - 2 * MX - 0.5, 1.3, 26, 14), bold: true, valign: "middle" });
+      const op = arr(s.options);
+      const gap = 0.3;
+      const cw = (W - 2 * MX - (op.length - 1) * gap) / Math.max(1, op.length);
+      op.forEach((o, i) =>
+        anim(sl, click(sl), "zoom", () => {
+          const x = MX + i * (cw + gap);
+          T(sl, plain(o), { shape: S.roundRect, rectRadius: 0.18, x, y: 3.55, w: cw, h: 1.5, fill: { color: GCOL[i % GCOL.length] }, line: { type: "none" }, fontSize: fit(plain(o), cw - 0.3, 1.4, 26, 13), bold: true, color: "FFFFFF", align: "center", valign: "middle" });
+          T(sl, `Góc ${i + 1}`, { x, y: 5.1, w: cw, h: 0.35, fontSize: 12, color: col.muted, align: "center" });
+        })
+      );
+      if (s.reasonPrompt) T(sl, "✎ " + plain(s.reasonPrompt), { x: MX, y: 5.55, w: W - 2 * MX, h: 0.45, fontSize: 16, italic: true, color: col.muted });
+      if (s.conclusion) anim(sl, click(sl), "float", () => {
+        const c = plain(s.conclusion);
+        box(sl, MX, 1.95, W - 2 * MX, 3.1, { fill: "E3F4EB", line: "1E8E5A", lw: 1.5 });
+        T(sl, [{ text: "Kết luận: ", options: { bold: true, color: "1E8E5A" } }, { text: c }], { x: MX + 0.25, y: 2.0, w: W - 2 * MX - 0.5, h: 3.0, fontSize: fit(c, W - 2 * MX - 0.5, 3.0, 24, 13), valign: "middle", color: "123B2A" });
+      });
+      timerBar(sl, s.minutes);
+      footer(sl, d.p, n);
+    };
+    R.kwl = (sl, d, n) => {
+      const s = d.s;
+      header(sl, s.phase, s.title, { chip: s.stage === "l" ? "Bảng KWL – cuối giờ" : "Bảng KWL – đầu giờ" });
+      const q = plain(s.question);
+      T(sl, q, { x: MX, y: 1.9, w: W - 2 * MX, h: 0.6, fontSize: fit(q, W - 2 * MX, 0.6, 22, 13), bold: true });
+      const K = [["K – Em đã biết", "2F6FDB"], ["W – Em muốn biết", "E8930C"], ["L – Em đã học được", "1E8E5A"]];
+      const act = (i) => (s.stage === "l" ? i === 2 : i < 2);
+      const head = K.map(([t, c], i) => ({ text: t, options: { bold: true, color: "FFFFFF", fill: { color: act(i) ? c : "B9C3D0" }, align: "center" } }));
+      const rows = [head].concat(Array.from({ length: 5 }, () => K.map(() => ({ text: "", options: { fill: { color: "FFFFFF" } } }))));
+      sl.addTable(rows, { x: MX, y: 2.6, w: W - 2 * MX, colW: K.map(() => (W - 2 * MX) / 3), rowH: [0.5].concat(Array(5).fill(0.7)), fontFace: FONT, fontSize: 18, border: { type: "solid", pt: 1, color: col.line }, valign: "middle", autoPage: false });
+      timerBar(sl, s.minutes);
+      footer(sl, d.p, n);
+    };
+
     // Ghi chú cho giáo viên (lời dẫn, đáp án).
     function notes(d) {
       const s = d.s;
@@ -1577,6 +1899,13 @@
         if (s.minutes) out.push(`Thời lượng: ${s.minutes} phút.`);
       }
       if (d.k === "q" && L360.Khbd) out.push("Đáp án: " + L360.Khbd.qLine(d.q, d.i) + (d.q.explain ? "\nGiải thích: " + plain(d.q.explain) : ""));
+      if ((d.k === "puzzle" || d.k === "gift") && L360.Khbd) {
+        out.push(d.k === "puzzle" ? "Cách chơi: bấm mảnh ghép → thẻ câu hỏi hiện ra; bấm thẻ → đáp án; bấm thẻ lần nữa → mở mảnh ghép. Bấm ra ngoài (khi đã mở hết) → hiện từ khoá." : "Cách chơi: bấm hộp quà → thẻ câu hỏi; bấm thẻ → đáp án; bấm thẻ lần nữa → hộp được mở.");
+        d.qs.forEach((q, i) => out.push(L360.Khbd.qLine(q, d.off + i)));
+        if (d.s.keyword) out.push("Từ khoá bức tranh: " + plain(d.s.keyword));
+      }
+      if (d.k === "flash") out.push("Bấm vào từng thẻ để lật. " + arr(d.s.pairs).map((x, i) => `${i + 1}) ${plain(x.left)} – ${plain(x.right)}`).join("; "));
+      if (d.k === "wheel") out.push("Bấm vào vòng quay để quay (mỗi lần bấm một lượt, 10 lượt khác nhau).");
       if (d.k === "page") L360.blocks.notes(d.pg).forEach((x) => out.push(`${x.title}: ${plain(x.text)}`));
       // Nguồn ảnh ghi trong phần ghi chú (không chèn lên trang chiếu).
       if (d.k === "page") {
@@ -1596,8 +1925,14 @@
       sl._click = 0;
       sl._trig = 0;
       sl._an = null;
+      sl._roles = null;
       // Gắn tên đánh dấu hiệu ứng vào hình được vẽ khi đang trong anim(…).
-      const tag = (o) => (sl._an ? Object.assign({}, o, { objectName: `L360A|${sl._an.k}|${sl._an.fx}|${sl._an.dur}|${++animSeq}` }) : o);
+      const tag = (o) =>
+        sl._roles
+          ? Object.assign({}, o, { objectName: `L360M|${sl._roles.map((r) => `${r[0]},${r[1]},${r[2] || 0}`).join(";")}|${++animSeq}` })
+          : sl._an
+          ? Object.assign({}, o, { objectName: `L360A|${sl._an.k}|${sl._an.fx}|${sl._an.dur}|${++animSeq}` })
+          : o;
       ["addText", "addShape"].forEach((fn) => {
         const f = sl[fn].bind(sl);
         sl[fn] = (a, o) => f(a, tag(o || {}));
@@ -1627,6 +1962,9 @@
   const fxBase = (fx) => String(fx).replace(/(Ok|No)$/, "");
   const fxSnd = (fx) => (/Ok$/.test(fx) ? "ok" : /No$/.test(fx) ? "no" : "");
   function timingXml(items, buttons = {}) {
+    // Mỗi hiệu ứng trên cùng một hình là một nhóm dựng riêng (grpId 0, 1, 2…) – như PowerPoint ghi.
+    const gcount = {};
+    items.forEach((it) => (it.grp = gcount[it.id] = gcount[it.id] == null ? 0 : gcount[it.id] + 1));
     let id = 2;
     const nid = () => ++id;
     const tgt = (spid) => `<p:tgtEl><p:spTgt spid="${spid}"/></p:tgtEl>`;
@@ -1642,12 +1980,17 @@
     };
     const effect = (it, node) => {
       const fx = fxBase(it.fx);
-      const head = (preset, cls, sub) => `<p:par><p:cTn id="${nid()}" presetID="${preset}" presetClass="${cls}" presetSubtype="${sub}" fill="hold"${cls === "exit" ? "" : ' grpId="0"'} nodeType="${node}"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>`;
+      const head = (preset, cls, sub) => `<p:par><p:cTn id="${nid()}" presetID="${preset}" presetClass="${cls}" presetSubtype="${sub}" fill="hold" grpId="${it.grp || 0}" nodeType="${node}"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>`;
       const tail = `</p:childTnLst>${audio(fxSnd(it.fx))}</p:cTn></p:par>`;
       const d = it.id;
       if (fx === "timer") {
         const ms = Math.max(1000, it.dur || 60000);
         return head(22, "exit", 2) + filt(d, "out", "wipe(right)", ms) + vis(d, "hidden", ms - 1) + tail;
+      }
+      if (fx === "spin") {
+        // Vòng quay: quay thêm (dur) độ trong 3,2 giây, chậm dần rồi dừng.
+        const by = Math.round((it.dur || 1440) * 60000);
+        return `<p:par><p:cTn id="${nid()}" presetID="8" presetClass="emph" presetSubtype="0" fill="hold" grpId="${it.grp || 0}" nodeType="${node}"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst><p:animRot by="${by}"><p:cBhvr><p:cTn id="${nid()}" dur="3200" decel="85000" fill="hold"/>${tgt(d)}<p:attrNameLst><p:attrName>r</p:attrName></p:attrNameLst></p:cBhvr></p:animRot></p:childTnLst>${audio(fxSnd(it.fx))}</p:cTn></p:par>`;
       }
       if (fx === "out") return head(10, "exit", 0) + filt(d, "out", "fade", DUR.out) + vis(d, "hidden", DUR.out - 1) + tail;
       if (fx === "appear" || fx === "after") return head(1, "entr", 0) + vis(d, "visible") + tail;
@@ -1662,7 +2005,7 @@
         return head(53, "entr", 16) + vis(d, "visible") + tav(d, "ppt_w", `<p:fltVal val="0"/>`, sv("#ppt_w"), DUR.zoom) + tav(d, "ppt_h", `<p:fltVal val="0"/>`, sv("#ppt_h"), DUR.zoom) + filt(d, "in", "fade", DUR.zoom) + tail;
       return head(10, "entr", 0) + vis(d, "visible") + filt(d, "in", "fade", DUR.fade) + tail;
     };
-    const len = (g) => Math.max(1, ...g.map((x) => (fxBase(x.fx) === "timer" ? Math.max(1000, x.dur || 60000) : DUR[fxBase(x.fx)] || 500)));
+    const len = (g) => Math.max(1, ...g.map((x) => (fxBase(x.fx) === "timer" ? Math.max(1000, x.dur || 60000) : fxBase(x.fx) === "spin" ? 3200 : DUR[fxBase(x.fx)] || 500)));
     // Một nhóm bấm: các hiệu ứng chạy ngay (bấm/cùng lúc) rồi các hiệu ứng "sau" (chờ hiệu ứng trước xong).
     const group = (g, start) => {
       const now = g.filter((x) => x.fx !== "after");
@@ -1716,7 +2059,8 @@
           .join("")}</p:childTnLst></p:cTn><p:nextCondLst><p:cond evt="onClick" delay="0">${b}</p:cond></p:nextCondLst></p:seq>`;
       })
       .join("");
-    const bld = items.filter((x) => x.sp && fxBase(x.fx) !== "out").map((x) => `<p:bldP spid="${x.id}" grpId="0" animBg="1"/>`);
+    // Mỗi hình có chữ được hiệu ứng xuất hiện/nhấn mạnh: một mục bldP (không trùng).
+    const bld = items.filter((x) => x.sp && fxBase(x.fx) !== "spin").map((x) => `<p:bldP spid="${x.id}" grpId="${x.grp || 0}" animBg="1"/>`);
     return `<p:timing><p:tnLst><p:par><p:cTn id="1" dur="indefinite" restart="never" nodeType="tmRoot"><p:childTnLst>${mainXml}${trigXml}</p:childTnLst></p:cTn></p:par></p:tnLst>${
       bld.length ? `<p:bldLst>${bld.join("")}</p:bldLst>` : ""
     }</p:timing>`;
@@ -1784,6 +2128,25 @@
         items.push({ id, k, fx, dur: Number(dur), sp });
         if (fxSnd(fx) && sounds[fxSnd(fx)]) usedSnd.add(fxSnd(fx));
         return `<p:cNvPr id="${id}" name="${/^T/.test(k) ? "Nút " + String(k).replace(/^T/, "") : "Hiệu ứng " + k}.${seq}"`;
+      });
+      xml = xml.replace(/<p:cNvPr id="(\d+)" name="L360M\|([^"|]+)\|(\d+)"/g, (m, id, list, seq, off) => {
+        const before = xml.slice(Math.max(0, off - 400), off);
+        const isSp = before.lastIndexOf("<p:sp>") > Math.max(before.lastIndexOf("<p:pic>"), before.lastIndexOf("<p:cxnSp>"));
+        const end = xml.indexOf("</p:sp>", off);
+        const body = isSp && end > 0 ? xml.slice(off, end) : "";
+        const sp = isSp && /<a:t>[^<]*\S[^<]*<\/a:t>/.test(body) && body.indexOf("<p:pic>") < 0;
+        let nm = "";
+        list.split(";").forEach((r) => {
+          const [k, fx, dur] = r.split(",");
+          if (fx === "button") {
+            buttons[String(k).replace(/^T/, "")] = id;
+            nm = nm || `Nút bấm ${String(k).replace(/^T/, "")}`;
+          } else {
+            items.push({ id, k, fx, dur: Number(dur) || 0, sp });
+            if (fxSnd(fx) && sounds[fxSnd(fx)]) usedSnd.add(fxSnd(fx));
+          }
+        });
+        return `<p:cNvPr id="${id}" name="${nm || "Hình động"} ${seq}"`;
       });
       // Âm thanh: chỉ giữ hiệu ứng có tệp âm thanh thật; gắn quan hệ âm thanh vào trang.
       const need = [...new Set(items.map((x) => fxSnd(x.fx)).filter((x) => x && sounds[x]))];

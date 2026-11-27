@@ -5,7 +5,7 @@ root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CORE = ["js/config.js", "js/vendor/qrcode.js", "js/vendor/firebase/firebase-app-compat.js", "js/vendor/firebase/firebase-auth-compat.js", "js/vendor/firebase/firebase-database-compat.js",
         "js/core/util.js", "js/core/store.js", "js/core/design.js", "js/core/sound.js", "js/core/ui.js", "js/core/blocks.js",
         "js/data/sgk.js", "js/data/eduhistory.js", "js/core/curriculum.js", "js/core/pack.js", "js/core/room.js", "js/core/shell.js", "js/core/help.js", "js/core/auth.js", "js/core/library.js", "js/core/ppct.js",
-        "js/data/heritage-sites.js", "js/activities/basic.js", "js/activities/game.js", "js/activities/interactive.js", "js/activities/group.js", "js/activities/explore.js", "js/activities/web.js"]
+        "js/data/heritage-sites.js", "js/activities/basic.js", "js/activities/game.js", "js/activities/interactive.js", "js/activities/group.js", "js/activities/explore.js", "js/activities/web.js", "js/activities/fun.js"]
 PACKS = sorted(os.path.relpath(p, root) for p in glob.glob(os.path.join(root, "packs/*.js")))
 STUDIO = ["js/core/architect.js", "js/core/images.js", "js/core/khbd.js", "js/core/pptx.js"]
 PAGES = {
@@ -23,6 +23,7 @@ PAGES = {
     "tiendo.html": ("Tiến độ của tổ – Lesson 360°", [], False, "js/pages/tiendo.js", ""),
     "lophoc.html": ("Danh sách lớp – Lesson 360°", ["js/core/lophoc.js"], False, "js/pages/lophoc.js", ""),
     "tronde.html": ("Trộn đề kiểm tra – Lesson 360°", ["js/core/tronde.js"], False, "js/pages/tronde.js", ""),
+    "pdf.html": ("Chuyển Word sang PDF – Lesson 360°", ["js/core/word2pdf.js"], False, "js/pages/pdf.js", ""),
 }
 # ?v=<mã nội dung>: trình duyệt luôn tải bản mới sau mỗi lần cập nhật, không trộn mã cũ – mới.
 def V(path):

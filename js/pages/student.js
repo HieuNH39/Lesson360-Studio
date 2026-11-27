@@ -401,7 +401,16 @@
     head.innerHTML = `<div class="row" style="margin-bottom:12px"><span class="ph ph-${step.phase}">${u.esc(L360.phase(step.phase).name)}</span><span class="pill">${state.step + 1}/${pubMeta.steps.length}</span><b class="grow ellipsis">${u.esc(step.title)}</b>${
       step.ghiBai ? `<span class="ghi-badge">${L360.icon("ghiBai")} Ghi vở</span>` : ""
     }<span class="pill ${state.phase === "open" ? "ok" : ""}">${ui.phaseLabel(state, step)}</span>${sgkBtn()}</div>`;
-    const rk = JSON.stringify([state.step, state.phase, state.q, state.round, state.page, !!ctx.sub, !!live.answer, !!live.item, !!live.featured, g && g.id, step.type === "expo" ? !!live.expo : 0, live.item && live.item.text]);
+    const rk = JSON.stringify([state.step, state.phase, state.q, state.round, state.page, !!ctx.sub, !!live.answer, !!live.item, !!live.featured, g && g.id, step.type === "expo" ? !!live.expo : 0, live.item && live.item.text, step.type === "wheel" ? state.wheel || 0 : 0]);
+    // Công bố đáp án: máy học sinh phát tiếng đúng/sai (một lần cho mỗi câu).
+    if (live.answer && ctx.sub && !ctx.sub.pending && L360.sound && playedKey !== key) {
+      playedKey = key;
+      const a = live.answer;
+      const v = ctx.sub.v;
+      const ok = step.type === "quiz" || step.type === "video" ? L360.quizPoints(a, v) === 100 : step.type === "poll2" && a.answer != null ? Number(v) === Number(a.answer) : null;
+      if (ok === true) L360.sound.correct();
+      else if (ok === false) L360.sound.wrong();
+    }
     if (rk === lastRender && T.student && T.student.update) return ctx.item ? T.student.update(main, ctx) : undefined;
     if (rk === lastRender) return;
     lastRender = rk;
@@ -421,6 +430,8 @@
     }
     T.student.result(main, ctx);
   };
+  let playedKey = null;
+  document.addEventListener("pointerdown", () => L360.sound && L360.sound.unlock(), { once: true });
   const render = u.throttleRaf(() => {
     renderNow();
     ui.tick();

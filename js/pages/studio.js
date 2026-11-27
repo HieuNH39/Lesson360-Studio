@@ -470,6 +470,7 @@
         const s = L360.types[t].template();
         s.id = "s" + u.uid(4);
         s.phase = a.phase;
+        if (a.mode) (s.mode = a.mode), (s.title = a.label);
         if (a.id === "bai-giang") s.title = "Tìm hiểu kiến thức mới";
         steps.push(s);
       });
@@ -657,7 +658,7 @@
       ${s.type === "video" ? videoEd(s, i) : ""}
       ${s.type === "web" ? webEd(s, i) : ""}
       ${(T.fields || [])
-        .filter((f) => !["pages", "questions", "cwrows", "video"].includes(f.kind) && !["keyword", "keyClue", "rows", "source"].includes(f.key) && !(s.type === "slide" && f.key.startsWith("media.")))
+        .filter((f) => !["pages", "questions", "cwrows", "video"].includes(f.kind) && !["rows", "source"].includes(f.key) && !(s.type === "crossword" && ["keyword", "keyClue"].includes(f.key)) && !(s.type === "slide" && f.key.startsWith("media.")))
         .map((f) => fieldHtml(s, f, i))
         .join("")}
       ${s.type !== "slide" ? `<label class="field">${icon("ghiBai")} Nội dung học sinh ghi vở sau hoạt động (không bắt buộc)<textarea data-si="${i}" data-k="ghiBai" rows="2" placeholder="- Ý chính cần ghi">${u.esc(s.ghiBai || "")}</textarea></label>` : ""}
@@ -950,7 +951,7 @@
           }
         }
         setP(s, k, v);
-        if (k === "keyword") s.keyword = L360.upWord ? L360.upWord(v || "") : v;
+        if (k === "keyword" && s.type === "crossword") s.keyword = L360.upWord ? L360.upWord(v || "") : v;
         if (k === "phase") return changed(), drawSteps();
         changed();
         if (k === "title") preview();

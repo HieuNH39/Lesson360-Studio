@@ -49,6 +49,12 @@ Web là trang tĩnh: **GitHub Pages** (hoặc Netlify) phục vụ trang, **Fire
 - Danh sách lớp: 16/16 kiểm tra đạt; phòng học chỉ chứa mã và tên gọi ngắn, họ tên đầy đủ chỉ giáo viên đã duyệt đọc được, học sinh không đổi được tên có sẵn.
 - Học sinh không đọc được gói bài học có đáp án, không đọc được bài của bạn, không nộp thay bạn, không nộp khi đã khoá, không đổi được tiến trình tiết học.
 
+## Thư viện chạy trên trình duyệt (không cần máy chủ)
+
+- Chuyển Word sang PDF (`pdf.html`, nút "Giáo án PDF"): docx-preview (Apache-2.0) dựng trang, jsPDF (MIT) vẽ PDF dạng chữ, qpdf-wasm (Apache-2.0) đặt mật khẩu AES-256. Phông tương đương nhúng vào PDF ở `assets/fonts/` (Liberation, Carlito – SIL OFL 1.1; DejaVu Sans làm phông dự phòng), xem `assets/fonts/LICENSE-fonts.txt`.
+- Âm thanh đúng/sai trong PowerPoint: `assets/sound/dung.wav`, `sai.wav` (tự tổng hợp, không bản quyền).
+- Kiểm tra PowerPoint: mọi bài mẫu xuất ra đều qua kiểm tra lược đồ OOXML (chuyển cảnh, hiệu ứng, nút bấm, âm thanh).
+
 ## Chi phí
 
 Không phải trả phí với quy mô một trường khi dùng gói Firebase Spark miễn phí (100 kết nối đồng thời, 1 GB dữ liệu; mỗi tiết học khoảng 50–200 KB). Giáo viên dùng trợ lý AI quen thuộc (ChatGPT, Gemini hoặc Claude) để soạn giáo án qua lời nhắc chuẩn của Studio.
